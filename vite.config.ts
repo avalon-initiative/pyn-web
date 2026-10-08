@@ -2,6 +2,8 @@
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
+const api = process.env.PYN_API ?? 'http://127.0.0.1:7878'
+
 // Dev: /v1 is proxied to pyn-server so the browser needs no CORS.
 export default defineConfig({
   plugins: [vue()],
@@ -9,7 +11,7 @@ export default defineConfig({
     modules: { generateScopedName: 'pyn_[name]__[local]__[hash:base64:5]' },
   },
   server: {
-    proxy: { '/v1': 'http://127.0.0.1:7878', '/healthz': 'http://127.0.0.1:7878' },
+    proxy: { '/v1': api, '/healthz': api },
   },
   test: {
     environment: 'jsdom',
