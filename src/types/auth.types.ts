@@ -1,9 +1,11 @@
 export type RegistrationMode = 'open' | 'invite' | 'closed'
 
-/** Mirrors the server's `CreatedToken`. */
-export interface CreatedToken {
-  token: string
-  info: { id: string; user: string; expires_at: string | null }
+/** Mirrors the server's `SessionInfo`. */
+export interface Session {
+  user: string
+  permissions: string[]
+  csrf_token: string
+  expires_at: string
 }
 
 export interface SignInForm {
