@@ -1,0 +1,67 @@
+// Design tokens: the only place raw colors, spacing and radii are defined. Components read
+// them through the --pyn-* custom properties, so theming (and a later extraction into a
+// shared UI library) never touches component stylesheets.
+
+$spacing: (
+  1: 0.25rem,
+  2: 0.5rem,
+  3: 0.75rem,
+  4: 1rem,
+  6: 1.5rem,
+  8: 2rem,
+);
+
+@mixin light {
+  --pyn-bg: #f6f7f9;
+  --pyn-surface: #ffffff;
+  --pyn-border: #d9dde3;
+  --pyn-text: #1b2230;
+  --pyn-text-muted: #5b6577;
+  --pyn-accent: #3857d6;
+  --pyn-available: #1f8a4c;
+  --pyn-available-bg: #e3f4ea;
+  --pyn-locked: #b4540a;
+  --pyn-locked-bg: #fdecd9;
+  --pyn-mine: #3857d6;
+  --pyn-mine-bg: #e4eafc;
+  --pyn-danger: #b3261e;
+  --pyn-danger-bg: #fbe4e2;
+}
+
+@mixin dark {
+  --pyn-bg: #0e1218;
+  --pyn-surface: #171c25;
+  --pyn-border: #2a3240;
+  --pyn-text: #e6e9ef;
+  --pyn-text-muted: #98a2b3;
+  --pyn-accent: #7d95f2;
+  --pyn-available: #5cc98a;
+  --pyn-available-bg: #12301f;
+  --pyn-locked: #f0a35c;
+  --pyn-locked-bg: #3a2410;
+  --pyn-mine: #8fa5f5;
+  --pyn-mine-bg: #1c2650;
+  --pyn-danger: #f2877f;
+  --pyn-danger-bg: #3d1714;
+}
+
+:root {
+  @include light;
+  --pyn-radius: 0.375rem;
+  --pyn-radius-pill: 999px;
+  --pyn-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --pyn-font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  @each $k, $v in $spacing {
+    --pyn-space-#{$k}: #{$v};
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark;
+}

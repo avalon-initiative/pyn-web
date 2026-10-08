@@ -1,0 +1,42 @@
+@use 'mixins' as m;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pyn-space-1);
+  padding: 0 var(--pyn-space-2);
+  border-radius: var(--pyn-radius-pill);
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  white-space: nowrap;
+}
+
+.icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: none;
+}
+
+.lease {
+  opacity: 0.8;
+}
+
+.available {
+  color: var(--pyn-available);
+  background: var(--pyn-available-bg);
+}
+
+.locked {
+  color: var(--pyn-locked);
+  background: var(--pyn-locked-bg);
+}
+
+.mine {
+  color: var(--pyn-mine);
+  background: var(--pyn-mine-bg);
+}
+
+.expiring {
+  color: var(--pyn-danger);
+  background: var(--pyn-danger-bg);
+}
