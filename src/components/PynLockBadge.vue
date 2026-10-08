@@ -5,7 +5,7 @@ import { formatLease, lockState } from '../state/lease.state'
 import type { LockInfo } from '../types/lock.types'
 
 const props = defineProps<{
-  lock?: LockInfo
+  lock?: LockInfo | null
   /** The signed-in user, so their own locks read as "You". */
   me?: string
   /** Injected for deterministic stories and tests; defaults to the current time. */

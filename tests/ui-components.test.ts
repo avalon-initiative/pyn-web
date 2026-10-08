@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PynFileList from '../src/components/PynFileList.vue'
 import PynLockBadge from '../src/components/PynLockBadge.vue'
+import { groupByTopLevel, splitPath } from '../src/state/files.state'
 import { formatLease, lockState } from '../src/state/lease.state'
 
 const now = new Date('2026-10-08T12:00:00Z')
@@ -28,6 +29,29 @@ describe('lease state', () => {
     expect(lockState(lock('me', 120), 'me', now)).toBe('mine')
     expect(lockState(lock('bob', 10), 'me', now)).toBe('expiring')
     expect(lockState(lock('bob', -10), 'me', now)).toBe('available')
+  })
+})
+
+describe('files state', () => {
+  it('splits a path into folder and file name', () => {
+    expect(splitPath('Content/World/Main.umap')).toEqual({
+      dir: 'Content/World/',
+      name: 'Main.umap',
+    })
+    expect(splitPath('README.md')).toEqual({ dir: '', name: 'README.md' })
+  })
+
+  it('groups rows by top-level folder, keeping order', () => {
+    const rows = [
+      { path: 'Content/a.umap', mode: 'exclusive' as const },
+      { path: 'README.md', mode: 'shared' as const },
+      { path: 'Content/b.umap', mode: 'exclusive' as const },
+    ]
+    const groups = groupByTopLevel(rows)
+    expect(groups.map((g) => [g.name, g.rows.length])).toEqual([
+      ['Content', 2],
+      ['(root)', 1],
+    ])
   })
 })
 
@@ -61,6 +85,19 @@ describe('PynFileList', () => {
     expect(w.findAll('li')).toHaveLength(2)
     expect(w.findAll('[data-state]')).toHaveLength(1)
     expect(w.text()).toContain('r9')
+  })
+
+  it('shows the folder and file name separately and tolerates null from the API', () => {
+    const w = mount(PynFileList, {
+      props: {
+        now,
+        rows: [{ path: 'Content/World/Main.umap', mode: 'exclusive', revision: null, lock: null }],
+      },
+    })
+    expect(w.text()).toContain('Content/World/')
+    expect(w.text()).toContain('Main.umap')
+    expect(w.text()).not.toContain('rnull')
+    expect(w.text()).toContain('Available')
   })
 
   it('renders an empty state', () => {

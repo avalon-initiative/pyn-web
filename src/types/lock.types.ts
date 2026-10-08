@@ -10,10 +10,16 @@ export type LockState = 'available' | 'locked' | 'mine' | 'expiring'
 
 export type Mode = 'shared' | 'exclusive'
 
+/** Mirrors the server's `FileEntry`. */
 export interface FileRow {
   path: string
   mode: Mode
-  /** Head revision, if the file has any. */
-  revision?: number
-  lock?: LockInfo
+  /** Head revision; null for a path that is locked but has no revision yet. */
+  revision?: number | null
+  lock?: LockInfo | null
+}
+
+export interface FilePage {
+  entries: FileRow[]
+  next_after: string | null
 }

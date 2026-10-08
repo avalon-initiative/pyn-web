@@ -16,7 +16,7 @@ export function formatLease(expiresAt: string, now: Date): string {
 
 /** What a viewer should see for a file's lock. An expired lock counts as no lock. */
 export function lockState(
-  lock: LockInfo | undefined,
+  lock: LockInfo | null | undefined,
   me: string | undefined,
   now: Date,
 ): LockState {
