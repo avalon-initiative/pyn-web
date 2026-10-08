@@ -1,4 +1,4 @@
-/** Mirrors the pyn-server API (`Lock`); replaced by the generated OpenAPI client types later. */
+/** Mirrors the server's `Lock`. */
 export interface LockInfo {
   path: string
   owner: string

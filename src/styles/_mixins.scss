@@ -5,7 +5,7 @@
   }
 }
 
-// Narrow screens: components own their responsive behaviour; never fork a mobile variant.
+// Narrow screens; each component owns its responsive behaviour.
 @mixin narrow {
   @media (max-width: 40rem) {
     @content;

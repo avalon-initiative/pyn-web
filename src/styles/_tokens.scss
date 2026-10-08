@@ -1,6 +1,4 @@
-// Design tokens: the only place raw colors, spacing and radii are defined. Components read
-// them through the --pyn-* custom properties, so theming (and a later extraction into a
-// shared UI library) never touches component stylesheets.
+// Design tokens: the only place raw colors, spacing and radii are defined.
 
 $spacing: (
   1: 0.25rem,

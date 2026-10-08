@@ -17,7 +17,7 @@ const meta: Meta<typeof PynFileList> = {
 export default meta
 type Story = StoryObj<typeof PynFileList>
 
-/** The repository mockup from the proposal: exclusive ownership must be impossible to miss. */
+/** Repository mockup with lock badges. */
 export const GameRepository: Story = {
   args: {
     rows: [
