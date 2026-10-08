@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PynFileList from '../src/components/PynFileList.vue'
 import PynLockBadge from '../src/components/PynLockBadge.vue'
+import PynKeys from '../src/components/PynKeys.vue'
 import PynSignIn from '../src/components/PynSignIn.vue'
 import { authHeaders, isToken, tokenId } from '../src/state/credential.state'
 import { groupByTopLevel, splitPath } from '../src/state/files.state'
@@ -192,5 +193,46 @@ describe('tokenId', () => {
   it('reads the id so a session can be ended', () => {
     expect(tokenId('pyn_0044a3c6d41a_' + 'ab'.repeat(32))).toBe('0044a3c6d41a')
     expect(tokenId('alice')).toBeNull()
+  })
+})
+
+describe('PynKeys', () => {
+  const keys = [
+    {
+      id: 'aaaaaaaaaaaa',
+      title: 'work laptop',
+      algorithm: 'ssh-ed25519',
+      fingerprint: 'SHA256:abc',
+      created_at: '2026-10-08T09:00:00Z',
+      last_used_at: null,
+    },
+  ]
+
+  it('lists keys with their fingerprint and whether they were used', () => {
+    const w = mount(PynKeys, { props: { keys } })
+    expect(w.text()).toContain('work laptop')
+    expect(w.text()).toContain('SHA256:abc')
+    expect(w.text()).toContain('Added 2026-10-08')
+    expect(w.text()).toContain('never used')
+  })
+
+  it('says so when there are no keys', () => {
+    expect(mount(PynKeys, { props: { keys: [] } }).text()).toContain('No keys yet')
+  })
+
+  it('emits the pasted key and title, then clears the form', async () => {
+    const w = mount(PynKeys, { props: { keys: [] } })
+    await w.find('input').setValue('laptop')
+    await w.find('textarea').setValue('  ssh-ed25519 AAAA  ')
+    await w.find('form').trigger('submit')
+    expect(w.emitted('add')?.[0]).toEqual([{ key: 'ssh-ed25519 AAAA', title: 'laptop' }])
+    expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('emits the id to remove and shows an error', async () => {
+    const w = mount(PynKeys, { props: { keys, error: 'that key is already linked to an account' } })
+    expect(w.find('[role=alert]').text()).toContain('already linked')
+    await w.find('button.remove, button[type=button]').trigger('click')
+    expect(w.emitted('remove')?.[0]).toEqual(['aaaaaaaaaaaa'])
   })
 })

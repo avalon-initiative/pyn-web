@@ -26,6 +26,28 @@
   font-size: 0.875rem;
 }
 
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--pyn-space-3);
+}
+
+.navLink {
+  padding: var(--pyn-space-1) var(--pyn-space-2);
+  color: var(--pyn-text-muted);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+
+  &[aria-current='true'] {
+    color: var(--pyn-text);
+    border-bottom-color: var(--pyn-accent);
+  }
+
+  @include m.focus-ring;
+}
+
 .signOut {
   padding: var(--pyn-space-1) var(--pyn-space-3);
   color: var(--pyn-text);
