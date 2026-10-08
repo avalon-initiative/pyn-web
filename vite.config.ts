@@ -2,7 +2,7 @@
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vitest/config'
 
-// Dev: the browser talks to the Vite origin and /v1 is proxied to pyn-server, so no CORS in dev.
+// Dev: /v1 is proxied to pyn-server so the browser needs no CORS.
 export default defineConfig({
   plugins: [vue()],
   css: {

@@ -34,9 +34,7 @@ build:
 run:
 	npm run dev
 
-# Generic PID-file-based background run — reusable as-is for any long-running
-# process. Only `run:` above needs to change per-stack; start/stop/status
-# don't.
+# PID-file background run; only `run` is per-stack.
 start:
 	@mkdir -p $(PID_DIR) $(LOG_DIR)
 	@if [ -f $(PID_FILE) ] && kill -0 "$$(cat $(PID_FILE))" 2>/dev/null; then \
