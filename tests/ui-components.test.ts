@@ -4,7 +4,8 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PynFileList from '../src/components/PynFileList.vue'
 import PynLockBadge from '../src/components/PynLockBadge.vue'
-import { authHeaders, isToken } from '../src/state/credential.state'
+import PynSignIn from '../src/components/PynSignIn.vue'
+import { authHeaders, isToken, tokenId } from '../src/state/credential.state'
 import { groupByTopLevel, splitPath } from '../src/state/files.state'
 import { formatLease, lockState } from '../src/state/lease.state'
 
@@ -127,5 +128,69 @@ describe('credentials', () => {
     expect(authHeaders('pyn_x_y')).toEqual({ Authorization: 'Bearer pyn_x_y' })
     expect(authHeaders('alice')).toEqual({ 'X-Pyn-User': 'alice' })
     expect(authHeaders('')).toEqual({})
+  })
+})
+
+describe('PynSignIn', () => {
+  const fill = async (w: ReturnType<typeof mount>, values: string[]) => {
+    const inputs = w.findAll('input')
+    for (const [i, v] of values.entries()) await inputs[i].setValue(v)
+  }
+
+  it('emits the user name and password when signing in', async () => {
+    const w = mount(PynSignIn, { props: { registration: 'invite' } })
+    await fill(w, ['alice', 'a long password'])
+    await w.find('form').trigger('submit')
+    expect(w.emitted('signIn')?.[0]).toEqual([{ username: 'alice', password: 'a long password' }])
+  })
+
+  it('offers an invitation field on invite-only servers and not on open ones', async () => {
+    const invite = mount(PynSignIn, { props: { registration: 'invite' } })
+    await invite
+      .findAll('button')
+      .find((b) => b.text() === 'I have an invitation')!
+      .trigger('click')
+    expect(invite.findAll('input')).toHaveLength(3)
+    await fill(invite, ['wendy', 'a long password', 'pyni_x'])
+    await invite.find('form').trigger('submit')
+    expect(invite.emitted('register')?.[0]).toEqual([
+      { username: 'wendy', password: 'a long password', invite: 'pyni_x' },
+    ])
+
+    const open = mount(PynSignIn, { props: { registration: 'open' } })
+    await open
+      .findAll('button')
+      .find((b) => b.text() === 'Create an account')!
+      .trigger('click')
+    expect(open.findAll('input')).toHaveLength(2)
+  })
+
+  it('hides registration on closed servers', () => {
+    const w = mount(PynSignIn, { props: { registration: 'closed' } })
+    const labels = w.findAll('button').map((b) => b.text())
+    expect(labels).not.toContain('Create an account')
+    expect(labels).not.toContain('I have an invitation')
+    expect(labels).toContain('Use a token')
+  })
+
+  it('passes a token straight through and shows an error', async () => {
+    const w = mount(PynSignIn, {
+      props: { registration: null, error: 'wrong user name or password' },
+    })
+    expect(w.find('[role=alert]').text()).toContain('wrong user name')
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Use a token')!
+      .trigger('click')
+    await fill(w, ['pyn_abc'])
+    await w.find('form').trigger('submit')
+    expect(w.emitted('useCredential')?.[0]).toEqual(['pyn_abc'])
+  })
+})
+
+describe('tokenId', () => {
+  it('reads the id so a session can be ended', () => {
+    expect(tokenId('pyn_0044a3c6d41a_' + 'ab'.repeat(32))).toBe('0044a3c6d41a')
+    expect(tokenId('alice')).toBeNull()
   })
 })
