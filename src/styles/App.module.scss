@@ -26,21 +26,13 @@
   font-size: 0.875rem;
 }
 
-.identity {
-  display: flex;
-  align-items: center;
-  gap: var(--pyn-space-2);
-  color: var(--pyn-text-muted);
-  font-size: 0.875rem;
-}
-
-.input {
-  width: 12rem;
-  padding: var(--pyn-space-1) var(--pyn-space-2);
+.signOut {
+  padding: var(--pyn-space-1) var(--pyn-space-3);
   color: var(--pyn-text);
   background: var(--pyn-surface);
   border: 1px solid var(--pyn-border);
   border-radius: var(--pyn-radius);
+  cursor: pointer;
 
   @include m.focus-ring;
 }

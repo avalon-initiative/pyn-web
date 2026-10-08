@@ -34,3 +34,9 @@ export function saveCredential(credential: string): void {
     // Storage is optional; the credential just resets on reload.
   }
 }
+
+/** The id inside a `pyn_<id>_<secret>` token, used to end that session. */
+export function tokenId(token: string): string | null {
+  const match = /^pyn_([0-9a-f]{12})_/.exec(token)
+  return match ? match[1] : null
+}
