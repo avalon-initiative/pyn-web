@@ -28,7 +28,7 @@
 .path {
   font-family: var(--pyn-font-mono);
   font-size: 0.875rem;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .dir {

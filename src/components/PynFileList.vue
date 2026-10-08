@@ -16,7 +16,7 @@ defineProps<{
     <li v-for="row in rows" :key="row.path" :class="styles.row">
       <span :class="styles.path"
         ><span :class="styles.dir">{{ splitPath(row.path).dir }}</span
-        ><span :class="styles.name">{{ splitPath(row.path).name }}</span></span
+        ><wbr /><span :class="styles.name">{{ splitPath(row.path).name }}</span></span
       >
       <span :class="styles.meta">
         {{ row.mode }}<template v-if="row.revision != null"> · r{{ row.revision }}</template>
