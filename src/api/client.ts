@@ -1,4 +1,3 @@
-import { authHeaders } from '../state/credential.state'
 import type { FilePage, FileRow, Me } from '../types/lock.types'
 
 export class ApiError extends Error {
@@ -11,8 +10,8 @@ export class ApiError extends Error {
   }
 }
 
-async function get<T>(path: string, credential: string): Promise<T> {
-  const res = await fetch(path, { headers: authHeaders(credential) })
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(path)
   if (!res.ok) {
     const body = await res
       .json()
@@ -22,16 +21,16 @@ async function get<T>(path: string, credential: string): Promise<T> {
   return res.json()
 }
 
-export function fetchMe(credential: string): Promise<Me> {
-  return get('/v1/me', credential)
+export function fetchMe(): Promise<Me> {
+  return get('/v1/me')
 }
 
-export async function fetchFiles(credential: string): Promise<FileRow[]> {
+export async function fetchFiles(): Promise<FileRow[]> {
   const rows: FileRow[] = []
   let after: string | null = null
   do {
     const path: string = after ? `/v1/files?after=${encodeURIComponent(after)}` : '/v1/files'
-    const page: FilePage = await get(path, credential)
+    const page: FilePage = await get(path)
     rows.push(...page.entries)
     after = page.next_after
   } while (after)

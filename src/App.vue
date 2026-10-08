@@ -4,10 +4,9 @@ import styles from './styles/App.module.scss'
 import PynFileList from './components/PynFileList.vue'
 import PynKeys from './components/PynKeys.vue'
 import PynSignIn from './components/PynSignIn.vue'
-import { endSession, fetchRegistration, login, register } from './api/auth'
+import { fetchRegistration, register, restoreSession, signIn, signOut } from './api/auth'
 import { ApiError, fetchFiles, fetchMe } from './api/client'
 import { addKey, listKeys, removeKey } from './api/keys'
-import { loadCredential, saveCredential, tokenId } from './state/credential.state'
 import { groupByTopLevel } from './state/files.state'
 import type { RegisterForm, RegistrationMode, SignInForm, SshKey } from './types/auth.types'
 import type { FileRow, Me } from './types/lock.types'
@@ -20,7 +19,8 @@ const registration = ref<RegistrationMode | null>(null)
 const view = ref<'files' | 'keys'>('files')
 const keys = ref<SshKey[]>([])
 const now = ref(new Date())
-const credential = ref(loadCredential())
+const signedIn = ref(false)
+const ready = ref(false)
 let timer: ReturnType<typeof setInterval> | undefined
 
 const groups = computed(() => groupByTopLevel(rows.value))
@@ -33,15 +33,13 @@ function describe(e: unknown): string {
 
 async function refresh() {
   now.value = new Date()
-  if (!credential.value) return
+  if (!signedIn.value) return
   try {
-    me.value = await fetchMe(credential.value)
-    rows.value = await fetchFiles(credential.value)
+    me.value = await fetchMe()
+    rows.value = await fetchFiles()
     error.value = ''
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) {
-      credential.value = ''
-    }
+    if (e instanceof ApiError && e.status === 401) signedIn.value = false
     error.value = describe(e)
   }
 }
@@ -58,44 +56,44 @@ async function attempt(action: () => Promise<void>) {
   }
 }
 
-const signIn = (form: SignInForm) =>
+const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
-    credential.value = (await login(form)).token
+    await signIn(form)
+    signedIn.value = true
   })
 
 const join = (form: RegisterForm) =>
   attempt(async () => {
     await register(form)
-    credential.value = (await login(form)).token
+    await signIn(form)
+    signedIn.value = true
   })
 
 async function showKeys() {
   view.value = 'keys'
   await attempt(async () => {
-    keys.value = await listKeys(credential.value)
+    keys.value = await listKeys()
   })
 }
 
 const newKey = (form: { key: string; title: string }) =>
   attempt(async () => {
-    await addKey(credential.value, form.key, form.title)
-    keys.value = await listKeys(credential.value)
+    await addKey(form.key, form.title)
+    keys.value = await listKeys()
   })
 
 const deleteKey = (id: string) =>
   attempt(async () => {
-    await removeKey(credential.value, id)
-    keys.value = await listKeys(credential.value)
+    await removeKey(id)
+    keys.value = await listKeys()
   })
 
-async function signOut() {
-  const id = tokenId(credential.value)
-  if (id) await endSession(credential.value, id).catch(() => undefined)
-  credential.value = ''
+async function leave() {
+  await signOut().catch(() => undefined)
+  signedIn.value = false
 }
 
-watch(credential, (value) => {
-  saveCredential(value)
+watch(signedIn, (value) => {
   if (value) refresh()
   else {
     me.value = null
@@ -105,6 +103,8 @@ watch(credential, (value) => {
 
 onMounted(async () => {
   registration.value = await fetchRegistration().catch(() => null)
+  signedIn.value = (await restoreSession().catch(() => null)) !== null
+  ready.value = true
   refresh()
   timer = setInterval(refresh, 15_000)
 })
@@ -114,15 +114,14 @@ onUnmounted(() => clearInterval(timer))
 <template>
   <main :class="styles.page">
     <PynSignIn
-      v-if="!credential"
+      v-if="ready && !signedIn"
       :registration="registration"
       :busy="busy"
       :error="error"
-      @sign-in="signIn"
+      @sign-in="submitSignIn"
       @register="join"
-      @use-credential="credential = $event"
     />
-    <template v-else>
+    <template v-else-if="signedIn">
       <header :class="styles.header">
         <div>
           <h1 :class="styles.title">{{ view === 'files' ? 'Files' : 'Account' }}</h1>
@@ -148,7 +147,7 @@ onUnmounted(() => clearInterval(timer))
           >
             SSH keys
           </button>
-          <button type="button" :class="styles.signOut" @click="signOut">Sign out</button>
+          <button type="button" :class="styles.signOut" @click="leave">Sign out</button>
         </nav>
       </header>
       <template v-if="view === 'files'">

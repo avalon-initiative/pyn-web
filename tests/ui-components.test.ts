@@ -6,7 +6,7 @@ import PynFileList from '../src/components/PynFileList.vue'
 import PynLockBadge from '../src/components/PynLockBadge.vue'
 import PynKeys from '../src/components/PynKeys.vue'
 import PynSignIn from '../src/components/PynSignIn.vue'
-import { authHeaders, isToken, tokenId } from '../src/state/credential.state'
+import { csrfHeaders, setCsrfToken } from '../src/state/csrf.state'
 import { groupByTopLevel, splitPath } from '../src/state/files.state'
 import { formatLease, lockState } from '../src/state/lease.state'
 
@@ -119,16 +119,15 @@ describe('repo rules', () => {
   })
 })
 
-describe('credentials', () => {
-  it('tells tokens from dev user names', () => {
-    expect(isToken('pyn_0044a3c6d41a_' + 'ab'.repeat(32))).toBe(true)
-    expect(isToken('alice')).toBe(false)
-  })
-
-  it('sends a bearer header for tokens, the dev header for names, and nothing when empty', () => {
-    expect(authHeaders('pyn_x_y')).toEqual({ Authorization: 'Bearer pyn_x_y' })
-    expect(authHeaders('alice')).toEqual({ 'X-Pyn-User': 'alice' })
-    expect(authHeaders('')).toEqual({})
+describe('csrfHeaders', () => {
+  it('adds the token to state-changing requests only, and nothing before sign-in', () => {
+    setCsrfToken('')
+    expect(csrfHeaders('POST')).toEqual({})
+    setCsrfToken('abc')
+    expect(csrfHeaders('POST')).toEqual({ 'X-Pyn-CSRF': 'abc' })
+    expect(csrfHeaders('delete')).toEqual({ 'X-Pyn-CSRF': 'abc' })
+    expect(csrfHeaders('GET')).toEqual({})
+    setCsrfToken('')
   })
 })
 
@@ -166,33 +165,19 @@ describe('PynSignIn', () => {
     expect(open.findAll('input')).toHaveLength(2)
   })
 
-  it('hides registration on closed servers', () => {
+  it('hides registration on closed servers and offers no token entry', () => {
     const w = mount(PynSignIn, { props: { registration: 'closed' } })
     const labels = w.findAll('button').map((b) => b.text())
     expect(labels).not.toContain('Create an account')
     expect(labels).not.toContain('I have an invitation')
-    expect(labels).toContain('Use a token')
+    expect(labels.join(' ')).not.toMatch(/token/i)
   })
 
-  it('passes a token straight through and shows an error', async () => {
+  it('shows an error', () => {
     const w = mount(PynSignIn, {
       props: { registration: null, error: 'wrong user name or password' },
     })
     expect(w.find('[role=alert]').text()).toContain('wrong user name')
-    await w
-      .findAll('button')
-      .find((b) => b.text() === 'Use a token')!
-      .trigger('click')
-    await fill(w, ['pyn_abc'])
-    await w.find('form').trigger('submit')
-    expect(w.emitted('useCredential')?.[0]).toEqual(['pyn_abc'])
-  })
-})
-
-describe('tokenId', () => {
-  it('reads the id so a session can be ended', () => {
-    expect(tokenId('pyn_0044a3c6d41a_' + 'ab'.repeat(32))).toBe('0044a3c6d41a')
-    expect(tokenId('alice')).toBeNull()
   })
 })
 

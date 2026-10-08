@@ -1,16 +1,11 @@
-import { authHeaders } from '../state/credential.state'
-import type { CreatedToken, RegisterForm, RegistrationMode, SignInForm } from '../types/auth.types'
+import { csrfHeaders, setCsrfToken } from '../state/csrf.state'
+import type { RegisterForm, RegistrationMode, Session, SignInForm } from '../types/auth.types'
 import { ApiError } from './client'
 
-export async function send<T>(
-  method: string,
-  path: string,
-  body?: unknown,
-  credential = '',
-): Promise<T> {
+export async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method,
-    headers: { 'Content-Type': 'application/json', ...authHeaders(credential) },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders(method) },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   if (!res.ok) {
@@ -27,8 +22,23 @@ export async function fetchRegistration(): Promise<RegistrationMode> {
   return info.registration
 }
 
-export function login(form: SignInForm): Promise<CreatedToken> {
-  return send('POST', '/v1/login', form)
+/** The server sets the HttpOnly session cookie; the page only keeps the CSRF token. */
+export async function signIn(form: SignInForm): Promise<Session> {
+  const session = await send<Session>('POST', '/v1/session', form)
+  setCsrfToken(session.csrf_token)
+  return session
+}
+
+/** The session the browser's cookie already holds, or null when signed out. */
+export async function restoreSession(): Promise<Session | null> {
+  try {
+    const session = await send<Session>('GET', '/v1/session')
+    setCsrfToken(session.csrf_token)
+    return session
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return null
+    throw e
+  }
 }
 
 export async function register(form: RegisterForm): Promise<void> {
@@ -36,6 +46,10 @@ export async function register(form: RegisterForm): Promise<void> {
 }
 
 /** Ends the session on the server; the caller forgets it either way. */
-export async function endSession(token: string, id: string): Promise<void> {
-  await send('DELETE', `/v1/tokens/${id}`, undefined, token)
+export async function signOut(): Promise<void> {
+  try {
+    await send('DELETE', '/v1/session')
+  } finally {
+    setCsrfToken('')
+  }
 }
