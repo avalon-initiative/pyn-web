@@ -2,46 +2,53 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import styles from './styles/App.module.scss'
 import PynFileList from './components/PynFileList.vue'
-import { fetchFiles } from './api/client'
+import { ApiError, fetchFiles, fetchMe } from './api/client'
+import { loadCredential, saveCredential } from './state/credential.state'
 import { groupByTopLevel } from './state/files.state'
-import type { FileRow } from './types/lock.types'
+import type { FileRow, Me } from './types/lock.types'
 
-const USER_KEY = 'pyn.user'
-
-function storedUser(): string {
-  try {
-    return localStorage.getItem(USER_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
+const NOT_SIGNED_IN = 'Not signed in: enter a token or user name above.'
 
 const rows = ref<FileRow[]>([])
+const me = ref<Me | null>(null)
 const error = ref('')
 const now = ref(new Date())
-const me = ref(storedUser())
+const credential = ref(loadCredential())
 let timer: ReturnType<typeof setInterval> | undefined
 
 const groups = computed(() => groupByTopLevel(rows.value))
 const lockedCount = computed(() => rows.value.filter((r) => r.lock).length)
 
-watch(me, (user) => {
-  try {
-    localStorage.setItem(USER_KEY, user)
-  } catch {
-    // Storage is optional; the identity just resets on reload.
+function describe(e: unknown): string {
+  if (e instanceof ApiError) {
+    return e.status === 401 && !credential.value ? NOT_SIGNED_IN : e.message
   }
-})
+  return `Could not reach pyn-server: ${e instanceof Error ? e.message : String(e)}`
+}
 
 async function refresh() {
   now.value = new Date()
+  if (!credential.value) {
+    me.value = null
+    rows.value = []
+    error.value = NOT_SIGNED_IN
+    return
+  }
   try {
-    rows.value = await fetchFiles()
+    me.value = await fetchMe(credential.value)
+    rows.value = await fetchFiles(credential.value)
     error.value = ''
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    me.value = null
+    rows.value = []
+    error.value = describe(e)
   }
 }
+
+watch(credential, (value) => {
+  saveCredential(value)
+  refresh()
+})
 
 onMounted(() => {
   refresh()
@@ -55,17 +62,26 @@ onUnmounted(() => clearInterval(timer))
     <header :class="styles.header">
       <div>
         <h1 :class="styles.title">Files</h1>
-        <p :class="styles.summary">{{ rows.length }} files, {{ lockedCount }} locked</p>
+        <p :class="styles.summary">
+          <template v-if="me">Signed in as {{ me.user }} · </template>{{ rows.length }} files,
+          {{ lockedCount }} locked
+        </p>
       </div>
       <label :class="styles.identity">
-        Viewing as
-        <input v-model.trim="me" :class="styles.input" placeholder="your name" />
+        Sign in
+        <input
+          v-model.trim="credential"
+          :class="styles.input"
+          type="password"
+          autocomplete="off"
+          placeholder="token or dev user"
+        />
       </label>
     </header>
-    <p v-if="error" :class="styles.error" role="alert">Could not reach pyn-server: {{ error }}</p>
+    <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
     <section v-for="group in groups" :key="group.name" :class="styles.group">
       <h2 :class="styles.groupTitle">{{ group.name }}</h2>
-      <PynFileList :rows="group.rows" :me="me" :now="now" />
+      <PynFileList :rows="group.rows" :me="me?.user" :now="now" />
     </section>
   </main>
 </template>

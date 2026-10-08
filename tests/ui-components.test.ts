@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PynFileList from '../src/components/PynFileList.vue'
 import PynLockBadge from '../src/components/PynLockBadge.vue'
+import { authHeaders, isToken } from '../src/state/credential.state'
 import { groupByTopLevel, splitPath } from '../src/state/files.state'
 import { formatLease, lockState } from '../src/state/lease.state'
 
@@ -113,5 +114,18 @@ describe('repo rules', () => {
         e.isDirectory() ? vues(join(d, e.name)) : e.name.endsWith('.vue') ? [join(d, e.name)] : [],
       )
     for (const f of vues(dir)) expect(readFileSync(f, 'utf8'), f).not.toMatch(/<style[\s>]/)
+  })
+})
+
+describe('credentials', () => {
+  it('tells tokens from dev user names', () => {
+    expect(isToken('pyn_0044a3c6d41a_' + 'ab'.repeat(32))).toBe(true)
+    expect(isToken('alice')).toBe(false)
+  })
+
+  it('sends a bearer header for tokens, the dev header for names, and nothing when empty', () => {
+    expect(authHeaders('pyn_x_y')).toEqual({ Authorization: 'Bearer pyn_x_y' })
+    expect(authHeaders('alice')).toEqual({ 'X-Pyn-User': 'alice' })
+    expect(authHeaders('')).toEqual({})
   })
 })

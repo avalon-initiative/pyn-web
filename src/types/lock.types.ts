@@ -19,6 +19,12 @@ export interface FileRow {
   lock?: LockInfo | null
 }
 
+/** Mirrors the server's `Me`. */
+export interface Me {
+  user: string
+  permissions: string[]
+}
+
 export interface FilePage {
   entries: FileRow[]
   next_after: string | null
