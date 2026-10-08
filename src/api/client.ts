@@ -1,7 +1,16 @@
-import type { LockInfo } from '../types/lock.types'
+import type { FilePage, FileRow } from '../types/lock.types'
 
-export async function fetchLocks(): Promise<LockInfo[]> {
-  const res = await fetch('/v1/locks')
-  if (!res.ok) throw new Error(`pyn-server returned ${res.status}`)
-  return res.json()
+export async function fetchFiles(): Promise<FileRow[]> {
+  const rows: FileRow[] = []
+  let after: string | null = null
+  do {
+    const res: Response = await fetch(
+      after ? `/v1/files?after=${encodeURIComponent(after)}` : '/v1/files',
+    )
+    if (!res.ok) throw new Error(`pyn-server returned ${res.status}`)
+    const page: FilePage = await res.json()
+    rows.push(...page.entries)
+    after = page.next_after
+  } while (after)
+  return rows
 }

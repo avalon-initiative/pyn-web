@@ -31,6 +31,14 @@
   overflow-wrap: anywhere;
 }
 
+.dir {
+  color: var(--pyn-text-muted);
+}
+
+.name {
+  font-weight: 600;
+}
+
 .meta {
   color: var(--pyn-text-muted);
   font-size: 0.8125rem;
