@@ -2,7 +2,12 @@ import { authHeaders } from '../state/credential.state'
 import type { CreatedToken, RegisterForm, RegistrationMode, SignInForm } from '../types/auth.types'
 import { ApiError } from './client'
 
-async function send<T>(method: string, path: string, body?: unknown, credential = ''): Promise<T> {
+export async function send<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  credential = '',
+): Promise<T> {
   const res = await fetch(path, {
     method,
     headers: { 'Content-Type': 'application/json', ...authHeaders(credential) },

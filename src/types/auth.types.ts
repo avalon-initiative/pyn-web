@@ -14,3 +14,13 @@ export interface SignInForm {
 export interface RegisterForm extends SignInForm {
   invite?: string
 }
+
+/** Mirrors the server's `SshKeyInfo`. */
+export interface SshKey {
+  id: string
+  title: string
+  algorithm: string
+  fingerprint: string
+  created_at: string
+  last_used_at: string | null
+}
