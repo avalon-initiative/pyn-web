@@ -4,6 +4,7 @@ import PynLockBadge from './PynLockBadge.vue'
 import PynModeChip from './PynModeChip.vue'
 import styles from '../styles/PynTree.module.scss'
 import { formatDateTime } from '../state/datetime.state'
+import { blobPath } from '../state/blob.state'
 import { formatAgo, treePath } from '../state/tree.state'
 import { splitPath } from '../state/files.state'
 import type { TreeEntry } from '../types/tree.types'
@@ -30,8 +31,9 @@ defineProps<{
       <tr v-for="e in entries" :key="e.path" :class="styles.row" :data-kind="e.kind">
         <td :class="styles.name">
           <PynIcon :name="e.kind" :class="styles.icon" />
-          <a v-if="e.kind === 'folder'" :href="treePath({ owner, name }, e.path)">{{ e.name }}</a>
-          <span v-else>{{ e.name }}</span>
+          <a :href="(e.kind === 'folder' ? treePath : blobPath)({ owner, name }, e.path)">{{
+            e.name
+          }}</a>
         </td>
         <td :class="styles.change">
           <template v-if="e.last_change">

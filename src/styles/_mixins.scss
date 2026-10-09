@@ -117,3 +117,43 @@
   border-radius: var(--pyn-radius-pill);
   font-size: 0.75rem;
 }
+
+// highlight.js token classes are global names in the markup it produces.
+@mixin syntax {
+  :global(.hljs-keyword),
+  :global(.hljs-built_in),
+  :global(.hljs-literal),
+  :global(.hljs-selector-tag),
+  :global(.hljs-meta) {
+    color: var(--pyn-syntax-keyword);
+  }
+
+  :global(.hljs-string),
+  :global(.hljs-regexp),
+  :global(.hljs-addition),
+  :global(.hljs-attr),
+  :global(.hljs-selector-class) {
+    color: var(--pyn-syntax-string);
+  }
+
+  :global(.hljs-comment),
+  :global(.hljs-quote) {
+    color: var(--pyn-syntax-comment);
+    font-style: italic;
+  }
+
+  :global(.hljs-number),
+  :global(.hljs-symbol),
+  :global(.hljs-variable),
+  :global(.hljs-deletion) {
+    color: var(--pyn-syntax-number);
+  }
+
+  :global(.hljs-title),
+  :global(.hljs-type),
+  :global(.hljs-name),
+  :global(.hljs-section),
+  :global(.hljs-tag) {
+    color: var(--pyn-syntax-name);
+  }
+}

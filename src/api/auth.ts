@@ -2,18 +2,21 @@ import { csrfHeaders, setCsrfToken } from '../state/csrf.state'
 import type { RegisterForm, RegistrationMode, Session, SignInForm } from '../types/auth.types'
 import { ApiError } from './client'
 
+/** The `ApiError` for a non-2xx response, from the server's error body when it has one. */
+export async function failure(res: Response): Promise<ApiError> {
+  const err = await res
+    .json()
+    .catch(() => ({ code: 'error', message: `server returned ${res.status}` }))
+  return new ApiError(res.status, err.code, err.message)
+}
+
 export async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method,
     headers: { 'Content-Type': 'application/json', ...csrfHeaders(method) },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  if (!res.ok) {
-    const err = await res
-      .json()
-      .catch(() => ({ code: 'error', message: `server returned ${res.status}` }))
-    throw new ApiError(res.status, err.code, err.message)
-  }
+  if (!res.ok) throw await failure(res)
   return res.status === 204 ? (undefined as T) : res.json()
 }
 

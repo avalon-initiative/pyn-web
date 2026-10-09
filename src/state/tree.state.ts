@@ -4,7 +4,7 @@ import type { ActivityEntry, Crumb } from '../types/tree.types'
 
 type Repo = { owner: string; name: string }
 
-const encodeSegments = (path: string) => path.split('/').map(encodeURIComponent).join('/')
+export const encodeSegments = (path: string) => path.split('/').map(encodeURIComponent).join('/')
 
 /** The app route of a folder; the root is the repository's Code tab. */
 export function treePath(r: Repo, path: string): string {
