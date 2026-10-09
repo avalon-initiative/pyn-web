@@ -1,56 +1,9 @@
-@use 'mixins' as m;
-
 .page {
-  max-width: 56rem;
+  min-height: 100vh;
+}
+
+.signedOut {
+  max-width: 28rem;
   margin: 0 auto;
-  padding: var(--pyn-space-6) var(--pyn-space-4);
-}
-
-.header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--pyn-space-3);
-  margin-bottom: var(--pyn-space-4);
-}
-
-.summary {
-  margin: var(--pyn-space-1) 0 0;
-  color: var(--pyn-text-muted);
-  font-size: 0.875rem;
-}
-
-.nav {
-  display: flex;
-  align-items: center;
-  gap: var(--pyn-space-3);
-}
-
-.navLink {
-  padding: var(--pyn-space-1) var(--pyn-space-2);
-  color: var(--pyn-text-muted);
-  background: none;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  text-decoration: none;
-  cursor: pointer;
-
-  &[aria-current='true'] {
-    color: var(--pyn-text);
-    border-bottom-color: var(--pyn-accent);
-  }
-
-  @include m.focus-ring;
-}
-
-.signOut {
-  padding: var(--pyn-space-1) var(--pyn-space-3);
-  color: var(--pyn-text);
-  background: var(--pyn-surface);
-  border: 1px solid var(--pyn-border);
-  border-radius: var(--pyn-radius);
-  cursor: pointer;
-
-  @include m.focus-ring;
+  padding: var(--pyn-space-8) var(--pyn-space-4);
 }

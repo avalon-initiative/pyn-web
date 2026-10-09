@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import styles from '../styles/PynFileList.module.scss'
 import PynLockBadge from './PynLockBadge.vue'
+import PynModeChip from './PynModeChip.vue'
 import { splitPath } from '../state/files.state'
 import type { FileRow } from '../types/lock.types'
 
@@ -18,9 +19,8 @@ defineProps<{
         ><span :class="styles.dir">{{ splitPath(row.path).dir }}</span
         ><wbr /><span :class="styles.name">{{ splitPath(row.path).name }}</span></span
       >
-      <span :class="styles.meta">
-        {{ row.mode }}<template v-if="row.revision != null"> · r{{ row.revision }}</template>
-      </span>
+      <span :class="styles.meta">{{ row.revision != null ? `r${row.revision}` : '' }}</span>
+      <PynModeChip :mode="row.mode" />
       <PynLockBadge v-if="row.mode === 'exclusive'" :lock="row.lock" :me="me" :now="now" />
     </li>
   </ul>

@@ -45,7 +45,7 @@ export interface RepoTab {
 export function repoTabs(permissions: string[], isOwner: boolean): RepoTab[] {
   const has = (p: string) => permissions.includes(p)
   const tabs: RepoTab[] = [
-    { section: '', label: 'Files' },
+    { section: '', label: 'Code' },
     { section: 'locks', label: 'Locks' },
     { section: 'history', label: 'History' },
   ]

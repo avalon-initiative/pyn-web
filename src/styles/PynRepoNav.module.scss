@@ -2,17 +2,21 @@
 
 .nav {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--pyn-space-2);
-  margin-bottom: var(--pyn-space-4);
+  gap: var(--pyn-space-1);
+  overflow-x: auto;
   border-bottom: 1px solid var(--pyn-border);
 }
 
 .tab {
-  padding: var(--pyn-space-1) var(--pyn-space-3);
+  flex: none;
+  padding: var(--pyn-space-2) var(--pyn-space-4);
   color: var(--pyn-text-muted);
   border-bottom: 2px solid transparent;
   text-decoration: none;
+
+  &:hover {
+    color: var(--pyn-text);
+  }
 
   &[aria-current='page'] {
     color: var(--pyn-text);

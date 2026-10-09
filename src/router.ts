@@ -15,7 +15,7 @@ import ReposView from './views/ReposView.vue'
 
 // Account pages live under "/_/": a user name has at least two characters, so it cannot collide.
 export const routes = [
-  { path: '/', name: 'repos', component: ReposView },
+  { path: '/', name: 'repos', component: ReposView, alias: '/_/repos' },
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
   { path: '/_/keys', name: 'keys', component: KeysView },
   {

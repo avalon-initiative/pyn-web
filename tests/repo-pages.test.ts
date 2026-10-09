@@ -37,9 +37,9 @@ describe('repo state', () => {
 
   it('shows only the tabs the permissions allow', () => {
     const labels = (p: string[], owner: boolean) => repoTabs(p, owner).map((t) => t.label)
-    expect(labels(['read'], false)).toEqual(['Files', 'Locks', 'History'])
+    expect(labels(['read'], false)).toEqual(['Code', 'Locks', 'History'])
     expect(labels(['read', 'view_audit', 'manage_users', 'manage_roles'], false)).toEqual([
-      'Files',
+      'Code',
       'Locks',
       'History',
       'Audit',

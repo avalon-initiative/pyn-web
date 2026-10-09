@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import PynLockIcon from './PynLockIcon.vue'
+import PynModeChip from './PynModeChip.vue'
 import styles from '../styles/PynLocks.module.scss'
 import { formatLease } from '../state/lease.state'
 import type { LockInfo } from '../types/lock.types'
@@ -22,7 +24,8 @@ function confirm() {
     <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
     <ul v-if="locks.length" :class="styles.list">
       <li v-for="lock in locks" :key="lock.path" :class="styles.item">
-        <span :class="styles.path">{{ lock.path }}</span>
+        <span :class="styles.path"><PynLockIcon :class="styles.lockIcon" />{{ lock.path }}</span>
+        <PynModeChip mode="exclusive" />
         <span :class="styles.meta"
           >{{ lock.owner }} · {{ formatLease(lock.expires_at, now ?? new Date()) }}</span
         >
