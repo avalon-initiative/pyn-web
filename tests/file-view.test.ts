@@ -13,6 +13,7 @@ import { makeRouter } from '../src/router'
 import {
   blobPath,
   contentUrl,
+  entryAt,
   fileBody,
   fileCrumbs,
   fileKind,
@@ -30,6 +31,12 @@ const r = { owner: 'acme', name: 'castle-quest' }
 const bytes = (s: string) => new TextEncoder().encode(s)
 
 describe('blob state', () => {
+  it('finds what a path names in a folder listing, or nothing', () => {
+    expect(entryAt(rootEntries, 'Content')?.kind).toBe('folder')
+    expect(entryAt(rootEntries, 'Content/')?.kind).toBe('folder')
+    expect(entryAt(rootEntries, 'Nope')).toBeNull()
+  })
+
   it('builds file, content and history links', () => {
     expect(blobPath(r, 'My Dir/a.ts')).toBe('/acme/castle-quest/blob/My%20Dir/a.ts')
     expect(contentUrl(r, 'a b.ts', 3)).toBe(

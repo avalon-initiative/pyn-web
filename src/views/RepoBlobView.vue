@@ -5,11 +5,11 @@ import { ApiError } from '../api/client'
 import { fetchContent, fetchTree } from '../api/repos'
 import PynFileView from '../components/PynFileView.vue'
 import { useAction } from '../state/action.state'
-import { contentUrl, fileBody, fileKind, parentOf, VIEW_LIMIT } from '../state/blob.state'
+import { contentUrl, entryAt, fileBody, fileKind, parentOf, VIEW_LIMIT } from '../state/blob.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useHashScroll } from '../state/hash.state'
 import { lineHash, parseLineHash } from '../state/lines.state'
-import { folderParam } from '../state/tree.state'
+import { folderParam, treePath } from '../state/tree.state'
 import styles from '../styles/View.module.scss'
 import type { LineRange } from '../types/code.types'
 import type { FileBody } from '../types/blob.types'
@@ -42,7 +42,12 @@ async function refresh() {
     let found: TreeEntry | undefined
     try {
       const tree = await fetchTree(target.value, parentOf(p))
-      found = tree.entries.find((e) => e.path === p && e.kind === 'file')
+      const hit = entryAt(tree.entries, p)
+      if (hit?.kind === 'folder') {
+        if (p === path.value) await router.replace(treePath(target.value, p))
+        return
+      }
+      found = hit ?? undefined
     } catch (e) {
       if (!(e instanceof ApiError && e.code === 'path_not_found')) throw e
     }

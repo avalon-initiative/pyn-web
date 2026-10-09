@@ -82,3 +82,7 @@ export function fileBody(path: string, content: FetchedContent): FileBody {
   if (fileKind(path) === 'markdown') return { kind: 'markdown', text }
   return { kind: 'code', text, language: languageFor(path) }
 }
+
+/** What a path names in its parent folder's listing; null when it matches nothing. */
+export const entryAt = (entries: TreeEntry[], path: string): TreeEntry | null =>
+  entries.find((e) => e.path === clean(path)) ?? null
