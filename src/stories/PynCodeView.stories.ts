@@ -12,3 +12,4 @@ type Story = StoryObj<typeof PynCodeView>
 
 export const TypeScript: Story = {}
 export const PlainText: Story = { args: { language: null } }
+export const SelectedLines: Story = { args: { range: { start: 3, end: 5 } } }

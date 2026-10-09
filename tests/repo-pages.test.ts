@@ -90,6 +90,7 @@ describe('internalPath', () => {
   it('returns same-origin paths for plain clicks only', () => {
     const o = window.location.origin
     expect(internalPath(click(`${o}/alice/game?x=1`), o)).toBe('/alice/game?x=1')
+    expect(internalPath(click(`${o}/alice/game#L2-L4`), o)).toBe('/alice/game#L2-L4')
     expect(internalPath(click(`${o}/alice/game`, { ctrlKey: true }), o)).toBeNull()
     expect(internalPath(click('https://example.com/x'), o)).toBeNull()
   })

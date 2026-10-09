@@ -6,6 +6,7 @@ import PynMarkdown from './PynMarkdown.vue'
 import styles from '../styles/PynFileView.module.scss'
 import { baseName, fileCrumbs, parentOf } from '../state/blob.state'
 import { treePath } from '../state/tree.state'
+import type { LineRange } from '../types/code.types'
 import type { FileBody } from '../types/blob.types'
 import type { TreeEntry } from '../types/tree.types'
 
@@ -20,7 +21,11 @@ defineProps<{
   missing?: boolean
   me?: string
   now?: Date
+  /** Highlighted line range of a code file. */
+  lines?: LineRange | null
 }>()
+
+defineEmits<{ selectLines: [range: LineRange] }>()
 </script>
 
 <template>
@@ -38,7 +43,13 @@ defineProps<{
       <div v-else-if="body.kind === 'markdown'" :class="styles.panel">
         <PynMarkdown :source="body.text" :owner="owner" :name="name" :dir="parentOf(path)" />
       </div>
-      <PynCodeView v-else-if="body.kind === 'code'" :text="body.text" :language="body.language" />
+      <PynCodeView
+        v-else-if="body.kind === 'code'"
+        :text="body.text"
+        :language="body.language"
+        :range="lines"
+        @select="$emit('selectLines', $event)"
+      />
       <div v-else-if="body.kind === 'image'" :class="[styles.panel, styles.image]">
         <img :src="body.src" :alt="baseName(path)" />
       </div>

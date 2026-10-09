@@ -20,6 +20,8 @@ import {
   readmeEntry,
 } from '../src/state/blob.state'
 import { highlightLines, languageFor } from '../src/state/code.state'
+import { hashId, scrollToHash } from '../src/state/hash.state'
+import { clickLine, lineHash, parseLineHash } from '../src/state/lines.state'
 import { renderMarkdown, resolveRelative } from '../src/state/markdown.state'
 import { codeText, fileEntry, imageSrc, lockedEntry, readmeText } from '../src/stories/file-data'
 import { now, repo, rootEntries, rootListing, summary } from '../src/stories/landing-data'
@@ -189,6 +191,42 @@ describe('router', () => {
   })
 })
 
+describe('hash state', () => {
+  it('parses and formats line hashes', () => {
+    expect(parseLineHash('#L12')).toEqual({ start: 12, end: 12 })
+    expect(parseLineHash('#L20-L12')).toEqual({ start: 12, end: 20 })
+    expect(parseLineHash('#L0')).toBeNull()
+    expect(parseLineHash('#intro')).toBeNull()
+    expect(lineHash({ start: 3, end: 3 })).toBe('#L3')
+    expect(lineHash({ start: 3, end: 7 })).toBe('#L3-L7')
+  })
+
+  it('extends a range from its first line on shift-click', () => {
+    expect(clickLine(null, 5, true)).toEqual({ start: 5, end: 5 })
+    expect(clickLine({ start: 5, end: 5 }, 9, false)).toEqual({ start: 9, end: 9 })
+    expect(clickLine({ start: 5, end: 5 }, 9, true)).toEqual({ start: 5, end: 9 })
+    expect(clickLine({ start: 5, end: 9 }, 2, true)).toEqual({ start: 2, end: 5 })
+  })
+
+  it('decodes element ids and scrolls to them only when off screen', () => {
+    expect(hashId('#a%20b')).toBe('a b')
+    expect(hashId('#')).toBeNull()
+    expect(hashId('#%E0%A4%A')).toBeNull()
+    const el = document.createElement('div')
+    el.id = 'far'
+    el.scrollIntoView = vi.fn()
+    el.getBoundingClientRect = () => ({ top: 5000, bottom: 5020 }) as DOMRect
+    document.body.append(el)
+    expect(scrollToHash('#far')).toBe(true)
+    expect(el.scrollIntoView).toHaveBeenCalledOnce()
+    el.getBoundingClientRect = () => ({ top: 100, bottom: 120 }) as DOMRect
+    scrollToHash('#far')
+    expect(el.scrollIntoView).toHaveBeenCalledOnce()
+    expect(scrollToHash('#missing')).toBe(false)
+    el.remove()
+  })
+})
+
 describe('file components', () => {
   it('numbers each line of code', () => {
     const w = mount(PynCodeView, { props: { text: codeText, language: 'typescript' } })
@@ -196,6 +234,21 @@ describe('file components', () => {
     expect(lines).toHaveLength(codeText.trimEnd().split('\n').length)
     expect(lines[0].attributes('data-line')).toBe('1')
     expect(w.find('.hljs-keyword').exists()).toBe(true)
+  })
+
+  it('anchors line numbers, highlights the range and reports clicks', async () => {
+    const w = mount(PynCodeView, {
+      props: { text: codeText, language: 'typescript', range: { start: 2, end: 3 } },
+    })
+    const a = w.find('#L2 a')
+    expect(a.attributes('href')).toBe('#L2')
+    expect(a.text()).toBe('')
+    expect(
+      w.findAll('span[id^="L"]').filter((l) => l.classes().some((c) => c.includes('selected'))),
+    ).toHaveLength(2)
+    await w.find('#L7 a').trigger('click')
+    await w.find('#L7 a').trigger('click', { shiftKey: true })
+    expect(w.emitted('select')).toEqual([[{ start: 7, end: 7 }], [{ start: 2, end: 7 }]])
   })
 
   it('renders sanitised markdown', () => {
