@@ -10,15 +10,10 @@
   display: flex;
   align-items: center;
   gap: var(--pyn-space-2);
+  margin: 0;
   padding: var(--pyn-space-2);
   color: var(--pyn-text);
-  background: none;
-  border: 0;
-  border-radius: var(--pyn-radius);
-  font: inherit;
   font-weight: 600;
-  text-align: left;
-  cursor: not-allowed;
 }
 
 .account {

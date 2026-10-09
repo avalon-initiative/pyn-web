@@ -8,6 +8,7 @@ export interface NavItem {
 export const mainNav: NavItem[] = [
   { id: 'home', label: 'Home', href: '/', icon: 'home' },
   { id: 'locks', label: 'Your locks', href: '/_/locks', icon: 'lock' },
+  { id: 'orgs', label: 'Organizations', href: '/_/orgs', icon: 'user' },
 ]
 
 const adminNav: NavItem = {
@@ -26,6 +27,7 @@ export const accountNav = [{ id: 'keys', label: 'SSH keys', href: '/_/settings/k
 export function activeNav(path: string): string {
   if (path === '/') return 'home'
   if (path === '/_/locks') return 'locks'
+  if (path === '/_/orgs') return 'orgs'
   return path === adminNav.href ? adminNav.id : ''
 }
 

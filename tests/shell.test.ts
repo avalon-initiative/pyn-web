@@ -141,7 +141,6 @@ describe('PynSideNav', () => {
     expect(w.text()).toContain('Home')
     expect(w.text()).not.toContain('Settings')
     expect(w.findAll('[aria-current]').map((a) => a.text())).toEqual(['Home', 'alice/core-engine'])
-    expect(w.find('button').attributes('disabled')).toBeDefined()
   })
 
   it('says when there are no repositories', () => {

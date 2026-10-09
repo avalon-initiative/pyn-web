@@ -6,6 +6,8 @@ import type { RepoFormValue, RepoSettings, Visibility } from '../types/repo.type
 
 const props = defineProps<{
   owner: string
+  /** Offers an owner picker when there is a choice (yourself or organizations you own). */
+  owners?: string[]
   /** Present when editing an existing repository. */
   repo?: RepoFormValue
   /** Effective lock limit, shown while the policy file sets it or the setting is empty. */
@@ -14,7 +16,7 @@ const props = defineProps<{
   error?: string
 }>()
 
-const emit = defineEmits<{ submit: [RepoSettings] }>()
+const emit = defineEmits<{ submit: [RepoSettings]; 'update:owner': [string] }>()
 
 const name = ref(props.repo?.name ?? '')
 const visibility = ref<Visibility>(props.repo?.visibility ?? 'private')
@@ -40,6 +42,16 @@ const submit = () => {
 
 <template>
   <form :class="styles.form" @submit.prevent="submit">
+    <label v-if="owners && owners.length > 1" :class="styles.field"
+      >Owner
+      <select
+        :class="styles.input"
+        :value="owner"
+        @change="emit('update:owner', ($event.target as HTMLSelectElement).value)"
+      >
+        <option v-for="o in owners" :key="o" :value="o">{{ o }}</option>
+      </select>
+    </label>
     <label :class="styles.field"
       >Name
       <span :class="styles.name">

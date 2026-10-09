@@ -1,4 +1,5 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
+import type { OrgInfo } from '../types/org.types'
 import type { RepoInfo } from '../types/repo.types'
 
 export interface SessionContext {
@@ -18,3 +19,12 @@ export interface RepoContext {
 
 export const sessionKey: InjectionKey<SessionContext> = Symbol('session')
 export const repoKey: InjectionKey<RepoContext> = Symbol('repo')
+
+export interface OrgContext {
+  name: ComputedRef<string>
+  /** Null while loading, and when the name is not an organization. */
+  org: Ref<OrgInfo | null>
+  reload: () => Promise<void>
+}
+
+export const orgKey: InjectionKey<OrgContext> = Symbol('org')

@@ -17,13 +17,16 @@ import {
 import { fetchMe } from './api/admin'
 import { describeError } from './api/client'
 import { blockedStatus } from './state/account.state'
+import { listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { internalPath } from './state/links.state'
+import { sortOrgs } from './state/org.state'
 import { repoSlug, sortRepos } from './state/repo.state'
 import { activeNav, navItems } from './state/shell.state'
 import { applyTheme, loadTheme, saveTheme } from './state/theme.state'
 import type { ThemeChoice } from './state/theme.state'
+import type { OrgInfo } from './types/org.types'
 import type { RepoInfo } from './types/repo.types'
 import type { BlockedStatus, RegisterForm, RegistrationInfo, SignInForm } from './types/auth.types'
 
@@ -38,12 +41,18 @@ const notice = ref<{ status: BlockedStatus; user?: string } | null>(null)
 const resent = ref(false)
 const ready = ref(false)
 const repos = ref<RepoInfo[]>([])
+const orgs = ref<OrgInfo[]>([])
 const theme = ref<ThemeChoice>(loadTheme())
 applyTheme(theme.value)
 
 const slugs = computed(() => repos.value.map(repoSlug))
 const currentRepo = computed(() =>
-  route.params.owner ? `${String(route.params.owner)}/${String(route.params.name)}` : '',
+  route.params.owner && route.params.name
+    ? `${String(route.params.owner)}/${String(route.params.name)}`
+    : '',
+)
+const currentOrg = computed(() =>
+  route.params.owner && !route.params.name ? String(route.params.owner) : '',
 )
 
 function setTheme(choice: ThemeChoice) {
@@ -52,12 +61,13 @@ function setTheme(choice: ThemeChoice) {
   saveTheme(choice)
 }
 
-// The sidebar list follows creation and deletion, which both change the route.
+// The sidebar lists follow creation and deletion, which both change the route.
 watch(
   () => [user.value, route.name],
   async () => {
-    if (!user.value) return (repos.value = [])
+    if (!user.value) return ((repos.value = []), (orgs.value = []))
     repos.value = sortRepos(await listRepos().catch(() => repos.value))
+    orgs.value = sortOrgs(await listMyOrgs().catch(() => orgs.value))
   },
 )
 
@@ -175,6 +185,8 @@ onMounted(async () => {
             :current="activeNav(route.path)"
             :repos="repos"
             :current-repo="currentRepo"
+            :orgs="orgs"
+            :current-org="currentOrg"
           />
         </template>
         <RouterView />

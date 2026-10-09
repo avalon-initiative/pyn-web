@@ -21,7 +21,16 @@ const FRIENDLY: Record<string, string> = {
   invalid_verification: 'This verification link is not valid. It may be used already or expired.',
   server_admin_required: 'Only a server administrator can do that.',
   user_not_found: 'That account does not exist.',
-  user_exists: 'That user name is already taken.',
+  user_exists: 'That name is already taken by a user or an organization.',
+  reserved_name: 'That name is reserved. Choose another.',
+  org_not_found: 'That organization does not exist.',
+  not_org_owner: 'Only an owner of the organization can do that.',
+  not_org_member: 'Only a member of the organization can do that.',
+  org_not_empty: 'Delete the repositories the organization owns first.',
+  user_not_org_member: 'That user is not a member of the organization.',
+  already_org_member: 'That account is already a member of the organization.',
+  org_member_not_found: 'That account is not a member of the organization.',
+  last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 
 export function describeError(e: unknown): string {

@@ -6,6 +6,9 @@ export default meta
 type Story = StoryObj<typeof PynRepoForm>
 
 export const Create: Story = { args: { owner: 'alice' } }
+export const OwnerPicker: Story = {
+  args: { owner: 'studio', owners: ['alice', 'studio', 'modding-club'] },
+}
 export const Edit: Story = {
   args: { owner: 'alice', repo: { name: 'game', visibility: 'public', lease_hours: 24 } },
 }

@@ -3,7 +3,7 @@ import styles from '../styles/PynRepoList.module.scss'
 import { repoPath, repoSlug } from '../state/repo.state'
 import type { RepoInfo } from '../types/repo.types'
 
-defineProps<{ repos: RepoInfo[] }>()
+defineProps<{ repos: RepoInfo[]; empty?: string }>()
 </script>
 
 <template>
@@ -19,6 +19,7 @@ defineProps<{ repos: RepoInfo[] }>()
       </span>
     </li>
   </ul>
+  <p v-else-if="empty" :class="styles.empty">{{ empty }}</p>
   <p v-else :class="styles.empty">
     You are not in any repository yet. <a href="/_/new">Create one</a>.
   </p>

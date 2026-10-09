@@ -11,7 +11,10 @@ import type { MenuItem } from '../types/shell.types'
 const props = defineProps<{ user: string; repos: string[]; theme: ThemeChoice; admin?: boolean }>()
 const emit = defineEmits<{ open: [slug: string]; theme: [ThemeChoice]; signOut: [] }>()
 
-const create: MenuItem[] = [{ id: 'new-repo', label: 'New repository', href: '/_/new' }]
+const create: MenuItem[] = [
+  { id: 'new-repo', label: 'New repository', href: '/_/new' },
+  { id: 'new-org', label: 'New organization', href: '/_/new-org' },
+]
 const account = computed<MenuItem[]>(() => [
   { id: 'settings', label: 'Settings', href: '/_/settings' },
   ...(props.admin ? [{ id: 'accounts', label: 'Accounts', href: '/_/admin/accounts' }] : []),
