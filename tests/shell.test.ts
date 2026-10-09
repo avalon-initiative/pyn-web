@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import PynAccountSettings from '../src/components/PynAccountSettings.vue'
 import PynMenu from '../src/components/PynMenu.vue'
 import PynModeChip from '../src/components/PynModeChip.vue'
 import PynRepoHeader from '../src/components/PynRepoHeader.vue'
@@ -8,15 +9,13 @@ import PynShell from '../src/components/PynShell.vue'
 import PynSideNav from '../src/components/PynSideNav.vue'
 import PynTopBar from '../src/components/PynTopBar.vue'
 import { repoTabs } from '../src/state/repo.state'
-import { activeNav, mainNav, matchRepos } from '../src/state/shell.state'
+import { accountNav, activeNav, mainNav, matchRepos } from '../src/state/shell.state'
 import { applyTheme, loadTheme, saveTheme } from '../src/state/theme.state'
 import { sampleRepos } from '../src/stories/shell-data'
 
 describe('shell state', () => {
   it('matches the active sidebar item by path', () => {
     expect(activeNav('/')).toBe('home')
-    expect(activeNav('/_/repos')).toBe('repositories')
-    expect(activeNav('/_/keys')).toBe('settings')
     expect(activeNav('/alice/game')).toBe('')
   })
 
@@ -114,10 +113,10 @@ describe('PynTopBar', () => {
     expect(w.emitted('theme')?.[0]).toEqual(['dark'])
   })
 
-  it('links to SSH keys and emits sign out', async () => {
+  it('links to account settings and emits sign out', async () => {
     const w = mount(PynTopBar, { props: { user: 'alice', repos: [], theme: 'system' } })
     await w.find('[aria-label="Account menu"]').trigger('click')
-    expect(w.find('a[href="/_/keys"]').exists()).toBe(true)
+    expect(w.find('a[href="/_/settings"]').exists()).toBe(true)
     await w
       .findAll('button')
       .find((b) => b.text() === 'Sign out')!
@@ -139,7 +138,7 @@ describe('PynSideNav', () => {
     })
     expect(w.findAll('a').map((a) => a.attributes('href'))).toContain('/alice/castle-quest')
     expect(w.text()).toContain('Home')
-    expect(w.text()).toContain('Settings')
+    expect(w.text()).not.toContain('Settings')
     expect(w.findAll('[aria-current]').map((a) => a.text())).toEqual(['Home', 'alice/core-engine'])
     expect(w.find('button').attributes('disabled')).toBeDefined()
   })
@@ -149,6 +148,19 @@ describe('PynSideNav', () => {
       props: { account: 'alice', items: mainNav, current: '', repos: [] },
     })
     expect(w.text()).toContain('None yet')
+  })
+})
+
+describe('PynAccountSettings', () => {
+  it('lists the settings pages, marks the current one and renders the page', () => {
+    const w = mount(PynAccountSettings, {
+      props: { items: accountNav, current: 'keys' },
+      slots: { default: '<p>content</p>' },
+    })
+    const link = w.find('a[aria-current="page"]')
+    expect(link.text()).toBe('SSH keys')
+    expect(link.attributes('href')).toBe('/_/settings/keys')
+    expect(w.text()).toContain('content')
   })
 })
 

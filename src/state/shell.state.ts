@@ -5,17 +5,13 @@ export interface NavItem {
   icon: string
 }
 
-export const mainNav: NavItem[] = [
-  { id: 'home', label: 'Home', href: '/', icon: 'home' },
-  { id: 'repositories', label: 'Repositories', href: '/_/repos', icon: 'repo' },
-  { id: 'settings', label: 'Settings', href: '/_/keys', icon: 'settings' },
-]
+export const mainNav: NavItem[] = [{ id: 'home', label: 'Home', href: '/', icon: 'home' }]
+
+export const accountNav = [{ id: 'keys', label: 'SSH keys', href: '/_/settings/keys' }]
 
 /** The sidebar item that matches the current route path, if any. */
 export function activeNav(path: string): string {
-  if (path === '/') return 'home'
-  if (path === '/_/repos') return 'repositories'
-  return path.startsWith('/_/keys') ? 'settings' : ''
+  return path === '/' ? 'home' : ''
 }
 
 /** Which repositories match what the user typed, by owner/name substring. */
