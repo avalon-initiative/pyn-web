@@ -9,6 +9,9 @@ const paths: Record<string, string> = {
   chevron: 'm6 9 6 6 6-6',
   menu: 'M4 7h16M4 12h16M4 17h16',
   key: 'M8 14a4 4 0 1 1 3-6.5L21 7v4h-3v3h-3v-3h-4.5A4 4 0 0 1 8 14z',
+  folder: 'M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+  file: 'M7 3h7l5 5v13H7zM14 3v5h5',
+  branch: 'M7 4v12M17 8a2 2 0 1 0 0-.01M7 18a2 2 0 1 0 0-.01M17 10c0 4-10 2-10 6',
   user: 'M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 20c1-4 4-6 8-6s7 2 8 6',
 }
 

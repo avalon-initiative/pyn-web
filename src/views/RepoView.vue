@@ -15,7 +15,10 @@ const route = useRoute()
 const user = inject(sessionKey)!.user
 const owner = computed(() => String(route.params.owner))
 const name = computed(() => String(route.params.name))
-const section = computed(() => String(route.path.split('/')[3] ?? ''))
+const section = computed(() => {
+  const s = String(route.path.split('/')[3] ?? '')
+  return s === 'tree' ? '' : s
+})
 
 const target = computed(() => ({ owner: owner.value, name: name.value }))
 const repo = ref<RepoInfo | null>(null)

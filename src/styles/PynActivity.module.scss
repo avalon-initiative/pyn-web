@@ -1,0 +1,59 @@
+@use 'mixins' as m;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--pyn-text-md);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  gap: var(--pyn-space-3);
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: var(--pyn-mine);
+  background: var(--pyn-mine-bg);
+  border-radius: 50%;
+  font-size: var(--pyn-text-sm);
+  font-weight: 600;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.path {
+  font-family: var(--pyn-font-mono);
+  font-size: 0.8125rem;
+}
+
+.time {
+  color: var(--pyn-text-muted);
+  font-size: var(--pyn-text-xs);
+}
+
+.empty {
+  @include m.muted;
+}

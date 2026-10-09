@@ -1,0 +1,33 @@
+@use 'mixins' as m;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--pyn-text-md);
+}
+
+.list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--pyn-space-2) var(--pyn-space-4);
+  margin: 0;
+  font-size: 0.875rem;
+
+  dt {
+    color: var(--pyn-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+  }
+}
+
+.cap {
+  text-transform: capitalize;
+}

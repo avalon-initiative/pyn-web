@@ -1,0 +1,142 @@
+@use 'mixins' as m;
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--pyn-surface);
+  border: 1px solid var(--pyn-border);
+  border-radius: var(--pyn-radius);
+  overflow: hidden;
+
+  th,
+  td {
+    padding: var(--pyn-space-3) var(--pyn-space-4);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  @include m.narrow {
+    display: block;
+
+    tbody {
+      display: block;
+    }
+  }
+}
+
+.head {
+  background: var(--pyn-surface-raised);
+  color: var(--pyn-text-muted);
+  font-size: var(--pyn-text-sm);
+
+  @include m.narrow {
+    display: none;
+  }
+}
+
+.row {
+  & + & td {
+    border-top: 1px solid var(--pyn-border);
+  }
+
+  &:hover {
+    background: var(--pyn-hover);
+  }
+
+  @include m.narrow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--pyn-space-2);
+    padding: var(--pyn-space-3) var(--pyn-space-4);
+
+    & + & {
+      border-top: 1px solid var(--pyn-border);
+    }
+
+    & + & td {
+      border-top: 0;
+    }
+
+    td {
+      padding: 0;
+    }
+  }
+}
+
+.name {
+  width: 30%;
+  font-family: var(--pyn-font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+
+  a {
+    color: var(--pyn-text);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--pyn-accent);
+      text-decoration: underline;
+    }
+
+    @include m.focus-ring;
+  }
+
+  @include m.narrow {
+    width: auto;
+  }
+}
+
+.icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-right: var(--pyn-space-2);
+  vertical-align: -0.2em;
+  color: var(--pyn-text-muted);
+
+  [data-kind='folder'] & {
+    color: var(--pyn-accent);
+  }
+}
+
+.change {
+  font-size: var(--pyn-text-sm);
+}
+
+.message {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: block;
+  color: var(--pyn-text-muted);
+  font-size: var(--pyn-text-xs);
+}
+
+.rev {
+  @include m.pill;
+  margin-right: var(--pyn-space-1);
+  font-family: var(--pyn-font-mono);
+}
+
+.status {
+  white-space: nowrap;
+
+  > * + * {
+    margin-left: var(--pyn-space-2);
+  }
+
+  @include m.narrow {
+    white-space: normal;
+  }
+}
+
+.empty {
+  @include m.card;
+  margin: 0;
+  padding: var(--pyn-space-6);
+  color: var(--pyn-text-muted);
+  text-align: center;
+}
