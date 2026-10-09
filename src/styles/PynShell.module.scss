@@ -69,6 +69,5 @@
 }
 
 .content {
-  max-width: var(--pyn-content-width);
-  margin: 0 auto;
+  min-width: 0;
 }

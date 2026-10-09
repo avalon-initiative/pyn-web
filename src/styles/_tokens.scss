@@ -69,7 +69,6 @@ $font-sizes: (
   --pyn-font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   --pyn-topbar-height: 3.5rem;
   --pyn-sidebar-width: 15rem;
-  --pyn-content-width: 64rem;
   @each $k, $v in $spacing {
     --pyn-space-#{$k}: #{$v};
   }
