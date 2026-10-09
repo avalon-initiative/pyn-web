@@ -545,7 +545,7 @@ describe('blob view', () => {
         plugins: [router],
         provide: {
           [repoKey as symbol]: { target: ref({ owner: 'alice', name: 'game' }) },
-          [sessionKey as symbol]: { user: ref('alice') },
+          [sessionKey as symbol]: { user: ref('alice'), admin: ref(false) },
         },
       },
     })

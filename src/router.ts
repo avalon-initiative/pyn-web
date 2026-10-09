@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
+import AdminAccountsView from './views/AdminAccountsView.vue'
 import AccountView from './views/AccountView.vue'
 import KeysView from './views/KeysView.vue'
 import MyLocksView from './views/MyLocksView.vue'
@@ -23,6 +24,7 @@ export const routes = [
   { path: '/', name: 'repos', component: ReposView },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
+  { path: '/_/admin/accounts', name: 'admin-accounts', component: AdminAccountsView },
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
   {
     path: '/_/settings',
