@@ -1,3 +1,4 @@
+import { formatDate } from './datetime.state'
 import { repoPath } from './repo.state'
 import type { ActivityEntry, Crumb } from '../types/tree.types'
 
@@ -38,7 +39,7 @@ const UNITS: [string, number][] = [
 export function formatAgo(iso: string, now: Date): string {
   const ms = now.getTime() - new Date(iso).getTime()
   if (ms < 60_000) return 'just now'
-  if (ms >= 30 * 86_400_000) return iso.slice(0, 10)
+  if (ms >= 30 * 86_400_000) return formatDate(iso)
   for (const [unit, size] of UNITS) {
     if (ms >= size) {
       const n = Math.floor(ms / size)

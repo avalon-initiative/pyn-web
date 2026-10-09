@@ -197,7 +197,7 @@ describe('PynKeys', () => {
     const w = mount(PynKeys, { props: { keys } })
     expect(w.text()).toContain('work laptop')
     expect(w.text()).toContain('SHA256:abc')
-    expect(w.text()).toContain('Added 2026-10-08')
+    expect(w.text()).toContain('Added Oct 08 2026')
     expect(w.text()).toContain('never used')
   })
 

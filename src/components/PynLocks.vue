@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import PynLockIcon from './PynLockIcon.vue'
 import PynModeChip from './PynModeChip.vue'
 import styles from '../styles/PynLocks.module.scss'
+import { formatDateTime } from '../state/datetime.state'
 import { formatLease } from '../state/lease.state'
 import type { LockInfo } from '../types/lock.types'
 
@@ -26,7 +27,7 @@ function confirm() {
       <li v-for="lock in locks" :key="lock.path" :class="styles.item">
         <span :class="styles.path"><PynLockIcon :class="styles.lockIcon" />{{ lock.path }}</span>
         <PynModeChip mode="exclusive" />
-        <span :class="styles.meta"
+        <span :class="styles.meta" :title="`Expires ${formatDateTime(lock.expires_at)}`"
           >{{ lock.owner }} · {{ formatLease(lock.expires_at, now ?? new Date()) }}</span
         >
         <button

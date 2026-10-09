@@ -3,6 +3,7 @@ import PynIcon from './PynIcon.vue'
 import PynLockBadge from './PynLockBadge.vue'
 import PynModeChip from './PynModeChip.vue'
 import styles from '../styles/PynTree.module.scss'
+import { formatDateTime } from '../state/datetime.state'
 import { formatAgo, treePath } from '../state/tree.state'
 import { splitPath } from '../state/files.state'
 import type { TreeEntry } from '../types/tree.types'
@@ -42,8 +43,10 @@ defineProps<{
                 >r{{ e.last_change.id }}</span
               >
               {{ e.last_change.author }} ·
-              {{ formatAgo(e.last_change.created_at, now ?? new Date())
-              }}<template v-if="e.kind === 'folder'">
+              <span :title="formatDateTime(e.last_change.created_at)">{{
+                formatAgo(e.last_change.created_at, now ?? new Date())
+              }}</span
+              ><template v-if="e.kind === 'folder'">
                 · {{ splitPath(e.last_change.path).name }}</template
               >
             </span>

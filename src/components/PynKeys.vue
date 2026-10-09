@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import styles from '../styles/PynKeys.module.scss'
+import { formatDate } from '../state/datetime.state'
 import type { SshKey } from '../types/auth.types'
 
 defineProps<{
@@ -22,8 +23,6 @@ function submit() {
   key.value = ''
   title.value = ''
 }
-
-const day = (iso: string) => iso.slice(0, 10)
 </script>
 
 <template>
@@ -41,8 +40,8 @@ const day = (iso: string) => iso.slice(0, 10)
           <span :class="styles.meta"> · {{ k.algorithm }}</span>
           <div :class="styles.fingerprint">{{ k.fingerprint }}</div>
           <div :class="styles.meta">
-            Added {{ day(k.created_at) }} ·
-            {{ k.last_used_at ? `last used ${day(k.last_used_at)}` : 'never used' }}
+            Added {{ formatDate(k.created_at) }} ·
+            {{ k.last_used_at ? `last used ${formatDate(k.last_used_at)}` : 'never used' }}
           </div>
         </div>
         <button type="button" :class="styles.remove" :disabled="busy" @click="emit('remove', k.id)">

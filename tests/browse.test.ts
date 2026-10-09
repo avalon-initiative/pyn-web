@@ -51,7 +51,7 @@ describe('tree state', () => {
     expect(formatAgo(at(60_000), now)).toBe('1 minute ago')
     expect(formatAgo(at(2 * 3_600_000), now)).toBe('2 hours ago')
     expect(formatAgo(at(3 * 86_400_000), now)).toBe('3 days ago')
-    expect(formatAgo(at(90 * 86_400_000), now)).toBe('2026-07-10')
+    expect(formatAgo(at(90 * 86_400_000), now)).toBe('Jul 10 2026')
   })
 })
 
@@ -193,7 +193,7 @@ describe('landing parts', () => {
       },
     })
     expect(w.text()).toContain('24 hours')
-    expect(w.text()).toContain('2026-04-12')
+    expect(w.text()).toContain('Apr 12 2026')
     expect(w.text()).toContain('2 hours ago')
   })
 

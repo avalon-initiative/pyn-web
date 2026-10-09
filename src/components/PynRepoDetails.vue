@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import styles from '../styles/PynRepoDetails.module.scss'
+import { formatDate, formatDateTime } from '../state/datetime.state'
 import { formatAgo } from '../state/tree.state'
 import type { Visibility } from '../types/repo.types'
 
@@ -27,9 +28,11 @@ defineProps<{
       <dt>Lease</dt>
       <dd>{{ leaseHours }} hours</dd>
       <dt>Created</dt>
-      <dd>{{ createdAt.slice(0, 10) }}</dd>
+      <dd>{{ formatDate(createdAt) }}</dd>
       <dt>Last revision</dt>
-      <dd>{{ updatedAt ? formatAgo(updatedAt, now ?? new Date()) : 'None yet' }}</dd>
+      <dd :title="updatedAt ? formatDateTime(updatedAt) : undefined">
+        {{ updatedAt ? formatAgo(updatedAt, now ?? new Date()) : 'None yet' }}
+      </dd>
       <dt>Files</dt>
       <dd>{{ files }}</dd>
       <dt>Exclusive</dt>

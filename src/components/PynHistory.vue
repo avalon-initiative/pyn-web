@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
 import styles from '../styles/PynHistory.module.scss'
+import { formatDateTime } from '../state/datetime.state'
 import { FILTER_DEBOUNCE_MS } from '../state/history.state'
 import type { Revision } from '../types/repo.types'
 
@@ -63,7 +64,7 @@ onBeforeUnmount(() => clearTimeout(timer))
           </div>
           <div :class="styles.message">{{ rev.message }}</div>
         </div>
-        <div :class="styles.meta">{{ rev.author }} · {{ rev.created_at.slice(0, 10) }}</div>
+        <div :class="styles.meta">{{ rev.author }} · {{ formatDateTime(rev.created_at) }}</div>
       </li>
     </ul>
     <p v-else-if="!error" :class="styles.empty">

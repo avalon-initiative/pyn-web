@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import styles from '../styles/PynInvites.module.scss'
+import { formatDate } from '../state/datetime.state'
 import type { InviteInfo } from '../types/repo.types'
 
 const props = defineProps<{
@@ -19,7 +20,7 @@ const hours = ref(72)
 function state(i: InviteInfo): string {
   if (i.revoked_at) return 'revoked'
   if (i.used_by) return `used by ${i.used_by}`
-  return `expires ${i.expires_at.slice(0, 10)}`
+  return `expires ${formatDate(i.expires_at)}`
 }
 </script>
 
