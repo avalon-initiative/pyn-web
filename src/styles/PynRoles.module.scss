@@ -1,0 +1,39 @@
+@use 'mixins' as m;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+}
+
+.role {
+  @include m.form;
+}
+
+.heading {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.perms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pyn-space-2) var(--pyn-space-4);
+}
+
+.perm {
+  display: flex;
+  align-items: center;
+  gap: var(--pyn-space-1);
+  font-family: var(--pyn-font-mono);
+  font-size: 0.8125rem;
+}
+
+.button {
+  @include m.button;
+  align-self: flex-start;
+}
+
+.error {
+  @include m.error;
+}

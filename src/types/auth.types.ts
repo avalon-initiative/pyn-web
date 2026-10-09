@@ -3,7 +3,6 @@ export type RegistrationMode = 'open' | 'invite' | 'closed'
 /** Mirrors the server's `SessionInfo`. */
 export interface Session {
   user: string
-  permissions: string[]
   csrf_token: string
   expires_at: string
 }
