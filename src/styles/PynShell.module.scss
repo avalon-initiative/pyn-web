@@ -1,0 +1,74 @@
+@use 'mixins' as m;
+
+.shell {
+  display: grid;
+  grid-template:
+    'top top' var(--pyn-topbar-height) 'side main' 1fr / var(--pyn-sidebar-width)
+    minmax(0, 1fr);
+  min-height: 100vh;
+
+  @include m.narrow {
+    grid-template: 'top' var(--pyn-topbar-height) 'main' 1fr / minmax(0, 1fr);
+  }
+}
+
+.top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: var(--pyn-space-3);
+  padding: 0 var(--pyn-space-4);
+  background: var(--pyn-surface);
+  border-bottom: 1px solid var(--pyn-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.toggle {
+  @include m.button;
+  display: none;
+  padding: var(--pyn-space-2);
+
+  @include m.narrow {
+    display: inline-flex;
+  }
+}
+
+.side {
+  grid-area: side;
+  padding: var(--pyn-space-4) var(--pyn-space-3);
+  background: var(--pyn-surface);
+  border-right: 1px solid var(--pyn-border);
+  overflow-y: auto;
+
+  @include m.narrow {
+    position: fixed;
+    top: var(--pyn-topbar-height);
+    bottom: 0;
+    left: 0;
+    z-index: 9;
+    display: none;
+    width: min(var(--pyn-sidebar-width), 85vw);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.4);
+
+    &.open {
+      display: block;
+    }
+  }
+}
+
+.main {
+  grid-area: main;
+  min-width: 0;
+  padding: var(--pyn-space-6);
+
+  @include m.narrow {
+    padding: var(--pyn-space-4);
+  }
+}
+
+.content {
+  max-width: var(--pyn-content-width);
+  margin: 0 auto;
+}

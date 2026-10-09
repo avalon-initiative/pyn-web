@@ -1,0 +1,18 @@
+.chip {
+  display: inline-block;
+  padding: 0 var(--pyn-space-3);
+  border-radius: var(--pyn-radius-pill);
+  font-size: var(--pyn-text-xs);
+  font-weight: 500;
+  line-height: 1.5rem;
+}
+
+.shared {
+  color: var(--pyn-available);
+  background: var(--pyn-available-bg);
+}
+
+.exclusive {
+  color: var(--pyn-locked);
+  background: var(--pyn-locked-bg);
+}

@@ -1,0 +1,34 @@
+@use 'mixins' as m;
+
+.header {
+  margin-bottom: var(--pyn-space-4);
+}
+
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pyn-space-2);
+  margin: 0;
+  font-size: var(--pyn-text-xl);
+  overflow-wrap: anywhere;
+}
+
+.owner {
+  margin-right: calc(var(--pyn-space-1) * -1);
+  color: var(--pyn-text-muted);
+  font-weight: 400;
+}
+
+.chip {
+  @include m.pill;
+  padding: 0 var(--pyn-space-3);
+  font-weight: 400;
+  line-height: 1.5rem;
+  text-transform: capitalize;
+}
+
+.meta {
+  @include m.muted;
+  margin: var(--pyn-space-1) 0 var(--pyn-space-4);
+}

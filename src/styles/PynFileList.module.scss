@@ -11,7 +11,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
   gap: var(--pyn-space-4);
   padding: var(--pyn-space-2) var(--pyn-space-4);
@@ -21,7 +21,8 @@
   }
 
   @include m.narrow {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto auto 1fr;
+    gap: var(--pyn-space-2) var(--pyn-space-3);
   }
 }
 
@@ -29,6 +30,10 @@
   font-family: var(--pyn-font-mono);
   font-size: 0.875rem;
   overflow-wrap: break-word;
+
+  @include m.narrow {
+    grid-column: 1 / -1;
+  }
 }
 
 .dir {
@@ -41,7 +46,7 @@
 
 .meta {
   color: var(--pyn-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--pyn-text-sm);
 
   @include m.narrow {
     display: none;

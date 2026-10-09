@@ -21,6 +21,12 @@
   overflow-wrap: anywhere;
 }
 
+.lockIcon {
+  margin-right: var(--pyn-space-2);
+  color: var(--pyn-locked);
+  vertical-align: -0.125em;
+}
+
 .meta,
 .empty {
   @include m.muted;

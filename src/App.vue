@@ -1,12 +1,21 @@
 <script setup lang="ts">
-import { onMounted, provide, ref } from 'vue'
+import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import styles from './styles/App.module.scss'
+import PynShell from './components/PynShell.vue'
+import PynSideNav from './components/PynSideNav.vue'
 import PynSignIn from './components/PynSignIn.vue'
+import PynTopBar from './components/PynTopBar.vue'
 import { fetchRegistration, register, restoreSession, signIn, signOut } from './api/auth'
 import { describeError } from './api/client'
+import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { internalPath } from './state/links.state'
+import { repoSlug, sortRepos } from './state/repo.state'
+import { activeNav, mainNav } from './state/shell.state'
+import { applyTheme, loadTheme, saveTheme } from './state/theme.state'
+import type { ThemeChoice } from './state/theme.state'
+import type { RepoInfo } from './types/repo.types'
 import type { RegisterForm, RegistrationMode, SignInForm } from './types/auth.types'
 
 const router = useRouter()
@@ -16,6 +25,29 @@ const error = ref('')
 const busy = ref(false)
 const registration = ref<RegistrationMode | null>(null)
 const ready = ref(false)
+const repos = ref<RepoInfo[]>([])
+const theme = ref<ThemeChoice>(loadTheme())
+applyTheme(theme.value)
+
+const slugs = computed(() => repos.value.map(repoSlug))
+const currentRepo = computed(() =>
+  route.params.owner ? `${String(route.params.owner)}/${String(route.params.name)}` : '',
+)
+
+function setTheme(choice: ThemeChoice) {
+  theme.value = choice
+  applyTheme(choice)
+  saveTheme(choice)
+}
+
+// The sidebar list follows creation and deletion, which both change the route.
+watch(
+  () => [user.value, route.name],
+  async () => {
+    if (!user.value) return (repos.value = [])
+    repos.value = sortRepos(await listRepos().catch(() => repos.value))
+  },
+)
 
 const expire = () => (user.value = '')
 provide(sessionKey, { user, expire })
@@ -64,29 +96,39 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main :class="styles.page" @click="followLink">
-    <PynSignIn
-      v-if="ready && !user"
-      :registration="registration"
-      :busy="busy"
-      :error="error"
-      @sign-in="submitSignIn"
-      @register="join"
-    />
+  <div :class="styles.page" @click="followLink">
+    <main v-if="ready && !user" :class="styles.signedOut">
+      <PynSignIn
+        :registration="registration"
+        :busy="busy"
+        :error="error"
+        @sign-in="submitSignIn"
+        @register="join"
+      />
+    </main>
     <template v-else-if="user">
-      <header :class="styles.header">
-        <p :class="styles.summary">Signed in as {{ user }}</p>
-        <nav :class="styles.nav">
-          <a href="/" :class="styles.navLink" :aria-current="route.name === 'repos'"
-            >Repositories</a
-          >
-          <a href="/_/keys" :class="styles.navLink" :aria-current="route.name === 'keys'"
-            >SSH keys</a
-          >
-          <button type="button" :class="styles.signOut" @click="leave">Sign out</button>
-        </nav>
-      </header>
-      <RouterView />
+      <PynShell>
+        <template #top>
+          <PynTopBar
+            :user="user"
+            :repos="slugs"
+            :theme="theme"
+            @open="(slug) => router.push(`/${slug}`)"
+            @theme="setTheme"
+            @sign-out="leave"
+          />
+        </template>
+        <template #side>
+          <PynSideNav
+            :account="user"
+            :items="mainNav"
+            :current="activeNav(route.path)"
+            :repos="repos"
+            :current-repo="currentRepo"
+          />
+        </template>
+        <RouterView />
+      </PynShell>
     </template>
-  </main>
+  </div>
 </template>

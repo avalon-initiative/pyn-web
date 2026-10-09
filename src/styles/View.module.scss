@@ -16,7 +16,7 @@
 
 .summary {
   @include m.muted;
-  margin-top: var(--pyn-space-1);
+  margin: var(--pyn-space-1) 0 var(--pyn-space-4);
 }
 
 .action {

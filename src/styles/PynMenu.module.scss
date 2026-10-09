@@ -1,0 +1,76 @@
+@use 'mixins' as m;
+
+.menu {
+  position: relative;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pyn-space-2);
+  padding: var(--pyn-space-1) var(--pyn-space-2);
+  color: var(--pyn-text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--pyn-radius);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--pyn-hover);
+  }
+
+  @include m.focus-ring;
+}
+
+.panel {
+  @include m.card;
+  position: absolute;
+  top: calc(100% + var(--pyn-space-1));
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: var(--pyn-space-1);
+  background: var(--pyn-surface-raised);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.35);
+}
+
+.start {
+  right: auto;
+  left: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--pyn-space-2);
+  padding: var(--pyn-space-2) var(--pyn-space-3);
+  color: var(--pyn-text);
+  background: none;
+  border: 0;
+  border-radius: var(--pyn-radius);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--pyn-hover);
+  }
+
+  @include m.focus-ring;
+}
+
+.check {
+  width: 1rem;
+  color: var(--pyn-accent);
+}
+
+.separator {
+  width: 100%;
+  margin: var(--pyn-space-1) 0;
+  border: 0;
+  border-top: 1px solid var(--pyn-border);
+}

@@ -3,7 +3,7 @@ import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
 import { getRepo, repoMe } from '../api/repos'
-import PynRepoNav from '../components/PynRepoNav.vue'
+import PynRepoHeader from '../components/PynRepoHeader.vue'
 import PynRepoNotFound from '../components/PynRepoNotFound.vue'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
@@ -61,18 +61,18 @@ const tabs = computed(() => repoTabs(permissions.value, owner.value === user.val
   <PynRepoNotFound v-if="notFound" :slug="`${owner}/${name}`" />
   <p v-else-if="error" :class="styles.error" role="alert">{{ error }}</p>
   <template v-else-if="repo">
-    <header :class="styles.header">
-      <div>
-        <h1 :class="styles.title">{{ repo.owner }}/{{ repo.name }}</h1>
-        <p :class="styles.summary">{{ repo.visibility }} · {{ repo.lease_hours }}h leases</p>
-      </div>
-    </header>
+    <PynRepoHeader
+      :owner="repo.owner"
+      :name="repo.name"
+      :visibility="repo.visibility"
+      :lease-hours="repo.lease_hours"
+      :role="repo.role"
+      :tabs="permissions.includes('read') ? tabs : undefined"
+      :current="section"
+    />
     <p v-if="!permissions.includes('read')" :class="styles.summary">
       You have no role in this repository. Ask an admin to add you or send an invitation.
     </p>
-    <template v-else>
-      <PynRepoNav :owner="repo.owner" :name="repo.name" :tabs="tabs" :current="section" />
-      <RouterView />
-    </template>
+    <RouterView v-else />
   </template>
 </template>
