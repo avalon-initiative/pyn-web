@@ -15,8 +15,9 @@ import PynRepoList from '../src/components/PynRepoList.vue'
 import PynRepoNav from '../src/components/PynRepoNav.vue'
 import PynRepoNotFound from '../src/components/PynRepoNotFound.vue'
 import PynRoles from '../src/components/PynRoles.vue'
+import RepoBlobView from '../src/views/RepoBlobView.vue'
 import RepoHistoryView from '../src/views/RepoHistoryView.vue'
-import { repoKey } from '../src/state/context.state'
+import { repoKey, sessionKey } from '../src/state/context.state'
 import { internalPath } from '../src/state/links.state'
 import { repoPath, repoTabs, sortRepos } from '../src/state/repo.state'
 import { makeRouter } from '../src/router'
@@ -462,5 +463,41 @@ describe('PynInvites', () => {
     await w.find('input[type=number]').setValue('24')
     await w.find('form').trigger('submit')
     expect(w.emitted('create')?.[0]).toEqual([{ role: 'reader', hours: 24 }])
+  })
+})
+
+describe('blob view', () => {
+  const reply = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as Response
+  const listing = {
+    path: '',
+    entries: [{ name: 'docs', path: 'docs', kind: 'folder', mode: 'shared' }],
+  }
+
+  async function open(url: string) {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(listing)))
+    const router = makeRouter(createMemoryHistory())
+    await router.push(url)
+    const w = mount(RepoBlobView, {
+      global: {
+        plugins: [router],
+        provide: {
+          [repoKey as symbol]: { target: ref({ owner: 'alice', name: 'game' }) },
+          [sessionKey as symbol]: { user: ref('alice') },
+        },
+      },
+    })
+    await flushPromises()
+    return { w, router }
+  }
+
+  it('redirects a folder opened as a file to the tree view', async () => {
+    const { router } = await open('/alice/game/blob/docs')
+    expect(router.currentRoute.value.path).toBe('/alice/game/tree/docs')
+  })
+
+  it('keeps the not-found state for a path that matches nothing', async () => {
+    const { router, w } = await open('/alice/game/blob/missing')
+    expect(router.currentRoute.value.path).toBe('/alice/game/blob/missing')
+    expect(w.text()).toContain('missing')
   })
 })
