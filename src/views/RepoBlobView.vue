@@ -1,24 +1,29 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
 import { fetchContent, fetchTree } from '../api/repos'
 import PynFileView from '../components/PynFileView.vue'
 import { useAction } from '../state/action.state'
 import { contentUrl, fileBody, fileKind, parentOf, VIEW_LIMIT } from '../state/blob.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { useHashScroll } from '../state/hash.state'
+import { lineHash, parseLineHash } from '../state/lines.state'
 import { folderParam } from '../state/tree.state'
 import styles from '../styles/View.module.scss'
+import type { LineRange } from '../types/code.types'
 import type { FileBody } from '../types/blob.types'
 import type { TreeEntry } from '../types/tree.types'
 
 const { target } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const route = useRoute()
+const router = useRouter()
 const path = computed(() => folderParam(route.params.path))
 const entry = ref<TreeEntry | null>(null)
 const body = ref<FileBody | null>(null)
 const missing = ref(false)
+const lines = computed(() => parseLineHash(route.hash))
 const now = ref(new Date())
 const { error, attempt } = useAction()
 let loadedRevision: number | null = null
@@ -62,6 +67,9 @@ watch(path, () => {
   refresh()
 })
 
+const selectLines = (r: LineRange) => router.push({ hash: lineHash(r) })
+useHashScroll(() => body.value)
+
 onMounted(() => {
   refresh()
   timer = setInterval(refresh, 15_000)
@@ -80,5 +88,7 @@ onUnmounted(() => clearInterval(timer))
     :missing="missing"
     :me="user"
     :now="now"
+    :lines="lines"
+    @select-lines="selectLines"
   />
 </template>

@@ -5,5 +5,5 @@ export function internalPath(e: MouseEvent, origin: string): string | null {
   const a = (e.target as Element | null)?.closest?.('a')
   if (!a || a.target || a.hasAttribute('download')) return null
   const url = new URL(a.href, origin)
-  return url.origin === origin ? url.pathname + url.search : null
+  return url.origin === origin ? url.pathname + url.search + url.hash : null
 }

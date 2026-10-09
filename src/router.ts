@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouterHistory } from 'vue-router'
+import { scrollToHash } from './state/hash.state'
 import AccountView from './views/AccountView.vue'
 import KeysView from './views/KeysView.vue'
 import NewRepoView from './views/NewRepoView.vue'
@@ -46,4 +47,10 @@ export const routes = [
 ]
 
 export const makeRouter = (history: RouterHistory = createWebHistory()) =>
-  createRouter({ history, routes })
+  createRouter({
+    history,
+    routes,
+    scrollBehavior(to) {
+      if (to.hash) scrollToHash(to.hash)
+    },
+  })
