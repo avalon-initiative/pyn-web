@@ -1,0 +1,56 @@
+@use 'mixins' as m;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+}
+
+.code {
+  @include m.card;
+  margin: 0;
+  padding: var(--pyn-space-3) var(--pyn-space-4);
+  overflow-wrap: anywhere;
+}
+
+.list {
+  @include m.list;
+}
+
+.item {
+  @include m.item;
+}
+
+.form {
+  @include m.form;
+}
+
+.subheading {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.field {
+  @include m.field;
+}
+
+.input {
+  @include m.input;
+}
+
+.primary {
+  @include m.button-primary;
+}
+
+.danger {
+  @include m.button(var(--pyn-danger));
+}
+
+.meta,
+.empty {
+  @include m.muted;
+}
+
+.error {
+  @include m.error;
+}

@@ -1,0 +1,23 @@
+@use 'mixins' as m;
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pyn-space-2);
+  margin-bottom: var(--pyn-space-4);
+  border-bottom: 1px solid var(--pyn-border);
+}
+
+.tab {
+  padding: var(--pyn-space-1) var(--pyn-space-3);
+  color: var(--pyn-text-muted);
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+
+  &[aria-current='page'] {
+    color: var(--pyn-text);
+    border-bottom-color: var(--pyn-accent);
+  }
+
+  @include m.focus-ring;
+}

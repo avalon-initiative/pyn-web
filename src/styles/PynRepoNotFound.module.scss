@@ -1,0 +1,21 @@
+@use 'mixins' as m;
+
+.box {
+  @include m.card;
+  padding: var(--pyn-space-6);
+  text-align: center;
+}
+
+.heading {
+  margin: 0 0 var(--pyn-space-2);
+  font-size: 1.125rem;
+}
+
+.note {
+  @include m.muted;
+  margin-bottom: var(--pyn-space-3);
+}
+
+.link {
+  color: var(--pyn-accent);
+}

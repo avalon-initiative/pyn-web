@@ -15,11 +15,6 @@
   margin-bottom: var(--pyn-space-4);
 }
 
-.title {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
 .summary {
   margin: var(--pyn-space-1) 0 0;
   color: var(--pyn-text-muted);
@@ -38,6 +33,7 @@
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
+  text-decoration: none;
   cursor: pointer;
 
   &[aria-current='true'] {
@@ -57,24 +53,4 @@
   cursor: pointer;
 
   @include m.focus-ring;
-}
-
-.group {
-  margin-bottom: var(--pyn-space-6);
-}
-
-.groupTitle {
-  margin: 0 0 var(--pyn-space-2);
-  color: var(--pyn-text-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.error {
-  padding: var(--pyn-space-3) var(--pyn-space-4);
-  color: var(--pyn-danger);
-  background: var(--pyn-danger-bg);
-  border-radius: var(--pyn-radius);
 }

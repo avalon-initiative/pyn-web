@@ -1,0 +1,49 @@
+@use 'mixins' as m;
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pyn-space-3);
+  margin-bottom: var(--pyn-space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.summary {
+  @include m.muted;
+  margin-top: var(--pyn-space-1);
+}
+
+.action {
+  @include m.button-primary;
+  text-decoration: none;
+}
+
+.group {
+  margin-bottom: var(--pyn-space-6);
+}
+
+.groupTitle {
+  margin: 0 0 var(--pyn-space-2);
+  color: var(--pyn-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.error {
+  @include m.error;
+  padding: var(--pyn-space-3) var(--pyn-space-4);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-6);
+}
