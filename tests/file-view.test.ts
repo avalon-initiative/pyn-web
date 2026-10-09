@@ -120,6 +120,36 @@ describe('markdown state', () => {
     expect(html).toContain('src="/v1/repos/acme/castle-quest/content?path=x%2Fy%2Fimg%2Fa.png"')
   })
 
+  it('replaces external images with alt text and a safe link', () => {
+    const html = render('![logo](https://example.com/a.png) ![cdn](//cdn.example.com/b.png)')
+    expect(html).not.toContain('<img')
+    expect(html).toContain('href="https://example.com/a.png"')
+    expect(html).toContain('>logo</a>')
+    expect(html).toContain('href="https://cdn.example.com/b.png"')
+    expect(html.match(/rel="noopener noreferrer"/g)).toHaveLength(2)
+  })
+
+  it('replaces data: images with plain alt text', () => {
+    const html = render('![pixel](data:image/png;base64,AAAA)')
+    expect(html).not.toMatch(/<img|<a|data:/)
+    expect(html).toContain('pixel')
+  })
+
+  it('does not link an external image already inside a link', () => {
+    const html = render('[![badge](https://example.com/b.svg)](#top)')
+    expect(html).not.toContain('<img')
+    expect(html).not.toContain('example.com')
+    expect(html).toContain('badge')
+  })
+
+  it('drops srcset and picture sources', () => {
+    const html = render(
+      '<picture><source srcset="https://e.com/x.png"><img src="a.png" srcset="https://e.com/y.png"></picture>',
+    )
+    expect(html).not.toMatch(/srcset|<source|e\.com/)
+    expect(html).toContain('content?path=a.png')
+  })
+
   it('opens external links in a new tab without opener access', () => {
     const html = render('[e](https://example.com) [h](#top)')
     expect(html).toContain('href="https://example.com"')
