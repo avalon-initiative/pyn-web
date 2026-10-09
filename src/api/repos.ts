@@ -12,7 +12,9 @@ import type {
   RoleGrant,
 } from '../types/repo.types'
 import type { RepoSummary, TreeListing } from '../types/tree.types'
-import { send } from './auth'
+import { contentUrl } from '../state/blob.state'
+import type { FetchedContent } from '../types/blob.types'
+import { failure, send } from './auth'
 
 type Repo = { owner: string; name: string }
 
@@ -55,6 +57,32 @@ export const fetchTree = (r: Repo, path = '') =>
 
 export const fetchSummary = (r: Repo, activity = 6) =>
   send<RepoSummary>('GET', `${base(r)}/summary${query({ activity })}`)
+
+/** Reads at most `limit` bytes of a file's head content, then stops the download. */
+export async function fetchContent(r: Repo, path: string, limit: number): Promise<FetchedContent> {
+  const res = await fetch(contentUrl(r, path))
+  if (!res.ok) throw await failure(res)
+  const reader = res.body?.getReader()
+  if (!reader) return { bytes: new Uint8Array(await res.arrayBuffer()), truncated: false }
+  const chunks: Uint8Array[] = []
+  let size = 0
+  while (size <= limit) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    size += value.length
+  }
+  const truncated = size > limit
+  if (truncated) await reader.cancel()
+  const bytes = new Uint8Array(Math.min(size, limit))
+  let at = 0
+  for (const c of chunks) {
+    const part = c.subarray(0, bytes.length - at)
+    bytes.set(part, at)
+    at += part.length
+  }
+  return { bytes, truncated }
+}
 
 export const listLocks = (r: Repo) => send<LockInfo[]>('GET', `${base(r)}/locks`)
 

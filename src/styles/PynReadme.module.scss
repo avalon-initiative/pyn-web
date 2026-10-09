@@ -1,0 +1,49 @@
+@use 'mixins' as m;
+
+.readme {
+  @include m.card;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--pyn-space-2);
+  padding: var(--pyn-space-3) var(--pyn-space-4);
+  background: var(--pyn-surface-raised);
+  border-bottom: 1px solid var(--pyn-border);
+}
+
+.icon {
+  color: var(--pyn-text-muted);
+}
+
+.title {
+  color: var(--pyn-text);
+  font-size: var(--pyn-text-sm);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--pyn-accent);
+    text-decoration: underline;
+  }
+
+  @include m.focus-ring;
+}
+
+.body {
+  padding: var(--pyn-space-4) var(--pyn-space-6);
+
+  @include m.narrow {
+    padding: var(--pyn-space-4);
+  }
+}
+
+.plain {
+  margin: 0;
+  font-family: var(--pyn-font-mono);
+  font-size: var(--pyn-text-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

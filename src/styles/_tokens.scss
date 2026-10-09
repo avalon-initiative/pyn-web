@@ -37,6 +37,11 @@ $font-sizes: (
   --pyn-surface-raised: #eef0f4;
   --pyn-hover: #e8ebf1;
   --pyn-selected: #dfe5f8;
+  --pyn-syntax-keyword: #6d28d9;
+  --pyn-syntax-string: #1a7f37;
+  --pyn-syntax-comment: #5b6577;
+  --pyn-syntax-number: #b4540a;
+  --pyn-syntax-name: #3857d6;
 }
 
 @mixin dark {
@@ -58,6 +63,11 @@ $font-sizes: (
   --pyn-mine-bg: #1c2650;
   --pyn-danger: #f2877f;
   --pyn-danger-bg: #3d1714;
+  --pyn-syntax-keyword: #c4a1ff;
+  --pyn-syntax-string: #7ee0a1;
+  --pyn-syntax-comment: #98a2b3;
+  --pyn-syntax-number: #f0a35c;
+  --pyn-syntax-name: #7fb0ff;
 }
 
 :root {

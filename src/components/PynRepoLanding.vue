@@ -5,10 +5,12 @@ import PynBranchBar from './PynBranchBar.vue'
 import PynBreadcrumb from './PynBreadcrumb.vue'
 import PynCheckoutCard from './PynCheckoutCard.vue'
 import PynLockedFiles from './PynLockedFiles.vue'
+import PynReadme from './PynReadme.vue'
 import PynRepoDetails from './PynRepoDetails.vue'
 import PynTree from './PynTree.vue'
 import styles from '../styles/PynRepoLanding.module.scss'
 import { breadcrumbs, treePath } from '../state/tree.state'
+import type { ReadmeDoc } from '../types/blob.types'
 import type { RepoInfo } from '../types/repo.types'
 import type { RepoSummary, TreeListing } from '../types/tree.types'
 
@@ -19,6 +21,8 @@ const props = defineProps<{
   summary?: RepoSummary | null
   /** The folder does not exist (`path_not_found`). */
   missing?: boolean
+  /** The folder's README, when it has one. */
+  readme?: ReadmeDoc | null
   me?: string
   now?: Date
 }>()
@@ -51,6 +55,7 @@ const crumbs = computed(() => breadcrumbs(props.repo, props.path))
         :me="me"
         :now="now"
       />
+      <PynReadme v-if="readme && !missing" :readme="readme" :owner="repo.owner" :name="repo.name" />
       <PynCheckoutCard />
     </div>
     <aside v-if="summary" :class="styles.rail" aria-label="Repository summary">

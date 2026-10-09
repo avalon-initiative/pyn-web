@@ -92,13 +92,16 @@ describe('PynModeChip', () => {
 describe('PynTree', () => {
   const tree = () => mount(PynTree, { props: { entries: rootEntries, ...r, me: 'jamie', now } })
 
-  it('links folders to their route and leaves files unlinked', () => {
+  it('links folders to their route and files to the viewer', () => {
     const w = tree()
     const hrefs = w.findAll('a').map((a) => a.attributes('href'))
     expect(hrefs).toEqual([
       '/acme/castle-quest/tree/Content',
       '/acme/castle-quest/tree/Config',
       '/acme/castle-quest/tree/Source',
+      '/acme/castle-quest/blob/Game.uproject',
+      '/acme/castle-quest/blob/README.md',
+      '/acme/castle-quest/blob/Level02.umap',
     ])
   })
 

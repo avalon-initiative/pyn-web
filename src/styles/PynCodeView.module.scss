@@ -1,0 +1,39 @@
+@use 'mixins' as m;
+
+.code {
+  @include m.card;
+  overflow-x: auto;
+  background: var(--pyn-surface-raised);
+  @include m.syntax;
+}
+
+.pre {
+  margin: 0;
+  padding: var(--pyn-space-3) 0;
+  font-family: var(--pyn-font-mono);
+  font-size: var(--pyn-text-sm);
+  line-height: 1.6;
+  width: max-content;
+  min-width: 100%;
+}
+
+.line {
+  display: block;
+  padding: 0 var(--pyn-space-4) 0 0;
+  white-space: pre;
+
+  &::before {
+    content: attr(data-line);
+    display: inline-block;
+    min-width: 3.5rem;
+    margin-right: var(--pyn-space-4);
+    padding-right: var(--pyn-space-3);
+    color: var(--pyn-text-muted);
+    text-align: right;
+    user-select: none;
+  }
+
+  &:hover {
+    background: var(--pyn-hover);
+  }
+}

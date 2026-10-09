@@ -1,0 +1,123 @@
+@use 'mixins' as m;
+
+.markdown {
+  overflow-wrap: anywhere;
+  @include m.syntax;
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: var(--pyn-space-6) 0 var(--pyn-space-3);
+    line-height: 1.25;
+  }
+
+  h1,
+  h2 {
+    padding-bottom: var(--pyn-space-2);
+    border-bottom: 1px solid var(--pyn-border);
+  }
+
+  h1 {
+    font-size: var(--pyn-text-xl);
+  }
+
+  h2 {
+    font-size: var(--pyn-text-lg);
+  }
+
+  h3 {
+    font-size: var(--pyn-text-md);
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: var(--pyn-text-base);
+  }
+
+  p,
+  ul,
+  ol,
+  blockquote,
+  pre,
+  table {
+    margin: 0 0 var(--pyn-space-4);
+  }
+
+  ul,
+  ol {
+    padding-left: var(--pyn-space-8);
+  }
+
+  li + li {
+    margin-top: var(--pyn-space-1);
+  }
+
+  a {
+    color: var(--pyn-accent);
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--pyn-border);
+  }
+
+  blockquote {
+    padding: 0 var(--pyn-space-4);
+    color: var(--pyn-text-muted);
+    border-left: 3px solid var(--pyn-border);
+  }
+
+  code {
+    padding: 0.1em 0.35em;
+    background: var(--pyn-surface-raised);
+    border-radius: var(--pyn-radius);
+    font-family: var(--pyn-font-mono);
+    font-size: 0.875em;
+  }
+
+  pre {
+    padding: var(--pyn-space-3) var(--pyn-space-4);
+    overflow-x: auto;
+    background: var(--pyn-surface-raised);
+    border-radius: var(--pyn-radius);
+
+    code {
+      padding: 0;
+      background: none;
+      font-size: var(--pyn-text-sm);
+    }
+  }
+
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: var(--pyn-space-1) var(--pyn-space-3);
+    border: 1px solid var(--pyn-border);
+  }
+
+  th {
+    background: var(--pyn-surface-raised);
+  }
+}

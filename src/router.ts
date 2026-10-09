@@ -3,6 +3,7 @@ import type { RouterHistory } from 'vue-router'
 import AccountView from './views/AccountView.vue'
 import KeysView from './views/KeysView.vue'
 import NewRepoView from './views/NewRepoView.vue'
+import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
 import RepoFilesView from './views/RepoFilesView.vue'
 import RepoHistoryView from './views/RepoHistoryView.vue'
@@ -32,6 +33,7 @@ export const routes = [
     children: [
       { path: '', name: 'files', component: RepoFilesView },
       { path: 'tree/:path(.*)?', name: 'tree', component: RepoFilesView },
+      { path: 'blob/:path(.+)', name: 'blob', component: RepoBlobView },
       { path: 'locks', name: 'locks', component: RepoLocksView },
       { path: 'history', name: 'history', component: RepoHistoryView },
       { path: 'audit', name: 'audit', component: RepoAuditView },

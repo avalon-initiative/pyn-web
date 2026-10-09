@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import PynRepoLanding from '../components/PynRepoLanding.vue'
+import { readmeText } from './file-data'
 import { folderListing, now, repo, rootListing, summary } from './landing-data'
 
 const meta: Meta<typeof PynRepoLanding> = {
@@ -30,3 +31,6 @@ export const EmptyRepository: Story = {
 }
 export const MissingFolder: Story = { args: { path: 'Content/Gone', listing: null, missing: true } }
 export const Loading: Story = { args: { listing: null, summary: null } }
+export const WithReadme: Story = {
+  args: { readme: { name: 'README.md', path: 'README.md', text: readmeText } },
+}
