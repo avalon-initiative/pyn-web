@@ -3,6 +3,8 @@ import type { RepoInfo } from '../types/repo.types'
 
 export interface SessionContext {
   user: Ref<string>
+  /** Whether `GET /v1/me` reports a server administrator. */
+  admin: Ref<boolean>
   /** Called when the server says the session is gone. */
   expire: () => void
 }

@@ -19,6 +19,8 @@ const FRIENDLY: Record<string, string> = {
   path_not_found: 'That folder does not exist in this repository.',
   not_namespace_owner: 'Only the repository owner, as an admin, can do that.',
   invalid_verification: 'This verification link is not valid. It may be used already or expired.',
+  server_admin_required: 'Only a server administrator can do that.',
+  user_not_found: 'That account does not exist.',
   user_exists: 'That user name is already taken.',
 }
 

@@ -8,3 +8,4 @@ const meta: Meta<typeof PynTopBar> = {
 }
 export default meta
 export const Default: StoryObj<typeof PynTopBar> = {}
+export const Administrator: StoryObj<typeof PynTopBar> = { args: { admin: true } }

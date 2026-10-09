@@ -7,19 +7,21 @@ import type { AuditEntry, AuditFilter } from '../types/repo.types'
 
 const props = defineProps<{
   entries: AuditEntry[]
-  filter: AuditFilter
+  filter?: AuditFilter
+  /** Hides the filter form for logs the server cannot filter. */
+  plain?: boolean
   hasMore?: boolean
   busy?: boolean
   error?: string
 }>()
 const emit = defineEmits<{ filter: [AuditFilter]; more: [] }>()
 
-const form = reactive({ ...props.filter })
+const form = reactive<AuditFilter>({ path: '', actor: '', action: '', ...props.filter })
 </script>
 
 <template>
   <section :class="styles.page">
-    <form :class="styles.filters" @submit.prevent="emit('filter', { ...form })">
+    <form v-if="!plain" :class="styles.filters" @submit.prevent="emit('filter', { ...form })">
       <input v-model="form.actor" :class="styles.input" placeholder="Actor" aria-label="Actor" />
       <input v-model="form.path" :class="styles.input" placeholder="Path" aria-label="Path" />
       <select v-model="form.action" :class="styles.input" aria-label="Action">

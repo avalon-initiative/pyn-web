@@ -14,13 +14,14 @@ import {
   signIn,
   signOut,
 } from './api/auth'
+import { fetchMe } from './api/admin'
 import { describeError } from './api/client'
 import { blockedStatus } from './state/account.state'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { internalPath } from './state/links.state'
 import { repoSlug, sortRepos } from './state/repo.state'
-import { activeNav, mainNav } from './state/shell.state'
+import { activeNav, navItems } from './state/shell.state'
 import { applyTheme, loadTheme, saveTheme } from './state/theme.state'
 import type { ThemeChoice } from './state/theme.state'
 import type { RepoInfo } from './types/repo.types'
@@ -29,6 +30,7 @@ import type { BlockedStatus, RegisterForm, RegistrationInfo, SignInForm } from '
 const router = useRouter()
 const route = useRoute()
 const user = ref('')
+const admin = ref(false)
 const error = ref('')
 const busy = ref(false)
 const registration = ref<RegistrationInfo | null>(null)
@@ -59,8 +61,17 @@ watch(
   },
 )
 
-const expire = () => (user.value = '')
-provide(sessionKey, { user, expire })
+const expire = () => {
+  user.value = ''
+  admin.value = false
+}
+provide(sessionKey, { user, admin, expire })
+
+/** Reads the admin flag before the user is set, so admin pages do not flash as not found. */
+async function begin(name: string) {
+  admin.value = (await fetchMe().catch(() => null))?.admin === true
+  user.value = name
+}
 
 async function attempt(action: () => Promise<void>) {
   busy.value = true
@@ -81,14 +92,14 @@ const pendingUser = ref('')
 const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
     pendingUser.value = form.username
-    user.value = (await signIn(form)).user
+    await begin((await signIn(form)).user)
   })
 
 const join = (form: RegisterForm) =>
   attempt(async () => {
     pendingUser.value = form.username
     const { status } = await register(form)
-    if (status === 'active') user.value = (await signIn(form)).user
+    if (status === 'active') await begin((await signIn(form)).user)
     else notice.value = { status, user: form.username }
   })
 
@@ -107,7 +118,7 @@ function dismissNotice() {
 
 async function leave() {
   await signOut().catch(() => undefined)
-  user.value = ''
+  expire()
   await router.push('/')
 }
 
@@ -120,7 +131,8 @@ function followLink(e: MouseEvent) {
 
 onMounted(async () => {
   registration.value = await fetchRegistration().catch(() => null)
-  user.value = (await restoreSession().catch(() => null))?.user ?? ''
+  const session = await restoreSession().catch(() => null)
+  if (session) await begin(session.user)
   ready.value = true
 })
 </script>
@@ -150,6 +162,7 @@ onMounted(async () => {
             :user="user"
             :repos="slugs"
             :theme="theme"
+            :admin="admin"
             @open="(slug) => router.push(`/${slug}`)"
             @theme="setTheme"
             @sign-out="leave"
@@ -158,7 +171,7 @@ onMounted(async () => {
         <template #side>
           <PynSideNav
             :account="user"
-            :items="mainNav"
+            :items="navItems(admin)"
             :current="activeNav(route.path)"
             :repos="repos"
             :current-repo="currentRepo"

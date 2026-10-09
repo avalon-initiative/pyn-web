@@ -10,12 +10,23 @@ export const mainNav: NavItem[] = [
   { id: 'locks', label: 'Your locks', href: '/_/locks', icon: 'lock' },
 ]
 
+const adminNav: NavItem = {
+  id: 'accounts',
+  label: 'Accounts',
+  href: '/_/admin/accounts',
+  icon: 'user',
+}
+
+/** The sidebar items; server administration shows only for administrators. */
+export const navItems = (admin: boolean): NavItem[] => (admin ? [...mainNav, adminNav] : mainNav)
+
 export const accountNav = [{ id: 'keys', label: 'SSH keys', href: '/_/settings/keys' }]
 
 /** The sidebar item that matches the current route path, if any. */
 export function activeNav(path: string): string {
   if (path === '/') return 'home'
-  return path === '/_/locks' ? 'locks' : ''
+  if (path === '/_/locks') return 'locks'
+  return path === adminNav.href ? adminNav.id : ''
 }
 
 /** Which repositories match what the user typed, by owner/name substring. */

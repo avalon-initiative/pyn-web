@@ -40,3 +40,16 @@ const entries = [
 
 export const Events: Story = { args: { entries, filter, hasMore: true } }
 export const Empty: Story = { args: { entries: [], filter: { ...filter, actor: 'zed' } } }
+
+const serverEntries = [
+  {
+    id: 3,
+    at: '2026-10-08T11:00:00Z',
+    actor: 'root',
+    action: 'account_disabled',
+    detail: 'dave: Left the studio',
+  },
+  { id: 2, at: '2026-10-08T10:00:00Z', actor: 'root', action: 'account_enabled', detail: 'dave' },
+  { id: 1, at: '2026-10-07T09:00:00Z', actor: 'root', action: 'account_approved', detail: 'bob' },
+]
+export const ServerLog: Story = { args: { entries: serverEntries, plain: true, hasMore: true } }
