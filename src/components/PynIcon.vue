@@ -12,6 +12,7 @@ const paths: Record<string, string> = {
   folder: 'M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
   file: 'M7 3h7l5 5v13H7zM14 3v5h5',
   branch: 'M7 4v12M17 8a2 2 0 1 0 0-.01M7 18a2 2 0 1 0 0-.01M17 10c0 4-10 2-10 6',
+  lock: 'M7 11h10v9H7zM9 11V8a3 3 0 0 1 6 0v3',
   user: 'M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4 20c1-4 4-6 8-6s7 2 8 6',
 }
 

@@ -17,6 +17,7 @@ describe('shell state', () => {
   it('matches the active sidebar item by path', () => {
     expect(activeNav('/')).toBe('home')
     expect(activeNav('/alice/game')).toBe('')
+    expect(activeNav('/_/locks')).toBe('locks')
   })
 
   it('matches repositories case-insensitively and returns nothing for an empty query', () => {

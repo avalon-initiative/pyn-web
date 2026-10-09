@@ -1,4 +1,4 @@
-import type { FilePage, FileRow, LockInfo, Me } from '../types/lock.types'
+import type { FilePage, FileRow, LockInfo, Me, MyLock } from '../types/lock.types'
 import type {
   AuditFilter,
   AuditPage,
@@ -89,6 +89,11 @@ export async function fetchContent(r: Repo, path: string, limit: number): Promis
 }
 
 export const listLocks = (r: Repo) => send<LockInfo[]>('GET', `${base(r)}/locks`)
+
+export const listMyLocks = () => send<MyLock[]>('GET', '/v1/me/locks')
+
+export const releaseLock = (r: Repo, path: string) =>
+  send<void>('POST', `${base(r)}/release`, { path })
 
 export const forceUnlock = (r: Repo, path: string, reason: string) =>
   send<LockInfo>('POST', `${base(r)}/force-unlock`, { path, reason })

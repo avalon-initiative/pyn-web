@@ -24,6 +24,17 @@
   text-decoration: none;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pyn-space-2);
+}
+
+.secondary {
+  @include m.button;
+  text-decoration: none;
+}
+
 .group {
   margin-bottom: var(--pyn-space-6);
 }

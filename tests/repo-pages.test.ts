@@ -9,6 +9,7 @@ import PynHistory from '../src/components/PynHistory.vue'
 import PynInvites from '../src/components/PynInvites.vue'
 import PynLocks from '../src/components/PynLocks.vue'
 import PynMembers from '../src/components/PynMembers.vue'
+import PynMyLocks from '../src/components/PynMyLocks.vue'
 import PynRepoDelete from '../src/components/PynRepoDelete.vue'
 import PynRepoForm from '../src/components/PynRepoForm.vue'
 import PynRepoList from '../src/components/PynRepoList.vue'
@@ -19,6 +20,7 @@ import RepoBlobView from '../src/views/RepoBlobView.vue'
 import RepoHistoryView from '../src/views/RepoHistoryView.vue'
 import { repoKey, sessionKey } from '../src/state/context.state'
 import { internalPath } from '../src/state/links.state'
+import { releaseEach } from '../src/state/my-locks.state'
 import { parseLockLimit, repoPath, repoTabs, sortRepos } from '../src/state/repo.state'
 import { makeRouter } from '../src/router'
 
@@ -559,5 +561,85 @@ describe('blob view', () => {
     const { router, w } = await open('/alice/game/blob/missing')
     expect(router.currentRoute.value.path).toBe('/alice/game/blob/missing')
     expect(w.text()).toContain('missing')
+  })
+})
+
+describe('PynMyLocks', () => {
+  const mine = [
+    {
+      owner: 'alice',
+      name: 'game',
+      path: 'a.umap',
+      acquired_at: '',
+      expires_at: '2026-10-08T15:00:00Z',
+    },
+    {
+      owner: 'bob',
+      name: 'tools',
+      path: 'b.psd',
+      acquired_at: '',
+      expires_at: '2026-10-08T12:20:00Z',
+    },
+  ]
+
+  it('shows repository, path, time left and the full expiry on hover', () => {
+    const w = mount(PynMyLocks, { props: { locks: mine, now } })
+    expect(w.text()).toContain('alice/game')
+    expect(w.text()).toContain('a.umap')
+    expect(w.text()).toContain('3h 0m')
+    expect(w.find('[title^="Expires"]').attributes('title')).toContain('Oct 08 2026')
+    expect(w.find('a').attributes('href')).toBe('/alice/game')
+  })
+
+  it('emits release for one lock', async () => {
+    const w = mount(PynMyLocks, { props: { locks: mine, now } })
+    await w.findAll('li button')[1].trigger('click')
+    expect(w.emitted('release')?.[0]).toEqual([mine[1]])
+  })
+
+  it('asks before releasing all and can be cancelled', async () => {
+    const w = mount(PynMyLocks, { props: { locks: mine, now } })
+    await w.find('button').trigger('click')
+    expect(w.emitted('releaseAll')).toBeUndefined()
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Cancel')!
+      .trigger('click')
+    await w.find('button').trigger('click')
+    await w.find('form').trigger('submit')
+    expect(w.emitted('releaseAll')).toHaveLength(1)
+  })
+
+  it('shows a per-lock failure and the empty state', () => {
+    const failures = [{ lock: mine[0], message: 'denied' }]
+    const w = mount(PynMyLocks, { props: { locks: mine, failures, now } })
+    expect(w.findAll('[role="alert"]').map((a) => a.text())).toEqual(['denied'])
+    expect(mount(PynMyLocks, { props: { locks: [] } }).text()).toContain('You hold no locks')
+  })
+})
+
+describe('releaseEach', () => {
+  it('collects failures per lock and keeps going', async () => {
+    const locks = [
+      { owner: 'a', name: 'r', path: 'x', acquired_at: '', expires_at: '' },
+      { owner: 'a', name: 'r', path: 'y', acquired_at: '', expires_at: '' },
+      { owner: 'a', name: 'r', path: 'z', acquired_at: '', expires_at: '' },
+    ]
+    const seen: string[] = []
+    const failures = await releaseEach(locks, async (l) => {
+      seen.push(l.path)
+      if (l.path === 'y') throw new ApiError(403, 'not_lock_holder', 'not the holder')
+    })
+    expect(seen).toEqual(['x', 'y', 'z'])
+    expect(failures).toEqual([{ lock: locks[1], message: 'not the holder' }])
+  })
+
+  it('aborts on 401', async () => {
+    const lock = { owner: 'a', name: 'r', path: 'x', acquired_at: '', expires_at: '' }
+    await expect(
+      releaseEach([lock], async () => {
+        throw new ApiError(401, 'unauthorized', 'no')
+      }),
+    ).rejects.toBeInstanceOf(ApiError)
   })
 })
