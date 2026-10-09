@@ -20,6 +20,8 @@ import NewOrgView from './views/NewOrgView.vue'
 import OrgAuditView from './views/OrgAuditView.vue'
 import OrgMembersView from './views/OrgMembersView.vue'
 import OrgSettingsView from './views/OrgSettingsView.vue'
+import OrgTeamsView from './views/OrgTeamsView.vue'
+import OrgTeamView from './views/OrgTeamView.vue'
 import OrgsView from './views/OrgsView.vue'
 import OrgView from './views/OrgView.vue'
 import OwnerView from './views/OwnerView.vue'
@@ -51,6 +53,8 @@ export const routes = [
     children: [
       { path: '', name: 'owner', component: OwnerView },
       { path: '-/members', name: 'org-members', component: OrgMembersView },
+      { path: '-/teams', name: 'org-teams', component: OrgTeamsView },
+      { path: '-/teams/:team', name: 'org-team', component: OrgTeamView },
       { path: '-/audit', name: 'org-audit', component: OrgAuditView },
       { path: '-/settings', name: 'org-settings', component: OrgSettingsView },
     ],

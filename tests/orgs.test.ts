@@ -29,6 +29,8 @@ describe('router', () => {
     expect(resolve('/_/new').name).toBe('new-repo')
     expect(resolve('/studio').name).toBe('owner')
     expect(resolve('/studio/-/members').name).toBe('org-members')
+    expect(resolve('/studio/-/teams').name).toBe('org-teams')
+    expect(resolve('/studio/-/teams/artists').name).toBe('org-team')
     expect(resolve('/studio/-/settings').name).toBe('org-settings')
     expect(resolve('/studio/-/audit').name).toBe('org-audit')
     expect(resolve('/studio/game').name).toBe('files')
@@ -52,8 +54,8 @@ describe('org state', () => {
   it('shows tabs by role', () => {
     const sections = (r: Parameters<typeof orgTabs>[0]) => orgTabs(r).map((t) => t.section)
     expect(sections(null)).toEqual([''])
-    expect(sections('member')).toEqual(['', 'members'])
-    expect(sections('owner')).toEqual(['', 'members', 'audit', 'settings'])
+    expect(sections('member')).toEqual(['', 'members', 'teams'])
+    expect(sections('owner')).toEqual(['', 'members', 'teams', 'audit', 'settings'])
   })
 
   it('offers yourself and the organizations you own', () => {
@@ -102,6 +104,7 @@ describe('PynOrgHeader', () => {
     expect(w.findAll('nav a').map((a) => a.attributes('href'))).toEqual([
       '/studio',
       '/studio/-/members',
+      '/studio/-/teams',
     ])
   })
 })

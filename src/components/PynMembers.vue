@@ -1,71 +1,67 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
 import styles from '../styles/PynMembers.module.scss'
-import type { Member, NewUser } from '../types/repo.types'
+import { isEditable, sourceNote } from '../state/team.state'
+import type { Grantee } from '../types/team.types'
 
-const props = defineProps<{
-  members: Member[]
-  roles: string[]
-  busy?: boolean
-  error?: string
-}>()
-const emit = defineEmits<{ setRole: [{ user: string; role: string }]; addUser: [NewUser] }>()
+withDefaults(
+  defineProps<{
+    grantees: Grantee[]
+    roles: string[]
+    /** What the rows are, for labels and the empty text. */
+    kind?: 'person' | 'team'
+    /** Show a button that takes the grant away. */
+    revocable?: boolean
+    title?: string
+    busy?: boolean
+    error?: string
+  }>(),
+  { kind: 'person' },
+)
+const emit = defineEmits<{ setRole: [{ name: string; role: string }]; revoke: [name: string] }>()
 
-const form = reactive<NewUser>({ username: '', password: '', role: props.roles[0] ?? 'reader' })
-
-function add() {
-  emit('addUser', { ...form })
-  form.username = ''
-  form.password = ''
-}
-
-const change = (user: string, e: Event) =>
-  emit('setRole', { user, role: (e.target as HTMLSelectElement).value })
+const change = (name: string, e: Event) =>
+  emit('setRole', { name, role: (e.target as HTMLSelectElement).value })
 </script>
 
 <template>
   <section :class="styles.page">
-    <ul v-if="members.length" :class="styles.list">
-      <li v-for="m in members" :key="m.user" :class="styles.item">
-        <strong>{{ m.user }}</strong>
-        <select
-          :class="styles.input"
-          :value="m.role"
-          :aria-label="`Role of ${m.user}`"
-          :disabled="busy"
-          @change="change(m.user, $event)"
-        >
-          <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
-        </select>
+    <h3 v-if="title" :class="styles.subheading">{{ title }}</h3>
+    <ul v-if="grantees.length" :class="styles.list">
+      <li v-for="g in grantees" :key="g.name" :class="styles.item">
+        <span :class="styles.who">
+          <a v-if="g.href" :href="g.href" :class="styles.link">{{ g.name }}</a>
+          <strong v-else>{{ g.name }}</strong>
+          <span v-if="sourceNote(g.source)" :class="styles.note" data-source>{{
+            sourceNote(g.source)
+          }}</span>
+        </span>
+        <span :class="styles.actions">
+          <select
+            v-if="isEditable(g)"
+            :class="styles.input"
+            :value="g.role"
+            :aria-label="`Role of ${g.name}`"
+            :disabled="busy"
+            @change="change(g.name, $event)"
+          >
+            <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
+          </select>
+          <span v-else :class="styles.pill" data-role>{{ g.role }}</span>
+          <button
+            v-if="revocable && isEditable(g)"
+            type="button"
+            :class="styles.danger"
+            :disabled="busy"
+            :aria-label="`Revoke ${g.name}`"
+            @click="emit('revoke', g.name)"
+          >
+            Revoke
+          </button>
+        </span>
       </li>
     </ul>
-    <p v-else :class="styles.empty">No members.</p>
-
-    <form :class="styles.form" @submit.prevent="add">
-      <h3 :class="styles.subheading">Add a person</h3>
-      <label :class="styles.field"
-        >User name
-        <input v-model="form.username" :class="styles.input" required autocapitalize="none" />
-      </label>
-      <label :class="styles.field"
-        >Initial password (10 characters or more)
-        <input
-          v-model="form.password"
-          :class="styles.input"
-          type="password"
-          minlength="10"
-          required
-          autocomplete="new-password"
-        />
-      </label>
-      <label :class="styles.field"
-        >Role
-        <select v-model="form.role" :class="styles.input">
-          <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
-        </select>
-      </label>
-      <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
-      <button type="submit" :class="styles.primary" :disabled="busy">Add</button>
-    </form>
+    <p v-else :class="styles.empty">{{ kind === 'team' ? 'No teams.' : 'No members.' }}</p>
+    <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
+    <slot />
   </section>
 </template>
