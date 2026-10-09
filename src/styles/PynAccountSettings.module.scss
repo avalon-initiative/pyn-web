@@ -1,0 +1,46 @@
+@use 'mixins' as m;
+
+.layout {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: var(--pyn-space-6);
+
+  @include m.narrow {
+    grid-template-columns: 1fr;
+    gap: var(--pyn-space-4);
+  }
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-1);
+
+  @include m.narrow {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
+
+.link {
+  padding: var(--pyn-space-2) var(--pyn-space-3);
+  color: var(--pyn-text-muted);
+  border-radius: var(--pyn-radius);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--pyn-text);
+    background: var(--pyn-hover);
+  }
+
+  &[aria-current='page'] {
+    color: var(--pyn-text);
+    background: var(--pyn-selected);
+  }
+
+  @include m.focus-ring;
+}
+
+.body {
+  min-width: 0;
+}

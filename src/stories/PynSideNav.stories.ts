@@ -6,7 +6,7 @@ import { sampleRepos } from './shell-data'
 const meta: Meta<typeof PynSideNav> = {
   title: 'Shell/PynSideNav',
   component: PynSideNav,
-  args: { account: 'alice', items: mainNav, current: 'repositories', repos: sampleRepos },
+  args: { account: 'alice', items: mainNav, current: 'home', repos: sampleRepos },
 }
 export default meta
 type Story = StoryObj<typeof PynSideNav>

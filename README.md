@@ -9,7 +9,7 @@ Web UI for pyn. See `CLAUDE.md` for structure and rules. `npm run storybook` to 
 | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `/`                                                                  | repositories you belong to, with your role                                                    |
 | `/_/new`                                                             | create a repository (owned by the signed-in account)                                          |
-| `/_/keys`                                                            | SSH keys (account pages live under `/_/`, which no user name can take)                        |
+| `/_/settings`                                                        | account settings; `/_/settings/keys` (also `/_/keys`) lists SSH keys                          |
 | `/:owner/:name`                                                      | files and lock state                                                                          |
 | `/:owner/:name/{locks,history,audit,members,roles,invites,settings}` | repository pages; tabs follow the caller's permissions from `GET /v1/repos/{owner}/{name}/me` |
 

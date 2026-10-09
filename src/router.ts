@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouterHistory } from 'vue-router'
+import AccountView from './views/AccountView.vue'
 import KeysView from './views/KeysView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
@@ -15,9 +16,16 @@ import ReposView from './views/ReposView.vue'
 
 // Account pages live under "/_/": a user name has at least two characters, so it cannot collide.
 export const routes = [
-  { path: '/', name: 'repos', component: ReposView, alias: '/_/repos' },
+  { path: '/', name: 'repos', component: ReposView },
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
-  { path: '/_/keys', name: 'keys', component: KeysView },
+  {
+    path: '/_/settings',
+    component: AccountView,
+    children: [
+      { path: '', redirect: '/_/settings/keys' },
+      { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
+    ],
+  },
   {
     path: '/:owner/:name',
     component: RepoView,

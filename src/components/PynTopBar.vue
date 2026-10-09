@@ -13,7 +13,7 @@ const emit = defineEmits<{ open: [slug: string]; theme: [ThemeChoice]; signOut: 
 
 const create: MenuItem[] = [{ id: 'new-repo', label: 'New repository', href: '/_/new' }]
 const account = computed<MenuItem[]>(() => [
-  { id: 'keys', label: 'SSH keys', href: '/_/keys' },
+  { id: 'settings', label: 'Settings', href: '/_/settings' },
   { id: 'sep-theme', label: '', separator: true },
   ...themeChoices.map((t) => ({
     id: `theme:${t.id}`,
