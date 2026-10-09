@@ -52,6 +52,19 @@ export interface Revision {
   restored_from?: number | null
 }
 
+/** Mirrors the server's `HistoryPage`. */
+export interface HistoryPage {
+  revisions: Revision[]
+  next_cursor: string | null
+}
+
+export interface HistoryQuery {
+  path?: string
+  filter?: string
+  before?: string | null
+  limit?: number
+}
+
 /** Mirrors the server's `AuditEntry`. */
 export interface AuditEntry {
   id: number
