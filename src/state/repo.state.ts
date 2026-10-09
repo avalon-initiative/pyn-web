@@ -57,6 +57,16 @@ export function repoTabs(permissions: string[], isOwner: boolean): RepoTab[] {
   return tabs
 }
 
+export const MAX_LOCKS_MIN = 1
+export const MAX_LOCKS_MAX = 10000
+
+/** A lock-limit input as a number; null when empty, NaN when not a whole number. */
+export function parseLockLimit(text: string | number | null): number | null {
+  const t = String(text ?? '').trim()
+  if (t === '') return null
+  return /^\d+$/.test(t) ? Number(t) : NaN
+}
+
 export function sortRepos(repos: RepoInfo[]): RepoInfo[] {
   return [...repos].sort((a, b) => repoSlug(a).localeCompare(repoSlug(b)))
 }

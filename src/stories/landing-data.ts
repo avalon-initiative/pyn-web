@@ -8,6 +8,8 @@ export const repo: RepoInfo = {
   owner: 'acme',
   name: 'castle-quest',
   visibility: 'private',
+  max_locks_per_user: 10,
+  max_locks_set_by_policy: false,
   lease_hours: 24,
   created_at: '2026-04-12T09:00:00Z',
   role: 'admin',

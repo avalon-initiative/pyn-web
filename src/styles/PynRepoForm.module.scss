@@ -33,3 +33,7 @@
 .error {
   @include m.error;
 }
+
+.hint {
+  font-size: 0.8125rem;
+}

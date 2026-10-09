@@ -19,7 +19,7 @@ import RepoBlobView from '../src/views/RepoBlobView.vue'
 import RepoHistoryView from '../src/views/RepoHistoryView.vue'
 import { repoKey, sessionKey } from '../src/state/context.state'
 import { internalPath } from '../src/state/links.state'
-import { repoPath, repoTabs, sortRepos } from '../src/state/repo.state'
+import { parseLockLimit, repoPath, repoTabs, sortRepos } from '../src/state/repo.state'
 import { makeRouter } from '../src/router'
 
 const now = new Date('2026-10-08T12:00:00Z')
@@ -28,6 +28,8 @@ const repo = (owner: string, name: string, role?: string) => ({
   name,
   visibility: 'private' as const,
   lease_hours: 8,
+  max_locks_per_user: 10,
+  max_locks_set_by_policy: false,
   created_at: '2026-10-01T09:00:00Z',
   role,
 })
@@ -143,6 +145,17 @@ describe('repository api', () => {
     expect(JSON.parse(fn.mock.calls[1][1].body)).toEqual({ name: 'g2' })
   })
 
+  it('sends the lock limit on create, omits it when empty, and null clears it on patch', async () => {
+    const fn = stub(repo('alice', 'a'), repo('alice', 'b'), repo('alice', 'b'))
+    const s = { name: 'a', visibility: 'private' as const, lease_hours: 8 }
+    await createRepo('alice', { ...s, max_locks_per_user: 4 })
+    await createRepo('alice', { ...s, max_locks_per_user: null })
+    await updateRepo({ owner: 'alice', name: 'b' }, { max_locks_per_user: null })
+    expect(JSON.parse(fn.mock.calls[0][1].body).max_locks_per_user).toBe(4)
+    expect(JSON.parse(fn.mock.calls[1][1].body)).not.toHaveProperty('max_locks_per_user')
+    expect(JSON.parse(fn.mock.calls[2][1].body)).toEqual({ max_locks_per_user: null })
+  })
+
   it('encodes path segments', async () => {
     const fn = stub({})
     fn.mockResolvedValueOnce({ ok: true, status: 204 })
@@ -199,6 +212,53 @@ describe('PynRepoForm', () => {
     })
     expect((w.find('input').element as HTMLInputElement).value).toBe('game')
     expect(w.find('button').text()).toBe('Save changes')
+  })
+})
+
+describe('PynRepoForm lock limit', () => {
+  const base = { name: 'game', visibility: 'public' as const, lease_hours: 12 }
+  const mountEdit = (extra: object, effective = 10) =>
+    mount(PynRepoForm, {
+      props: { owner: 'alice', repo: { ...base, ...extra }, effectiveMaxLocks: effective },
+    })
+  const limit = (w: ReturnType<typeof mount>) => w.findAll('input[type=number]')[1]
+
+  it('emits the typed limit on create and nothing when empty', async () => {
+    const w = mount(PynRepoForm, { props: { owner: 'alice' } })
+    await w.find('input').setValue('game')
+    await limit(w).setValue('5')
+    await w.find('form').trigger('submit')
+    expect(w.emitted('submit')?.[0][0]).toMatchObject({ max_locks_per_user: 5 })
+    await limit(w).setValue('')
+    await w.find('form').trigger('submit')
+    expect(w.emitted('submit')?.[1][0]).not.toHaveProperty('max_locks_per_user')
+  })
+
+  it('shows the stored setting and clears it with null when emptied', async () => {
+    const w = mountEdit({ max_locks_per_user_setting: 5 }, 5)
+    expect((limit(w).element as HTMLInputElement).value).toBe('5')
+    await limit(w).setValue('')
+    await w.find('form').trigger('submit')
+    expect(w.emitted('submit')?.[0][0]).toMatchObject({ max_locks_per_user: null })
+    expect(limit(w).attributes('placeholder')).toBe('Server default (5)')
+  })
+
+  it('is read-only with a note and sends no limit while the policy file sets it', async () => {
+    const w = mountEdit({ max_locks_per_user_setting: 5, max_locks_set_by_policy: true }, 3)
+    expect((limit(w).element as HTMLInputElement).value).toBe('3')
+    expect(limit(w).attributes('readonly')).toBeDefined()
+    expect(w.text()).toContain('.pyn/pyn.toml')
+    await w.find('form').trigger('submit')
+    expect(w.emitted('submit')?.[0][0]).not.toHaveProperty('max_locks_per_user')
+  })
+})
+
+describe('parseLockLimit', () => {
+  it('reads whole numbers, empty as null and junk as NaN', () => {
+    expect(parseLockLimit('7')).toBe(7)
+    expect(parseLockLimit('')).toBeNull()
+    expect(parseLockLimit(null)).toBeNull()
+    expect(parseLockLimit('1.5')).toBeNaN()
   })
 })
 
