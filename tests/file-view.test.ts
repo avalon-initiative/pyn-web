@@ -120,6 +120,21 @@ describe('markdown state', () => {
     expect(html.match(/target="_blank"/g)).toHaveLength(1)
   })
 
+  it('gives headings GitHub-style ids, suffixing duplicates', () => {
+    const html = render('# Hello, World!\n\n## Setup\n\n## Setup\n\n## Setup')
+    expect(html).toContain('<h1 id="hello-world">')
+    expect(html).toContain('<h2 id="setup">')
+    expect(html).toContain('id="setup-1"')
+    expect(html).toContain('id="setup-2"')
+  })
+
+  it('never trusts authored ids or reserved heading ids', () => {
+    const html = render('<div id="app" name="x">a</div>\n\n# App\n\n## L12')
+    expect(html).not.toMatch(/<div[^>]*(id|name)=/)
+    expect(html).toContain('id="app-1"')
+    expect(html).toContain('id="l12"')
+  })
+
   it('highlights fenced code and renders tables', () => {
     const html = render('```js\nconst a = 1\n```\n\n| a |\n|---|\n| b |')
     expect(html).toContain('hljs-keyword')
@@ -256,6 +271,19 @@ describe('file components', () => {
     expect(w.find('h1').text()).toBe('Castle Quest')
     expect(w.find('script').exists()).toBe(false)
     expect(w.find('a[href="/acme/castle-quest/blob/Content/Levels/Notes.md"]').exists()).toBe(true)
+  })
+
+  it('scrolls to a rendered heading by its slug', () => {
+    const w = mount(PynMarkdown, {
+      props: { source: '[go](#setup)\n\n## Setup', ...r },
+      attachTo: document.body,
+    })
+    const el = w.find('h2').element
+    el.scrollIntoView = vi.fn()
+    el.getBoundingClientRect = () => ({ top: 5000, bottom: 5020 }) as DOMRect
+    expect(scrollToHash('#setup')).toBe(true)
+    expect(el.scrollIntoView).toHaveBeenCalledOnce()
+    w.unmount()
   })
 
   it('links the README to its file and renders it', () => {

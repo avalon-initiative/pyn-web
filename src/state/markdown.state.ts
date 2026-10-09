@@ -41,6 +41,41 @@ export function resolveRelative(dir: string, href: string): string | null {
   return parts.join('/')
 }
 
+/** GitHub-style heading slug: lowercase, punctuation dropped, spaces to hyphens. */
+export function slugify(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\p{M}\s_-]/gu, '')
+    .replace(/\s/g, '-')
+}
+
+const RESERVED = /^(app|L\d+(-L\d+)?)$/
+
+/** True when an id belongs to the app or a line anchor rather than rendered markdown. */
+function isTaken(id: string): boolean {
+  if (RESERVED.test(id)) return true
+  const el = document.getElementById(id)
+  return !!el && !el.closest('[data-markdown]')
+}
+
+/** Drops authored ids and names, then gives each heading a unique slug id. */
+function assignHeadingIds(doc: DocumentFragment) {
+  for (const el of doc.querySelectorAll('[id], [name]')) {
+    el.removeAttribute('id')
+    el.removeAttribute('name')
+  }
+  const used = new Set<string>()
+  for (const h of doc.querySelectorAll('h1, h2, h3, h4, h5, h6')) {
+    const base = slugify(h.textContent ?? '')
+    if (!base) continue
+    let id = base
+    for (let n = 1; used.has(id) || isTaken(id); n++) id = `${base}-${n}`
+    used.add(id)
+    h.id = id
+  }
+}
+
 /** Safe HTML for markdown; relative links open in the viewer, relative images load from the server. */
 export function renderMarkdown(source: string, repo: Repo, dir: string): string {
   const raw = marked.parse(source, { async: false })
@@ -60,6 +95,7 @@ export function renderMarkdown(source: string, repo: Repo, dir: string): string 
     const path = resolveRelative(dir, img.getAttribute('src') ?? '')
     if (path !== null) img.setAttribute('src', contentUrl(repo, path))
   }
+  assignHeadingIds(doc)
   const host = document.createElement('div')
   host.append(doc)
   return host.innerHTML

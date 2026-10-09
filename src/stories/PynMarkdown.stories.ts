@@ -11,3 +11,7 @@ export default meta
 type Story = StoryObj<typeof PynMarkdown>
 
 export const Document: Story = {}
+
+export const HeadingAnchors: Story = {
+  args: { source: '[Jump to Setup](#setup)\n\n## Usage\n\nText.\n\n## Setup\n\n## Setup\n' },
+}

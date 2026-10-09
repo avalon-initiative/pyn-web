@@ -18,5 +18,5 @@ const html = computed(() =>
 
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -- sanitised by DOMPurify in renderMarkdown -->
-  <div :class="styles.markdown" v-html="html" />
+  <div data-markdown :class="styles.markdown" v-html="html" />
 </template>
