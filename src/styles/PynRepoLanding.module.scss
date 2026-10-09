@@ -1,0 +1,46 @@
+@use 'mixins' as m;
+
+.landing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: var(--pyn-space-6);
+  align-items: start;
+
+  @media (max-width: 64rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-4);
+  min-width: 0;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-6);
+  padding-left: var(--pyn-space-6);
+  border-left: 1px solid var(--pyn-border);
+
+  @media (max-width: 64rem) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+.missing {
+  @include m.card;
+  padding: var(--pyn-space-6);
+  text-align: center;
+
+  p {
+    margin: 0 0 var(--pyn-space-2);
+  }
+
+  a {
+    color: var(--pyn-accent);
+  }
+}

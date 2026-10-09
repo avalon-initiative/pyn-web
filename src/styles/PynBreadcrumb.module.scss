@@ -1,0 +1,34 @@
+@use 'mixins' as m;
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--pyn-font-mono);
+  font-size: 0.875rem;
+}
+
+.item + .item::before {
+  content: '/';
+  padding: 0 var(--pyn-space-2);
+  color: var(--pyn-text-muted);
+}
+
+.link {
+  color: var(--pyn-accent);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  @include m.focus-ring;
+}
+
+.current {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

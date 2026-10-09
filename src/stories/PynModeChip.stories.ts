@@ -7,3 +7,4 @@ type Story = StoryObj<typeof PynModeChip>
 
 export const Shared: Story = { args: { mode: 'shared' } }
 export const Exclusive: Story = { args: { mode: 'exclusive' } }
+export const Mixed: Story = { args: { mode: 'mixed' } }

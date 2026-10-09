@@ -23,6 +23,7 @@ export const routes = [
     component: RepoView,
     children: [
       { path: '', name: 'files', component: RepoFilesView },
+      { path: 'tree/:path(.*)?', name: 'tree', component: RepoFilesView },
       { path: 'locks', name: 'locks', component: RepoLocksView },
       { path: 'history', name: 'history', component: RepoHistoryView },
       { path: 'audit', name: 'audit', component: RepoAuditView },

@@ -1,0 +1,68 @@
+@use 'mixins' as m;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--pyn-text-md);
+}
+
+.more {
+  color: var(--pyn-accent);
+  font-size: var(--pyn-text-sm);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  @include m.focus-ring;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--pyn-space-1) var(--pyn-space-3);
+  align-items: start;
+
+  > :last-child {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+.icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.125rem;
+  color: var(--pyn-text-muted);
+}
+
+.path {
+  font-family: var(--pyn-font-mono);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  @include m.muted;
+}

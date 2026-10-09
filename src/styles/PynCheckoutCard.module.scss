@@ -1,0 +1,35 @@
+@use 'mixins' as m;
+
+.card {
+  @include m.card;
+  display: flex;
+  align-items: center;
+  gap: var(--pyn-space-4);
+  padding: var(--pyn-space-4) var(--pyn-space-6);
+}
+
+.badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  color: var(--pyn-locked);
+  background: var(--pyn-locked-bg);
+  border-radius: 50%;
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--pyn-text-md);
+}
+
+.text {
+  @include m.muted;
+  margin-top: var(--pyn-space-1);
+}

@@ -10,6 +10,7 @@ import type {
   Revision,
   RoleGrant,
 } from '../types/repo.types'
+import type { RepoSummary, TreeListing } from '../types/tree.types'
 import { send } from './auth'
 
 type Repo = { owner: string; name: string }
@@ -47,6 +48,12 @@ export async function fetchFiles(r: Repo): Promise<FileRow[]> {
   } while (after)
   return rows
 }
+
+export const fetchTree = (r: Repo, path = '') =>
+  send<TreeListing>('GET', `${base(r)}/tree${query({ path })}`)
+
+export const fetchSummary = (r: Repo, activity = 6) =>
+  send<RepoSummary>('GET', `${base(r)}/summary${query({ activity })}`)
 
 export const listLocks = (r: Repo) => send<LockInfo[]>('GET', `${base(r)}/locks`)
 

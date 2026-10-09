@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import styles from '../styles/PynModeChip.module.scss'
-import type { Mode } from '../types/lock.types'
+import type { TreeMode } from '../types/tree.types'
 
-defineProps<{ mode: Mode }>()
+const LABELS = { shared: 'Shared', exclusive: 'Exclusive', mixed: 'Mixed' } as const
+
+defineProps<{ mode: TreeMode }>()
 </script>
 
 <template>
-  <span :class="[styles.chip, styles[mode]]" :data-mode="mode">{{
-    mode === 'exclusive' ? 'Exclusive' : 'Shared'
-  }}</span>
+  <span :class="[styles.chip, styles[mode]]" :data-mode="mode">{{ LABELS[mode] }}</span>
 </template>
