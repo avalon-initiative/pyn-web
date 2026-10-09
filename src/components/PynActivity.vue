@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import styles from '../styles/PynActivity.module.scss'
+import { formatDateTime } from '../state/datetime.state'
 import { activityVerb, formatAgo } from '../state/tree.state'
 import type { ActivityEntry } from '../types/tree.types'
 
@@ -19,7 +20,7 @@ defineProps<{ entries: ActivityEntry[]; now?: Date }>()
             <strong>{{ e.actor }}</strong> {{ activityVerb(e) }}
             <span v-if="e.path" :class="styles.path">{{ e.path }}</span>
           </p>
-          <time :class="styles.time" :datetime="e.at">{{
+          <time :class="styles.time" :datetime="e.at" :title="formatDateTime(e.at)">{{
             formatAgo(e.at, now ?? new Date())
           }}</time>
         </div>

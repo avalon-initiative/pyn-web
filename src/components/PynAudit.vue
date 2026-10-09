@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import styles from '../styles/PynAudit.module.scss'
+import { formatDateTime } from '../state/datetime.state'
 import { AUDIT_ACTIONS } from '../state/repo.state'
 import type { AuditEntry, AuditFilter } from '../types/repo.types'
 
@@ -35,7 +36,7 @@ const form = reactive({ ...props.filter })
           <span v-if="e.path" :class="styles.path"> {{ e.path }}</span>
           <div :class="styles.meta">{{ e.detail }}</div>
         </div>
-        <div :class="styles.meta">{{ e.actor }} · {{ e.at.slice(0, 16).replace('T', ' ') }}</div>
+        <div :class="styles.meta">{{ e.actor }} · {{ formatDateTime(e.at) }}</div>
       </li>
     </ul>
     <p v-else :class="styles.empty">No matching events.</p>
