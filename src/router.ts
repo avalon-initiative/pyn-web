@@ -14,12 +14,14 @@ import RepoLocksView from './views/RepoLocksView.vue'
 import RepoMembersView from './views/RepoMembersView.vue'
 import RepoRolesView from './views/RepoRolesView.vue'
 import RepoSettingsView from './views/RepoSettingsView.vue'
+import VerifyEmailView from './views/VerifyEmailView.vue'
 import RepoView from './views/RepoView.vue'
 import ReposView from './views/ReposView.vue'
 
 // Account pages live under "/_/": a user name has at least two characters, so it cannot collide.
 export const routes = [
   { path: '/', name: 'repos', component: ReposView },
+  { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
   {

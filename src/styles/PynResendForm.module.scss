@@ -1,0 +1,43 @@
+@use 'mixins' as m;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+}
+
+.field {
+  @include m.field;
+}
+
+.input {
+  padding: var(--pyn-space-2) var(--pyn-space-3);
+  color: var(--pyn-text);
+  background: var(--pyn-bg);
+  border: 1px solid var(--pyn-border);
+  border-radius: var(--pyn-radius);
+
+  @include m.focus-ring;
+}
+
+.button {
+  @include m.button;
+}
+
+.sent,
+.error {
+  margin: 0;
+  padding: var(--pyn-space-2) var(--pyn-space-3);
+  border-radius: var(--pyn-radius);
+  font-size: 0.875rem;
+}
+
+.sent {
+  color: var(--pyn-available);
+  background: var(--pyn-available-bg);
+}
+
+.error {
+  color: var(--pyn-danger);
+  background: var(--pyn-danger-bg);
+}

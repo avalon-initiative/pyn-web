@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest'
 import PynFileList from '../src/components/PynFileList.vue'
 import PynLockBadge from '../src/components/PynLockBadge.vue'
 import PynKeys from '../src/components/PynKeys.vue'
+import PynAccountNotice from '../src/components/PynAccountNotice.vue'
+import PynResendForm from '../src/components/PynResendForm.vue'
 import PynSignIn from '../src/components/PynSignIn.vue'
+import PynVerifyEmail from '../src/components/PynVerifyEmail.vue'
 import { csrfHeaders, setCsrfToken } from '../src/state/csrf.state'
 import { groupByTopLevel, splitPath } from '../src/state/files.state'
 import { formatLease, lockState } from '../src/state/lease.state'
@@ -178,6 +181,77 @@ describe('PynSignIn', () => {
       props: { registration: null, error: 'wrong user name or password' },
     })
     expect(w.find('[role=alert]').text()).toContain('wrong user name')
+  })
+})
+
+describe('sign-up and account states', () => {
+  const fillAll = async (w: ReturnType<typeof mount>, values: string[]) => {
+    const inputs = w.findAll('input')
+    for (const [i, v] of values.entries()) await inputs[i].setValue(v)
+  }
+
+  it('asks for an email on open servers that verify addresses', async () => {
+    const w = mount(PynSignIn, { props: { registration: 'open', emailVerification: true } })
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Create an account')!
+      .trigger('click')
+    expect(w.findAll('input')).toHaveLength(3)
+    await fillAll(w, ['wendy', 'a long password', 'w@example.com'])
+    await w.find('form').trigger('submit')
+    expect(w.emitted('register')?.[0]).toEqual([
+      { username: 'wendy', password: 'a long password', email: 'w@example.com', invite: undefined },
+    ])
+  })
+
+  it.each([
+    ['pending_verification', 'Check your email'],
+    ['pending_approval', 'Waiting for approval'],
+    ['account_disabled', 'Account disabled'],
+  ] as const)('shows the %s state instead of the form', async (status, title) => {
+    const w = mount(PynSignIn, {
+      props: { registration: 'open', notice: { status, user: 'wendy' } },
+    })
+    expect(w.find('form input[autocomplete=username]').exists()).toBe(false)
+    expect(w.text()).toContain(title)
+    expect(w.text()).toContain('wendy')
+    expect(w.findAll('input[type=email]')).toHaveLength(status === 'pending_verification' ? 1 : 0)
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Back to sign in')!
+      .trigger('click')
+    expect(w.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('emits the address to resend to and confirms without revealing the account', async () => {
+    const w = mount(PynAccountNotice, { props: { status: 'pending_verification', sent: true } })
+    await w.find('input').setValue('w@example.com')
+    await w.find('form').trigger('submit')
+    expect(w.emitted('resend')?.[0]).toEqual(['w@example.com'])
+    expect(w.find('[role=status]').text()).toContain('If that address')
+  })
+
+  it('renders the resend form states', () => {
+    const w = mount(PynResendForm, { props: { sent: true, error: 'Too many attempts.' } })
+    expect(w.find('[role=status]').exists()).toBe(true)
+    expect(w.find('[role=alert]').text()).toContain('Too many')
+  })
+
+  it('shows the verification outcomes', () => {
+    const outcome = (props: object) => mount(PynVerifyEmail, { props: props as never })
+    expect(outcome({ outcome: 'verifying' }).text()).toContain('Verifying')
+    const ok = outcome({ outcome: 'verified', status: 'active', user: 'wendy' })
+    expect(ok.text()).toContain('You can sign in now')
+    expect(ok.find('a').attributes('href')).toBe('/')
+    const wait = outcome({ outcome: 'verified', status: 'pending_approval' })
+    expect(wait.text()).toContain('must approve')
+    const bad = outcome({
+      outcome: 'invalid',
+      resendError: 'Too many attempts. Try again in 5 minutes.',
+    })
+    expect(bad.text()).toContain('Link not valid')
+    expect(bad.find('input[type=email]').exists()).toBe(true)
+    expect(bad.text()).toContain('5 minutes')
   })
 })
 
