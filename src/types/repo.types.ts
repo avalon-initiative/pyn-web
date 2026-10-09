@@ -33,7 +33,10 @@ export type RepoFormValue = RepoSettings &
 /** Mirrors the server's `Member`. */
 export interface Member {
   user: string
+  /** The effective role. */
   role: string
+  /** What decides the role. */
+  source: 'direct' | 'team' | 'org_owner'
 }
 
 /** Mirrors the server's `RoleGrant`. */

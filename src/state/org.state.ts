@@ -21,7 +21,8 @@ export interface OrgTab {
 /** Tabs the viewer may use; the server enforces the same rules. */
 export function orgTabs(role: OrgRole | null | undefined): OrgTab[] {
   const tabs: OrgTab[] = [{ section: '', label: 'Repositories' }]
-  if (role) tabs.push({ section: 'members', label: 'Members' })
+  if (role)
+    tabs.push({ section: 'members', label: 'Members' }, { section: 'teams', label: 'Teams' })
   if (role === 'owner')
     tabs.push({ section: 'audit', label: 'Audit' }, { section: 'settings', label: 'Settings' })
   return tabs

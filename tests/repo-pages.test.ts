@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { ApiError, describeError } from '../src/api/client'
 import { createRepo, fetchFiles, setMember, updateRepo } from '../src/api/repos'
+import PynAddPerson from '../src/components/PynAddPerson.vue'
 import PynAudit from '../src/components/PynAudit.vue'
 import PynHistory from '../src/components/PynHistory.vue'
 import PynInvites from '../src/components/PynInvites.vue'
@@ -461,19 +462,53 @@ describe('PynAudit', () => {
 })
 
 describe('PynMembers', () => {
-  const props = { members: [{ user: 'bob', role: 'writer' }], roles: ['reader', 'writer'] }
+  const grantees = [
+    { name: 'bob', role: 'writer', source: 'direct' as const },
+    { name: 'carol', role: 'admin', source: 'org_owner' as const },
+    { name: 'dave', role: 'reader', source: 'team' as const },
+  ]
+  const roles = ['reader', 'writer']
 
-  it('emits a role change and a new person', async () => {
-    const w = mount(PynMembers, { props })
-    await w.findAll('select')[0].setValue('reader')
-    expect(w.emitted('setRole')?.[0]).toEqual([{ user: 'bob', role: 'reader' }])
-    const inputs = w.find('form').findAll('input')
+  it('emits a role change for a direct grant only and explains the others', async () => {
+    const w = mount(PynMembers, { props: { grantees, roles } })
+    expect(w.findAll('select')).toHaveLength(1)
+    await w.find('select').setValue('reader')
+    expect(w.emitted('setRole')?.[0]).toEqual([{ name: 'bob', role: 'reader' }])
+    expect(w.findAll('[data-role]').map((e) => e.text())).toEqual(['admin', 'reader'])
+    const notes = w.findAll('[data-source]').map((e) => e.text())
+    expect(notes[0]).toContain('owning the organization')
+    expect(notes[1]).toContain('team')
+  })
+
+  it('revokes team grants and links the team', async () => {
+    const w = mount(PynMembers, {
+      props: {
+        grantees: [{ name: 'artists', role: 'writer', href: '/studio/-/teams/artists' }],
+        roles,
+        kind: 'team',
+        revocable: true,
+      },
+    })
+    expect(w.find('a').attributes('href')).toBe('/studio/-/teams/artists')
+    await w.find('button').trigger('click')
+    expect(w.emitted('revoke')?.[0]).toEqual(['artists'])
+    expect(mount(PynMembers, { props: { grantees: [], roles, kind: 'team' } }).text()).toBe(
+      'No teams.',
+    )
+  })
+})
+
+describe('PynAddPerson', () => {
+  it('emits a new person and clears the form', async () => {
+    const w = mount(PynAddPerson, { props: { roles: ['reader', 'writer'] } })
+    const inputs = w.findAll('input')
     await inputs[0].setValue('wendy')
     await inputs[1].setValue('a long password')
     await w.find('form').trigger('submit')
     expect(w.emitted('addUser')?.[0]).toEqual([
       { username: 'wendy', password: 'a long password', role: 'reader' },
     ])
+    expect((inputs[0].element as HTMLInputElement).value).toBe('')
   })
 })
 

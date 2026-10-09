@@ -14,6 +14,8 @@ export interface RepoContext {
   target: ComputedRef<{ owner: string; name: string }>
   repo: Ref<RepoInfo | null>
   permissions: Ref<string[]>
+  /** The owning organization; null for a user-owned repository. */
+  org: Ref<OrgInfo | null>
   reload: () => Promise<void>
 }
 

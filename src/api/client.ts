@@ -30,6 +30,10 @@ const FRIENDLY: Record<string, string> = {
   user_not_org_member: 'That user is not a member of the organization.',
   already_org_member: 'That account is already a member of the organization.',
   org_member_not_found: 'That account is not a member of the organization.',
+  team_exists: 'A team with that name already exists in the organization.',
+  team_not_found: 'That team does not exist.',
+  team_member_not_found: 'That user is not in the team.',
+  not_org_repo: 'Only repositories owned by an organization can grant roles to teams.',
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 

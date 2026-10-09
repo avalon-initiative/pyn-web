@@ -63,6 +63,7 @@ provide(repoKey, {
   target,
   repo,
   permissions,
+  org,
   reload: async () => void (await load()),
 })
 
