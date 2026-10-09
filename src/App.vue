@@ -6,8 +6,16 @@ import PynShell from './components/PynShell.vue'
 import PynSideNav from './components/PynSideNav.vue'
 import PynSignIn from './components/PynSignIn.vue'
 import PynTopBar from './components/PynTopBar.vue'
-import { fetchRegistration, register, restoreSession, signIn, signOut } from './api/auth'
+import {
+  fetchRegistration,
+  register,
+  resendVerification,
+  restoreSession,
+  signIn,
+  signOut,
+} from './api/auth'
 import { describeError } from './api/client'
+import { blockedStatus } from './state/account.state'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { internalPath } from './state/links.state'
@@ -16,14 +24,16 @@ import { activeNav, mainNav } from './state/shell.state'
 import { applyTheme, loadTheme, saveTheme } from './state/theme.state'
 import type { ThemeChoice } from './state/theme.state'
 import type { RepoInfo } from './types/repo.types'
-import type { RegisterForm, RegistrationMode, SignInForm } from './types/auth.types'
+import type { BlockedStatus, RegisterForm, RegistrationInfo, SignInForm } from './types/auth.types'
 
 const router = useRouter()
 const route = useRoute()
 const user = ref('')
 const error = ref('')
 const busy = ref(false)
-const registration = ref<RegistrationMode | null>(null)
+const registration = ref<RegistrationInfo | null>(null)
+const notice = ref<{ status: BlockedStatus; user?: string } | null>(null)
+const resent = ref(false)
 const ready = ref(false)
 const repos = ref<RepoInfo[]>([])
 const theme = ref<ThemeChoice>(loadTheme())
@@ -58,22 +68,42 @@ async function attempt(action: () => Promise<void>) {
   try {
     await action()
   } catch (e) {
-    error.value = describeError(e)
+    const status = blockedStatus(e)
+    if (status) notice.value = { status, user: pendingUser.value }
+    else error.value = describeError(e)
   } finally {
     busy.value = false
   }
 }
 
+const pendingUser = ref('')
+
 const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
+    pendingUser.value = form.username
     user.value = (await signIn(form)).user
   })
 
 const join = (form: RegisterForm) =>
   attempt(async () => {
-    await register(form)
-    user.value = (await signIn(form)).user
+    pendingUser.value = form.username
+    const { status } = await register(form)
+    if (status === 'active') user.value = (await signIn(form)).user
+    else notice.value = { status, user: form.username }
   })
+
+const resend = (email: string) =>
+  attempt(async () => {
+    resent.value = false
+    await resendVerification(email)
+    resent.value = true
+  })
+
+function dismissNotice() {
+  notice.value = null
+  resent.value = false
+  error.value = ''
+}
 
 async function leave() {
   await signOut().catch(() => undefined)
@@ -98,12 +128,19 @@ onMounted(async () => {
 <template>
   <div :class="styles.page" @click="followLink">
     <main v-if="ready && !user" :class="styles.signedOut">
+      <RouterView v-if="route.name === 'verify-email'" />
       <PynSignIn
-        :registration="registration"
+        v-else
+        :registration="registration?.registration ?? null"
+        :email-verification="registration?.email_verification"
+        :notice="notice"
+        :resent="resent"
         :busy="busy"
         :error="error"
         @sign-in="submitSignIn"
         @register="join"
+        @resend="resend"
+        @dismiss="dismissNotice"
       />
     </main>
     <template v-else-if="user">

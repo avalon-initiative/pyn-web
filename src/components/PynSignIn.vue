@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import styles from '../styles/PynSignIn.module.scss'
-import type { RegisterForm, RegistrationMode, SignInForm } from '../types/auth.types'
+import PynAccountNotice from './PynAccountNotice.vue'
+import type { BlockedStatus, RegisterForm, RegistrationMode, SignInForm } from '../types/auth.types'
 
 const props = defineProps<{
   registration: RegistrationMode | null
+  emailVerification?: boolean
+  notice?: { status: BlockedStatus; user?: string } | null
+  resent?: boolean
   busy?: boolean
   error?: string
 }>()
@@ -12,6 +16,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   signIn: [SignInForm]
   register: [RegisterForm]
+  resend: [string]
+  dismiss: []
 }>()
 
 type View = 'sign-in' | 'register'
@@ -19,8 +25,10 @@ const view = ref<View>('sign-in')
 const username = ref('')
 const password = ref('')
 const invite = ref('')
+const email = ref('')
 
 const canRegister = computed(() => props.registration === 'open' || props.registration === 'invite')
+const needsEmail = computed(() => props.registration === 'open' && !!props.emailVerification)
 const needsInvite = computed(() => props.registration === 'invite')
 const title = computed(() => ({ 'sign-in': 'Sign in', register: 'Create an account' })[view.value])
 
@@ -31,6 +39,7 @@ function submit() {
     emit('register', {
       username: username.value,
       password: password.value,
+      email: needsEmail.value ? email.value : undefined,
       invite: invite.value.trim() || undefined,
     })
   }
@@ -38,7 +47,17 @@ function submit() {
 </script>
 
 <template>
-  <form :class="styles.card" @submit.prevent="submit">
+  <PynAccountNotice
+    v-if="notice"
+    :status="notice.status"
+    :user="notice.user"
+    :busy="busy"
+    :sent="resent"
+    :error="error"
+    @resend="(address) => emit('resend', address)"
+    @back="emit('dismiss')"
+  />
+  <form v-else :class="styles.card" @submit.prevent="submit">
     <h2 :class="styles.title">{{ title }}</h2>
 
     <label :class="styles.field"
@@ -52,6 +71,16 @@ function submit() {
         :class="styles.input"
         type="password"
         :autocomplete="view === 'register' ? 'new-password' : 'current-password'"
+        required
+      />
+    </label>
+    <label v-if="view === 'register' && needsEmail" :class="styles.field"
+      >Email address
+      <input
+        v-model.trim="email"
+        :class="styles.input"
+        type="email"
+        autocomplete="email"
         required
       />
     </label>

@@ -1,5 +1,11 @@
 import { csrfHeaders, setCsrfToken } from '../state/csrf.state'
-import type { RegisterForm, RegistrationMode, Session, SignInForm } from '../types/auth.types'
+import type {
+  RegisterForm,
+  Registered,
+  RegistrationInfo,
+  Session,
+  SignInForm,
+} from '../types/auth.types'
 import { ApiError } from './client'
 
 /** The `ApiError` for a non-2xx response, from the server's error body when it has one. */
@@ -7,7 +13,8 @@ export async function failure(res: Response): Promise<ApiError> {
   const err = await res
     .json()
     .catch(() => ({ code: 'error', message: `server returned ${res.status}` }))
-  return new ApiError(res.status, err.code, err.message)
+  const wait = Number.parseInt(res.headers.get('Retry-After') ?? '', 10)
+  return new ApiError(res.status, err.code, err.message, Number.isNaN(wait) ? undefined : wait)
 }
 
 export async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -20,10 +27,7 @@ export async function send<T>(method: string, path: string, body?: unknown): Pro
   return res.status === 204 ? (undefined as T) : res.json()
 }
 
-export async function fetchRegistration(): Promise<RegistrationMode> {
-  const info = await send<{ registration: RegistrationMode }>('GET', '/v1/registration')
-  return info.registration
-}
+export const fetchRegistration = () => send<RegistrationInfo>('GET', '/v1/registration')
 
 /** The server sets the HttpOnly session cookie; the page only keeps the CSRF token. */
 export async function signIn(form: SignInForm): Promise<Session> {
@@ -44,9 +48,18 @@ export async function restoreSession(): Promise<Session | null> {
   }
 }
 
-export async function register(form: RegisterForm): Promise<void> {
-  await send('POST', '/v1/register', { ...form, invite: form.invite || null })
-}
+export const register = (form: RegisterForm) =>
+  send<Registered>('POST', '/v1/register', {
+    ...form,
+    email: form.email || null,
+    invite: form.invite || null,
+  })
+
+export const verifyEmail = (token: string) =>
+  send<Registered>('POST', '/v1/register/verify', { token })
+
+export const resendVerification = (email: string) =>
+  send<void>('POST', '/v1/register/resend', { email })
 
 /** Ends the session on the server; the caller forgets it either way. */
 export async function signOut(): Promise<void> {

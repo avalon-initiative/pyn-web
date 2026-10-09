@@ -1,8 +1,11 @@
+import { formatWait } from '../state/wait.state'
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
     message: string,
+    readonly retryAfter?: number,
   ) {
     super(message)
   }
@@ -15,9 +18,13 @@ const FRIENDLY: Record<string, string> = {
     'Use 1 to 100 lowercase letters, digits, "-", "_" or ".", starting with a letter or digit and not ending in ".".',
   path_not_found: 'That folder does not exist in this repository.',
   not_namespace_owner: 'Only the repository owner, as an admin, can do that.',
+  invalid_verification: 'This verification link is not valid. It may be used already or expired.',
+  user_exists: 'That user name is already taken.',
 }
 
 export function describeError(e: unknown): string {
+  if (e instanceof ApiError && e.code === 'too_many_attempts')
+    return `Too many attempts. Try again in ${formatWait(e.retryAfter)}.`
   if (e instanceof ApiError) return FRIENDLY[e.code] ?? e.message
   return `Could not reach pyn-server: ${e instanceof Error ? e.message : String(e)}`
 }

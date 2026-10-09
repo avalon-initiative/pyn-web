@@ -15,3 +15,30 @@ export const ClosedServer: Story = { args: { registration: 'closed' } }
 export const WrongPassword: Story = {
   args: { error: 'authentication failed: wrong user name or password' },
 }
+export const OpenServerWithVerification: Story = {
+  args: { registration: 'open', emailVerification: true },
+}
+export const RateLimited: Story = {
+  args: { error: 'Too many attempts. Try again in 12 minutes.' },
+}
+export const EmailNotVerified: Story = {
+  args: {
+    registration: 'open',
+    emailVerification: true,
+    notice: { status: 'pending_verification', user: 'wendy' },
+  },
+}
+export const VerificationResent: Story = {
+  args: {
+    registration: 'open',
+    emailVerification: true,
+    notice: { status: 'pending_verification', user: 'wendy' },
+    resent: true,
+  },
+}
+export const AwaitingApproval: Story = {
+  args: { notice: { status: 'pending_approval', user: 'wendy' } },
+}
+export const AccountDisabled: Story = {
+  args: { notice: { status: 'account_disabled', user: 'wendy' } },
+}

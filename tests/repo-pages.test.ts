@@ -171,6 +171,7 @@ describe('repository api', () => {
       vi.fn().mockResolvedValue({
         ok: false,
         status: 404,
+        headers: new Headers(),
         json: async () => ({ code: 'repo_not_found', message: 'nope' }),
       }),
     )
@@ -373,7 +374,7 @@ describe('history view', () => {
     next_cursor: next,
   })
   const reply = (body: unknown, status = 200) =>
-    ({ ok: status < 400, status, json: async () => body }) as Response
+    ({ ok: status < 400, status, headers: new Headers(), json: async () => body }) as Response
 
   async function mountView(fn: ReturnType<typeof vi.fn>, url = '/alice/game/history') {
     vi.stubGlobal('fetch', fn)
