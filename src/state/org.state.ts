@@ -1,4 +1,14 @@
-import type { OrgInfo, OrgMember, OrgRole } from '../types/org.types'
+import type {
+  CreationRule,
+  MemberCreation,
+  OrgInfo,
+  OrgMember,
+  OrgRole,
+  RuleEffect,
+  RuleKind,
+  RuleRef,
+  RuleScope,
+} from '../types/org.types'
 
 export const ORG_ROLES: OrgRole[] = ['member', 'owner']
 
@@ -28,12 +38,40 @@ export function orgTabs(role: OrgRole | null | undefined): OrgTab[] {
   return tabs
 }
 
-/** Who may own a new repository: the user, then the organizations they own. */
+/** Who may own a new repository: the user, then every organization they belong to. */
 export function ownerChoices(user: string, orgs: OrgInfo[]): string[] {
-  return [user, ...sortOrgs(orgs.filter(isOrgOwner)).map((o) => o.name)]
+  return [user, ...sortOrgs(orgs.filter((o) => o.role)).map((o) => o.name)]
 }
 
 /** Owners remove anyone; anyone may remove themselves (leave). */
 export function canRemove(m: OrgMember, self: string, viewerIsOwner: boolean): boolean {
   return viewerIsOwner || m.user === self
 }
+
+export const MEMBER_CREATION: { value: MemberCreation; label: string }[] = [
+  { value: 'none', label: 'Nobody but owners' },
+  { value: 'private', label: 'Members: private repositories' },
+  { value: 'both', label: 'Members: public and private repositories' },
+]
+
+export const RULE_EFFECTS: RuleEffect[] = ['allow', 'deny']
+export const RULE_KINDS: RuleKind[] = ['team', 'user', 'role']
+export const RULE_SCOPES: RuleScope[] = ['both', 'private', 'public']
+
+export const ruleKey = (r: RuleRef) => `${r.effect}/${r.kind}/${r.subject}`
+
+/** Subjects a new rule may name; owners cannot be denied. */
+export function ruleSubjects(
+  kind: RuleKind,
+  effect: RuleEffect,
+  teams: string[],
+  members: string[],
+): string[] {
+  if (kind === 'team') return teams
+  if (kind === 'user') return members
+  return effect === 'deny' ? ['member'] : ['member', 'owner']
+}
+
+/** Whether the rule already exists, so adding it would replace its scope. */
+export const hasRule = (rules: CreationRule[], r: RuleRef) =>
+  rules.some((x) => ruleKey(x) === ruleKey(r))

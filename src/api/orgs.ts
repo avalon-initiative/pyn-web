@@ -1,5 +1,15 @@
 import type { AuditPage } from '../types/repo.types'
-import type { NewOrgMember, OrgInfo, OrgMember, OrgRole } from '../types/org.types'
+import type {
+  CreationRule,
+  MemberCreation,
+  NewOrgMember,
+  OrgInfo,
+  OrgMember,
+  OrgRole,
+  RepoPolicy,
+  RuleRef,
+  RuleScope,
+} from '../types/org.types'
 import { send } from './auth'
 
 const base = (org: string) => `/v1/orgs/${encodeURIComponent(org)}`
@@ -26,3 +36,16 @@ export const setOrgRole = (org: string, user: string, role: OrgRole) =>
 
 export const removeOrgMember = (org: string, user: string) =>
   send<void>('DELETE', member(org, user))
+
+const rule = (org: string, r: RuleRef) =>
+  `${base(org)}/repo-policy/rules/${r.effect}/${r.kind}/${encodeURIComponent(r.subject)}`
+
+export const getRepoPolicy = (org: string) => send<RepoPolicy>('GET', `${base(org)}/repo-policy`)
+
+export const setMemberCreation = (org: string, member_creation: MemberCreation) =>
+  send<RepoPolicy>('PUT', `${base(org)}/repo-policy`, { member_creation })
+
+export const setCreationRule = (org: string, r: RuleRef, scope: RuleScope) =>
+  send<CreationRule>('PUT', rule(org, r), { scope })
+
+export const removeCreationRule = (org: string, r: RuleRef) => send<void>('DELETE', rule(org, r))

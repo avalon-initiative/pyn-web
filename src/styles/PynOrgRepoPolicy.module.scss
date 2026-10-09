@@ -1,0 +1,76 @@
+@use 'mixins' as m;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pyn-space-3);
+}
+
+.heading,
+.subheading {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.note {
+  @include m.muted;
+}
+
+.list {
+  @include m.list;
+}
+
+.item {
+  @include m.item;
+}
+
+.subject,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pyn-space-2);
+}
+
+.kind {
+  @include m.muted;
+}
+
+.pill {
+  @include m.pill;
+
+  &[data-effect='deny'] {
+    color: var(--pyn-danger);
+    border-color: var(--pyn-danger);
+  }
+}
+
+.form {
+  @include m.form;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--pyn-space-3);
+}
+
+.field {
+  @include m.field;
+}
+
+.input {
+  @include m.input;
+}
+
+.primary {
+  @include m.button-primary;
+}
+
+.danger {
+  @include m.button(var(--pyn-danger));
+}
+
+.error {
+  @include m.error;
+}

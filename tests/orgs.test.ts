@@ -7,6 +7,7 @@ import PynOrgDelete from '../src/components/PynOrgDelete.vue'
 import PynOrgForm from '../src/components/PynOrgForm.vue'
 import PynOrgHeader from '../src/components/PynOrgHeader.vue'
 import PynOrgList from '../src/components/PynOrgList.vue'
+import PynOrgRepoPolicy from '../src/components/PynOrgRepoPolicy.vue'
 import PynOrgMembers from '../src/components/PynOrgMembers.vue'
 import PynRepoForm from '../src/components/PynRepoForm.vue'
 import PynRepoHeader from '../src/components/PynRepoHeader.vue'
@@ -14,11 +15,12 @@ import PynSideNav from '../src/components/PynSideNav.vue'
 import PynTopBar from '../src/components/PynTopBar.vue'
 import { makeRouter } from '../src/router'
 import { orgKey, sessionKey } from '../src/state/context.state'
-import { orgPath, orgTabs, ownerChoices } from '../src/state/org.state'
+import { orgPath, orgTabs, ownerChoices, ruleSubjects } from '../src/state/org.state'
 import { mainNav } from '../src/state/shell.state'
-import { orgMembers, orgs } from '../src/stories/org-data'
+import { orgMembers, orgs, repoPolicy, teams } from '../src/stories/org-data'
 import { sampleRepos } from '../src/stories/shell-data'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
+import OrgSettingsView from '../src/views/OrgSettingsView.vue'
 
 const resolve = (path: string) => makeRouter(createMemoryHistory()).resolve(path)
 
@@ -58,8 +60,22 @@ describe('org state', () => {
     expect(sections('owner')).toEqual(['', 'members', 'teams', 'audit', 'settings'])
   })
 
-  it('offers yourself and the organizations you own', () => {
-    expect(ownerChoices('alice', orgs)).toEqual(['alice', 'studio'])
+  it('offers yourself and every organization you belong to', () => {
+    expect(ownerChoices('alice', orgs)).toEqual(['alice', 'modding-club', 'studio'])
+    expect(ownerChoices('alice', [{ name: 'x', created_at: '' }])).toEqual(['alice'])
+  })
+
+  it('limits rule subjects and never offers denying owners', () => {
+    expect(ruleSubjects('role', 'deny', [], [])).toEqual(['member'])
+    expect(ruleSubjects('role', 'allow', [], [])).toEqual(['member', 'owner'])
+    expect(ruleSubjects('team', 'allow', ['qa'], ['bob'])).toEqual(['qa'])
+    expect(ruleSubjects('user', 'deny', ['qa'], ['bob'])).toEqual(['bob'])
+  })
+
+  it('keeps the server message for a forbidden creation and explains a missing rule', () => {
+    const msg = 'Members may not create public repositories in studio.'
+    expect(describeError(new ApiError(403, 'repo_create_forbidden', msg))).toBe(msg)
+    expect(describeError(new ApiError(404, 'creation_rule_not_found', 'x'))).toContain('rule')
   })
 
   it('explains the last-owner error', () => {
@@ -229,5 +245,88 @@ describe('OrgMembersView', () => {
     await flushPromises()
     expect(calls).toContain('DELETE /v1/orgs/studio/members/alice')
     expect(w.text()).toContain('at least one owner')
+  })
+})
+
+describe('PynOrgRepoPolicy', () => {
+  const props = { policy: repoPolicy, teams: teams.map((t) => t.slug), members: ['bob', 'carol'] }
+
+  it('lists rules with effect, kind, subject and scope', () => {
+    const w = mount(PynOrgRepoPolicy, { props })
+    expect(w.findAll('li')).toHaveLength(3)
+    expect(w.findAll('li')[1].text()).toContain('deny')
+    expect(w.findAll('li')[1].text()).toContain('carol')
+    expect(
+      (w.find('select[aria-label="Scope of deny user carol"]').element as HTMLSelectElement).value,
+    ).toBe('public')
+  })
+
+  it('emits the base setting, a scope change and a removal', async () => {
+    const w = mount(PynOrgRepoPolicy, { props })
+    await w.find('select').setValue('both')
+    expect(w.emitted('setBase')?.[0]).toEqual(['both'])
+    await w.find('select[aria-label="Scope of deny user carol"]').setValue('both')
+    expect(w.emitted('setRule')?.[0]).toEqual([
+      { rule: { effect: 'deny', kind: 'user', subject: 'carol', scope: 'public' }, scope: 'both' },
+    ])
+    await w.find('button[aria-label="Remove deny user carol"]').trigger('click')
+    expect(w.emitted('removeRule')?.[0]).toEqual([
+      { effect: 'deny', kind: 'user', subject: 'carol', scope: 'public' },
+    ])
+  })
+
+  it('adds a rule from the form and hides owner for deny', async () => {
+    const w = mount(PynOrgRepoPolicy, { props })
+    const form = w.find('form')
+    const [effect, kind, subject, scope] = form.findAll('select')
+    await kind.setValue('user')
+    await subject.setValue('bob')
+    await scope.setValue('private')
+    await form.trigger('submit')
+    expect(w.emitted('setRule')?.[0]).toEqual([
+      { rule: { effect: 'allow', kind: 'user', subject: 'bob' }, scope: 'private' },
+    ])
+    await effect.setValue('deny')
+    await kind.setValue('role')
+    expect(subject.findAll('option').map((o) => o.text())).toEqual(['Choose a role', 'member'])
+  })
+
+  it('shows the error', () => {
+    const w = mount(PynOrgRepoPolicy, { props: { ...props, error: 'nope' } })
+    expect(w.find('[role=alert]').text()).toBe('nope')
+  })
+})
+
+describe('OrgSettingsView', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('loads the policy for owners and saves the base setting', async () => {
+    const calls: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push(`${init?.method ?? 'GET'} ${url}`)
+        if (url.endsWith('/repo-policy'))
+          return Promise.resolve(new Response(JSON.stringify(repoPolicy)))
+        return Promise.resolve(new Response(JSON.stringify([])))
+      }),
+    )
+    const w = mount(OrgSettingsView, {
+      global: {
+        provide: {
+          [sessionKey as symbol]: { user: ref('alice'), admin: ref(false), expire: () => {} },
+          [orgKey as symbol]: {
+            name: computed(() => 'studio'),
+            org: ref(orgs[0]),
+            reload: async () => {},
+          },
+        },
+      },
+    })
+    await flushPromises()
+    expect(calls).toContain('GET /v1/orgs/studio/repo-policy')
+    await w.find('select').setValue('both')
+    await flushPromises()
+    expect(calls).toContain('PUT /v1/orgs/studio/repo-policy')
   })
 })

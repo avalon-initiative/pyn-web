@@ -34,6 +34,7 @@ const FRIENDLY: Record<string, string> = {
   team_not_found: 'That team does not exist.',
   team_member_not_found: 'That user is not in the team.',
   not_org_repo: 'Only repositories owned by an organization can grant roles to teams.',
+  creation_rule_not_found: 'That rule does not exist.',
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 

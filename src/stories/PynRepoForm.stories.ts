@@ -42,3 +42,10 @@ export const LimitSetByPolicy: Story = {
 export const NameTaken: Story = {
   args: { owner: 'alice', error: 'A repository with that name already exists for this owner.' },
 }
+export const CreationForbidden: Story = {
+  args: {
+    owner: 'modding-club',
+    owners: ['alice', 'modding-club', 'studio'],
+    error: 'Members may not create public repositories in modding-club.',
+  },
+}
