@@ -3,6 +3,7 @@ import type { RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
 import AccountView from './views/AccountView.vue'
 import KeysView from './views/KeysView.vue'
+import MyLocksView from './views/MyLocksView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
@@ -19,6 +20,7 @@ import ReposView from './views/ReposView.vue'
 // Account pages live under "/_/": a user name has at least two characters, so it cannot collide.
 export const routes = [
   { path: '/', name: 'repos', component: ReposView },
+  { path: '/_/locks', name: 'my-locks', component: MyLocksView },
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
   {
     path: '/_/settings',

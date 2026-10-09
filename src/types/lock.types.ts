@@ -29,3 +29,18 @@ export interface FilePage {
   entries: FileRow[]
   next_after: string | null
 }
+
+/** Mirrors the server's `MyLock`: a lock the caller holds, with its repository. */
+export interface MyLock {
+  owner: string
+  name: string
+  path: string
+  acquired_at: string
+  expires_at: string
+}
+
+/** A lock that could not be released, with the reason shown beside it. */
+export interface ReleaseFailure {
+  lock: MyLock
+  message: string
+}
