@@ -35,6 +35,7 @@ const remove = () =>
       :key="repoSlug(repo)"
       :owner="repo.owner"
       :repo="repo"
+      :effective-max-locks="repo.max_locks_per_user"
       :busy="saving.busy.value"
       :error="saving.error.value"
       @submit="save"

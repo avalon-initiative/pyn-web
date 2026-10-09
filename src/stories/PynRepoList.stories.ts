@@ -9,6 +9,8 @@ const repo = (owner: string, name: string, role: string, visibility = 'private')
   owner,
   name,
   visibility: visibility as 'private' | 'public',
+  max_locks_per_user: 10,
+  max_locks_set_by_policy: false,
   lease_hours: 8,
   created_at: '2026-10-01T09:00:00Z',
   role,

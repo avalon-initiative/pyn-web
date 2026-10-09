@@ -31,7 +31,11 @@ function query(params: Record<string, string | number | undefined | null>): stri
 export const listRepos = () => send<RepoInfo[]>('GET', '/v1/repos')
 
 export const createRepo = (owner: string, s: RepoSettings) =>
-  send<RepoInfo>('POST', '/v1/repos', { owner, ...s })
+  send<RepoInfo>('POST', '/v1/repos', {
+    owner,
+    ...s,
+    max_locks_per_user: s.max_locks_per_user ?? undefined,
+  })
 
 export const getRepo = (r: Repo) => send<RepoInfo>('GET', base(r))
 

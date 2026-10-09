@@ -6,6 +6,12 @@ export interface RepoInfo {
   name: string
   visibility: Visibility
   lease_hours: number
+  /** Effective lock limit per user. */
+  max_locks_per_user: number
+  /** The stored setting alone; absent or null follows the server default. */
+  max_locks_per_user_setting?: number | null
+  /** True when the policy file sets the limit and the setting cannot change. */
+  max_locks_set_by_policy: boolean
   created_at: string
   /** The caller's role; absent when the server does not report one. */
   role?: string | null
@@ -16,7 +22,13 @@ export interface RepoSettings {
   name: string
   visibility: Visibility
   lease_hours: number
+  /** Omitted leaves it alone (or the server default on create); null clears to the default. */
+  max_locks_per_user?: number | null
 }
+
+/** What the repository form edits: the settings plus the lock-limit state the server reports. */
+export type RepoFormValue = RepoSettings &
+  Partial<Pick<RepoInfo, 'max_locks_per_user_setting' | 'max_locks_set_by_policy'>>
 
 /** Mirrors the server's `Member`. */
 export interface Member {
