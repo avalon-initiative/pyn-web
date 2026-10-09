@@ -18,3 +18,25 @@ export interface NewOrgMember {
   user: string
   role: OrgRole
 }
+
+export type MemberCreation = 'none' | 'private' | 'both'
+export type RuleEffect = 'allow' | 'deny'
+export type RuleKind = 'team' | 'user' | 'role'
+export type RuleScope = 'public' | 'private' | 'both'
+
+/** Mirrors the server's `CreationRuleInfo`. */
+export interface CreationRule {
+  effect: RuleEffect
+  kind: RuleKind
+  subject: string
+  scope: RuleScope
+}
+
+/** Mirrors the server's `RepoPolicyInfo`. */
+export interface RepoPolicy {
+  member_creation: MemberCreation
+  rules: CreationRule[]
+}
+
+/** Identifies one rule: a subject holds at most one per effect. */
+export type RuleRef = Pick<CreationRule, 'effect' | 'kind' | 'subject'>

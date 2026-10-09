@@ -1,4 +1,4 @@
-import type { OrgInfo, OrgMember } from '../types/org.types'
+import type { OrgInfo, OrgMember, RepoPolicy } from '../types/org.types'
 import type { RepoTeam, TeamInfo } from '../types/team.types'
 
 export const orgs: OrgInfo[] = [
@@ -37,3 +37,12 @@ export const teams: TeamInfo[] = [
 export const repoTeams: RepoTeam[] = [
   { slug: 'artists', name: 'Artists', description: 'Texture and model work.', role: 'writer' },
 ]
+
+export const repoPolicy: RepoPolicy = {
+  member_creation: 'private',
+  rules: [
+    { effect: 'allow', kind: 'team', subject: 'artists', scope: 'both' },
+    { effect: 'deny', kind: 'user', subject: 'carol', scope: 'public' },
+    { effect: 'allow', kind: 'role', subject: 'member', scope: 'private' },
+  ],
+}
