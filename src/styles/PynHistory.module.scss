@@ -8,20 +8,56 @@
 
 .search {
   display: flex;
+  flex-direction: column;
   gap: var(--pyn-space-2);
+}
 
-  .input {
-    flex: 1;
-    font-family: var(--pyn-font-mono);
-  }
+.scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pyn-space-2);
 }
 
 .input {
   @include m.input;
+  font-family: var(--pyn-font-mono);
 }
 
-.primary {
-  @include m.button-primary;
+.button {
+  @include m.button;
+  align-self: flex-start;
+}
+
+.hint {
+  @include m.muted;
+
+  code {
+    font-family: var(--pyn-font-mono);
+  }
+}
+
+.main {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rev {
+  font-weight: 600;
+}
+
+.path {
+  font-family: var(--pyn-font-mono);
+  font-size: 0.875rem;
+}
+
+.revPath {
+  margin-left: var(--pyn-space-2);
+}
+
+.message {
+  color: var(--pyn-text-muted);
 }
 
 .list {
@@ -32,7 +68,11 @@
   @include m.item;
 }
 
-.meta,
+.meta {
+  @include m.muted;
+  white-space: nowrap;
+}
+
 .empty {
   @include m.muted;
 }

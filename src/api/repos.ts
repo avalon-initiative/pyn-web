@@ -2,12 +2,13 @@ import type { FilePage, FileRow, LockInfo, Me } from '../types/lock.types'
 import type {
   AuditFilter,
   AuditPage,
+  HistoryPage,
+  HistoryQuery,
   InviteInfo,
   Member,
   NewUser,
   RepoInfo,
   RepoSettings,
-  Revision,
   RoleGrant,
 } from '../types/repo.types'
 import type { RepoSummary, TreeListing } from '../types/tree.types'
@@ -60,8 +61,8 @@ export const listLocks = (r: Repo) => send<LockInfo[]>('GET', `${base(r)}/locks`
 export const forceUnlock = (r: Repo, path: string, reason: string) =>
   send<LockInfo>('POST', `${base(r)}/force-unlock`, { path, reason })
 
-export const fileHistory = (r: Repo, path: string) =>
-  send<Revision[]>('GET', `${base(r)}/history${query({ path })}`)
+export const fetchHistory = (r: Repo, q: HistoryQuery = {}) =>
+  send<HistoryPage>('GET', `${base(r)}/history${query({ ...q })}`)
 
 export const listAudit = (r: Repo, f: Partial<AuditFilter>, before?: number) =>
   send<AuditPage>('GET', `${base(r)}/audit${query({ ...f, before })}`)

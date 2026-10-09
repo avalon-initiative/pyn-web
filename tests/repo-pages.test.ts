@@ -1,4 +1,5 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { ApiError, describeError } from '../src/api/client'
@@ -14,6 +15,8 @@ import PynRepoList from '../src/components/PynRepoList.vue'
 import PynRepoNav from '../src/components/PynRepoNav.vue'
 import PynRepoNotFound from '../src/components/PynRepoNotFound.vue'
 import PynRoles from '../src/components/PynRoles.vue'
+import RepoHistoryView from '../src/views/RepoHistoryView.vue'
+import { repoKey } from '../src/state/context.state'
 import { internalPath } from '../src/state/links.state'
 import { repoPath, repoTabs, sortRepos } from '../src/state/repo.state'
 import { makeRouter } from '../src/router'
@@ -246,23 +249,119 @@ describe('PynLocks', () => {
 })
 
 describe('PynHistory', () => {
-  it('lists revisions and emits the searched path', async () => {
-    const revisions = [
-      {
-        id: 3,
-        path: 'a',
-        author: 'alice',
-        message: 'Restore',
-        created_at: '2026-10-08T11:00:00Z',
-        restored_from: 1,
-      },
-    ]
-    const w = mount(PynHistory, { props: { path: 'a', revisions } })
+  const rev = (id: number, path = 'a.ts', restored_from?: number) => ({
+    id,
+    path,
+    author: 'alice',
+    message: `m${id}`,
+    created_at: '2026-10-08T11:00:00Z',
+    restored_from,
+  })
+
+  it('shows revision, path, author and message', () => {
+    const w = mount(PynHistory, { props: { revisions: [rev(3, 'x/y.ts', 1)] } })
     expect(w.text()).toContain('r3')
+    expect(w.text()).toContain('x/y.ts')
+    expect(w.text()).toContain('alice')
+    expect(w.text()).toContain('m3')
     expect(w.text()).toContain('restored from r1')
-    await w.find('input').setValue(' b ')
-    await w.find('form').trigger('submit')
-    expect(w.emitted('search')?.[0]).toEqual(['b'])
+  })
+
+  it('has loading and empty states and an inline error', () => {
+    expect(mount(PynHistory, { props: { revisions: [], loading: true } }).text()).toContain(
+      'Loading history',
+    )
+    expect(mount(PynHistory, { props: { revisions: [] } }).text()).toContain('No revisions yet')
+    const w = mount(PynHistory, { props: { revisions: [], error: 'bad glob', filter: '[' } })
+    expect(w.find('[role=alert]').text()).toBe('bad glob')
+  })
+
+  it('debounces the filter and emits load-more', async () => {
+    vi.useFakeTimers()
+    const w = mount(PynHistory, { props: { revisions: [rev(1)], hasMore: true } })
+    await w.find('input').setValue(' *.ts ')
+    await w.find('input').setValue(' *.uasset ')
+    expect(w.emitted('filter')).toBeUndefined()
+    vi.advanceTimersByTime(400)
+    expect(w.emitted('filter')).toEqual([['*.uasset']])
+    vi.useRealTimers()
+    await w.find('button').trigger('click')
+    expect(w.emitted('more')).toHaveLength(1)
+  })
+
+  it('shows a per-file scope instead of the filter box', async () => {
+    const w = mount(PynHistory, { props: { revisions: [rev(1)], path: 'a.ts' } })
+    expect(w.find('input').exists()).toBe(false)
+    await w.find('button').trigger('click')
+    expect(w.emitted('clearPath')).toHaveLength(1)
+  })
+})
+
+describe('history view', () => {
+  const page = (ids: number[], next: string | null) => ({
+    revisions: ids.map((id) => ({
+      id,
+      path: 'a.ts',
+      author: 'alice',
+      message: `m${id}`,
+      created_at: '2026-10-08T11:00:00Z',
+    })),
+    next_cursor: next,
+  })
+  const reply = (body: unknown, status = 200) =>
+    ({ ok: status < 400, status, json: async () => body }) as Response
+
+  async function mountView(fn: ReturnType<typeof vi.fn>, url = '/alice/game/history') {
+    vi.stubGlobal('fetch', fn)
+    const router = makeRouter(createMemoryHistory())
+    await router.push(url)
+    const w = mount(RepoHistoryView, {
+      global: {
+        plugins: [router],
+        provide: { [repoKey as symbol]: { target: ref({ owner: 'alice', name: 'game' }) } },
+      },
+    })
+    await flushPromises()
+    return { w, router }
+  }
+
+  it('loads repository history on open and appends on load more', async () => {
+    const fn = vi
+      .fn()
+      .mockResolvedValueOnce(reply(page([3, 2], 'c1')))
+      .mockResolvedValueOnce(reply(page([1], null)))
+    const { w } = await mountView(fn)
+    expect(fn.mock.calls[0][0]).toBe('/v1/repos/alice/game/history')
+    expect(w.findAll('li')).toHaveLength(2)
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Load more')!
+      .trigger('click')
+    await flushPromises()
+    expect(fn.mock.calls[1][0]).toBe('/v1/repos/alice/game/history?before=c1')
+    expect(w.findAll('li').map((li) => li.text().slice(0, 2))).toEqual(['r3', 'r2', 'r1'])
+    expect(w.text()).not.toContain('Load more')
+  })
+
+  it('sends the glob filter, and the path for a per-file entry point', async () => {
+    vi.useFakeTimers()
+    const fn = vi.fn().mockResolvedValue(reply(page([1], null)))
+    const { w } = await mountView(fn)
+    await w.find('input').setValue('Content/*.uasset')
+    vi.advanceTimersByTime(400)
+    vi.useRealTimers()
+    await flushPromises()
+    expect(fn.mock.calls[1][0]).toBe('/v1/repos/alice/game/history?filter=Content%2F*.uasset')
+    await mountView(fn, '/alice/game/history?path=a.ts')
+    expect(fn.mock.calls[2][0]).toBe('/v1/repos/alice/game/history?path=a.ts')
+  })
+
+  it('shows the server message for a bad pattern', async () => {
+    const fn = vi
+      .fn()
+      .mockResolvedValue(reply({ code: 'invalid_request', message: 'bad glob: [' }, 400))
+    const { w } = await mountView(fn, '/alice/game/history?filter=%5B')
+    expect(w.find('[role=alert]').text()).toBe('bad glob: [')
   })
 })
 
