@@ -15,3 +15,10 @@ export const Document: Story = {}
 export const HeadingAnchors: Story = {
   args: { source: '[Jump to Setup](#setup)\n\n## Usage\n\nText.\n\n## Setup\n\n## Setup\n' },
 }
+
+export const ExternalImages: Story = {
+  args: {
+    source:
+      'Repository image: ![Logo](logo.png)\n\nExternal: ![Build status](https://example.com/badge.svg)\n\nInline data: ![Pixel](data:image/gif;base64,R0lGODlhAQABAAAAACw=)\n',
+  },
+}

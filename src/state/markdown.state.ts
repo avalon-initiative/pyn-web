@@ -76,7 +76,20 @@ function assignHeadingIds(doc: DocumentFragment) {
   }
 }
 
-/** Safe HTML for markdown; relative links open in the viewer, relative images load from the server. */
+/** Replaces a non-repository image with its alt text, linked to the original when that is http(s). */
+function externalImage(img: Element, src: string): Node {
+  const alt = img.getAttribute('alt') ?? ''
+  const href = src.startsWith('//') ? `https:${src}` : src
+  if (!/^https?:\/\//i.test(href) || img.closest('a')) return document.createTextNode(alt)
+  const a = document.createElement('a')
+  a.href = href
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
+  a.textContent = alt || href
+  return a
+}
+
+/** Safe HTML for markdown; relative links open in the viewer, relative images load from the server, external ones become text. */
 export function renderMarkdown(source: string, repo: Repo, dir: string): string {
   const raw = marked.parse(source, { async: false })
   const doc = DOMPurify.sanitize(raw, { RETURN_DOM_FRAGMENT: true, FORBID_ATTR: ['style'] })
@@ -91,9 +104,15 @@ export function renderMarkdown(source: string, repo: Repo, dir: string): string 
       a.setAttribute('rel', 'noopener noreferrer')
     }
   }
-  for (const img of doc.querySelectorAll('img[src]')) {
-    const path = resolveRelative(dir, img.getAttribute('src') ?? '')
+  for (const el of doc.querySelectorAll('source, [srcset]')) {
+    if (el.localName === 'source') el.remove()
+    else el.removeAttribute('srcset')
+  }
+  for (const img of doc.querySelectorAll('img')) {
+    const src = (img.getAttribute('src') ?? '').trim()
+    const path = resolveRelative(dir, src)
     if (path !== null) img.setAttribute('src', contentUrl(repo, path))
+    else img.replaceWith(externalImage(img, src))
   }
   assignHeadingIds(doc)
   const host = document.createElement('div')
