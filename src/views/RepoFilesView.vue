@@ -7,6 +7,7 @@ import PynRepoLanding from '../components/PynRepoLanding.vue'
 import { useAction } from '../state/action.state'
 import { fileBody, readmeEntry, VIEW_LIMIT } from '../state/blob.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { useHashScroll } from '../state/hash.state'
 import { folderParam } from '../state/tree.state'
 import styles from '../styles/View.module.scss'
 import type { ReadmeDoc } from '../types/blob.types'
@@ -75,6 +76,8 @@ watch(path, () => {
   readmeRevision = null
   refresh()
 })
+
+useHashScroll(() => readme.value)
 
 onMounted(() => {
   refresh()
