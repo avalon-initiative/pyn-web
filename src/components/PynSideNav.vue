@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import PynIcon from './PynIcon.vue'
 import styles from '../styles/PynSideNav.module.scss'
+import { orgPath } from '../state/org.state'
 import { repoPath, repoSlug } from '../state/repo.state'
 import type { NavItem } from '../state/shell.state'
+import type { OrgInfo } from '../types/org.types'
 import type { RepoInfo } from '../types/repo.types'
 
 defineProps<{
@@ -11,21 +13,17 @@ defineProps<{
   current: string
   repos: RepoInfo[]
   currentRepo?: string
+  orgs?: OrgInfo[]
+  currentOrg?: string
 }>()
 </script>
 
 <template>
   <nav :class="styles.side" aria-label="Main">
-    <button
-      type="button"
-      :class="styles.switcher"
-      disabled
-      title="Organizations are not available yet"
-    >
+    <p :class="styles.switcher">
       <span :class="styles.avatar">{{ account.slice(0, 1).toUpperCase() }}</span>
       <span :class="styles.account">{{ account }}</span>
-      <PynIcon name="chevron" />
-    </button>
+    </p>
     <ul :class="styles.list">
       <li v-for="item in items" :key="item.id">
         <a
@@ -37,6 +35,20 @@ defineProps<{
         </a>
       </li>
     </ul>
+    <template v-if="orgs?.length">
+      <h2 :class="styles.heading">Your organizations</h2>
+      <ul :class="styles.list">
+        <li v-for="org in orgs" :key="org.name">
+          <a
+            :href="orgPath(org.name)"
+            :class="styles.link"
+            :aria-current="org.name === currentOrg ? 'true' : undefined"
+          >
+            <PynIcon name="user" /><span :class="styles.repo">{{ org.name }}</span>
+          </a>
+        </li>
+      </ul>
+    </template>
     <h2 :class="styles.heading">Your repositories</h2>
     <ul v-if="repos.length" :class="styles.list">
       <li v-for="repo in repos" :key="repoSlug(repo)">

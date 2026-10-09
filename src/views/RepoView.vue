@@ -2,13 +2,16 @@
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
+import { getOrg } from '../api/orgs'
 import { getRepo, repoMe } from '../api/repos'
 import PynRepoHeader from '../components/PynRepoHeader.vue'
 import PynRepoNotFound from '../components/PynRepoNotFound.vue'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { isOrgOwner } from '../state/org.state'
 import { repoTabs } from '../state/repo.state'
 import styles from '../styles/View.module.scss'
+import type { OrgInfo } from '../types/org.types'
 import type { RepoInfo } from '../types/repo.types'
 
 const route = useRoute()
@@ -23,6 +26,7 @@ const section = computed(() => {
 const target = computed(() => ({ owner: owner.value, name: name.value }))
 const repo = ref<RepoInfo | null>(null)
 const permissions = ref<string[]>([])
+const org = ref<OrgInfo | null>(null)
 const notFound = ref(false)
 const { error, attempt } = useAction()
 
@@ -31,9 +35,14 @@ async function load() {
   notFound.value = false
   return attempt(async () => {
     try {
-      const [info, me] = await Promise.all([getRepo(t), repoMe(t)])
+      const [info, me, owningOrg] = await Promise.all([
+        getRepo(t),
+        repoMe(t),
+        getOrg(t.owner).catch(() => null),
+      ])
       repo.value = info
       permissions.value = me.permissions
+      org.value = owningOrg
     } catch (e) {
       if (e instanceof ApiError && e.code === 'repo_not_found') notFound.value = true
       else throw e
@@ -57,7 +66,9 @@ provide(repoKey, {
   reload: async () => void (await load()),
 })
 
-const tabs = computed(() => repoTabs(permissions.value, owner.value === user.value))
+const tabs = computed(() =>
+  repoTabs(permissions.value, owner.value === user.value || isOrgOwner(org.value)),
+)
 </script>
 
 <template>
@@ -70,6 +81,7 @@ const tabs = computed(() => repoTabs(permissions.value, owner.value === user.val
       :visibility="repo.visibility"
       :lease-hours="repo.lease_hours"
       :role="repo.role"
+      :org-owned="org !== null"
       :tabs="permissions.includes('read') ? tabs : undefined"
       :current="section"
     />

@@ -1,0 +1,25 @@
+@use 'mixins' as m;
+
+.form {
+  @include m.form;
+}
+
+.field {
+  @include m.field;
+}
+
+.input {
+  @include m.input;
+}
+
+.hint {
+  font-size: 0.8125rem;
+}
+
+.primary {
+  @include m.button-primary;
+}
+
+.error {
+  @include m.error;
+}

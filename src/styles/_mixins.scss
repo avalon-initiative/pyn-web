@@ -157,3 +157,29 @@
     color: var(--pyn-syntax-name);
   }
 }
+
+@mixin tab-nav {
+  display: flex;
+  gap: var(--pyn-space-1);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--pyn-border);
+}
+
+@mixin tab {
+  flex: none;
+  padding: var(--pyn-space-2) var(--pyn-space-4);
+  color: var(--pyn-text-muted);
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--pyn-text);
+  }
+
+  &[aria-current='page'] {
+    color: var(--pyn-text);
+    border-bottom-color: var(--pyn-accent);
+  }
+
+  @include focus-ring;
+}

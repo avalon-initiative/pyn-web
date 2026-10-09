@@ -28,7 +28,7 @@ function query(params: Record<string, string | number | undefined | null>): stri
   return s ? `?${s}` : ''
 }
 
-export const listRepos = () => send<RepoInfo[]>('GET', '/v1/repos')
+export const listRepos = (owner?: string) => send<RepoInfo[]>('GET', `/v1/repos${query({ owner })}`)
 
 export const createRepo = (owner: string, s: RepoSettings) =>
   send<RepoInfo>('POST', '/v1/repos', {
