@@ -11,20 +11,15 @@ import type {
   RuleScope,
 } from '../types/org.types'
 import { api, call } from './http'
-import type { Schemas } from './schema'
-
-// The server types an organization's `role` as a plain string; it is `owner` or `member`.
-const asOrg = (o: Promise<Schemas['OrgInfo']>) => o as Promise<OrgInfo>
-const asOrgs = (o: Promise<Schemas['OrgInfo'][]>) => o as Promise<OrgInfo[]>
 
 const org_ = (org: string) => ({ params: { path: { org } } })
 const rule = (org: string, r: RuleRef) => ({ params: { path: { org, ...r } } })
 
-export const listMyOrgs = () => asOrgs(call(api.GET('/v1/me/orgs')))
+export const listMyOrgs = () => call<OrgInfo[]>(api.GET('/v1/me/orgs'))
 
-export const createOrg = (name: string) => asOrg(call(api.POST('/v1/orgs', { body: { name } })))
+export const createOrg = (name: string) => call<OrgInfo>(api.POST('/v1/orgs', { body: { name } }))
 
-export const getOrg = (org: string) => asOrg(call(api.GET('/v1/orgs/{org}', org_(org))))
+export const getOrg = (org: string) => call<OrgInfo>(api.GET('/v1/orgs/{org}', org_(org)))
 
 export const deleteOrg = (org: string) => call<void>(api.DELETE('/v1/orgs/{org}', org_(org)))
 

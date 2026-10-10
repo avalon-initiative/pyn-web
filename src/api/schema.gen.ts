@@ -180,6 +180,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/explore/repos': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Works without credentials; private repositories never appear. */
+    get: operations['explore_repos']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/keys': {
     parameters: {
       query?: never
@@ -1279,8 +1296,7 @@ export interface components {
       /** Format: date-time */
       created_at: string
       name: string
-      /** @description The caller's standing in it (`owner` or `member`); absent when they have none. */
-      role?: string | null
+      role?: components['schemas']['OrgRole'] | null
     }
     /** @description A person in an organization. */
     OrgMember: {
@@ -1355,6 +1371,12 @@ export interface components {
       /** @description The caller's role in the repository; absent when they have none. */
       role?: string | null
       visibility: components['schemas']['Visibility']
+    }
+    RepoPage: {
+      /** @description Pass as `after` to fetch the next page; null on the last page. */
+      next_after: string | null
+      /** @description Ordered by owner, then name. */
+      repos: components['schemas']['RepoInfo'][]
     }
     /** @description An organization's repository-creation policy. Owners can always create repositories and are not listed in it. */
     RepoPolicyInfo: {
@@ -2116,6 +2138,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description last_server_admin: the account is the only active administrator */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
     }
   }
   enable: {
@@ -2158,6 +2189,49 @@ export interface operations {
       }
       /** @description user_not_found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  explore_repos: {
+    parameters: {
+      query?: {
+        /** @description return repositories after this `owner/name` */
+        after?: string
+        /** @description page size, default 50, max 200 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description public repositories; `role` is the caller's, if they have one */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoPage']
+        }
+      }
+      /** @description invalid_request: a malformed `after` */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description credentials were sent but are not valid */
+      401: {
         headers: {
           [name: string]: unknown
         }
@@ -4401,6 +4475,24 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['RoleGrant'][]
+        }
+      }
+      /** @description not_repo_member: the caller holds no role in the repository */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
