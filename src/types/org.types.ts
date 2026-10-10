@@ -3,8 +3,7 @@ import type { Schemas } from '../api/schema'
 export type OrgMember = Schemas['OrgMember']
 export type OrgRole = OrgMember['role']
 
-/** The server types `role` as a plain string; it is `owner` or `member`. */
-export type OrgInfo = Omit<Schemas['OrgInfo'], 'role'> & { role?: OrgRole | null }
+export type OrgInfo = Schemas['OrgInfo']
 
 export interface NewOrgMember {
   user: string
