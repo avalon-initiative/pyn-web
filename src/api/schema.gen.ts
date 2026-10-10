@@ -36,6 +36,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_limits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/orgs': {
     parameters: {
       query?: never
@@ -66,6 +82,22 @@ export interface paths {
     options?: never
     head?: never
     patch?: never
+    trace?: never
+  }
+  '/v1/admin/owners/{owner}/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch: operations['set_owner_limits']
     trace?: never
   }
   '/v1/admin/service-credentials': {
@@ -464,6 +496,38 @@ export interface paths {
     put: operations['add_team_member']
     post?: never
     delete: operations['remove_team_member']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/owners/{owner}/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['owner_limits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/owners/{owner}/usage': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['owner_usage']
+    put?: never
+    post?: never
+    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -924,6 +988,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/usage': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['repo_usage']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/users': {
     parameters: {
       query?: never
@@ -1140,7 +1220,7 @@ export interface components {
     CreateServiceCredentialRequest: {
       /** @description 1 to 64 lowercase letters, digits, `-` or `_`; unique, and never reused after revocation. */
       name: string
-      /** @description At least one of `manage_accounts`, `manage_organizations`. */
+      /** @description At least one of `manage_accounts`, `manage_organizations`, `manage_limits`. */
       scopes: string[]
     }
     CreateTeamRequest: {
@@ -1246,6 +1326,31 @@ export interface components {
       used_at?: string | null
       used_by?: string | null
     }
+    /** @description Limits on one owner. Every limit is opt-in: a null field is unlimited. */
+    Limits: {
+      /**
+       * Format: int64
+       * @description Members an organization may have; always null for a user.
+       */
+      members: number | null
+      /**
+       * Format: int64
+       * @description Repositories the owner may have.
+       */
+      repositories: number | null
+      /**
+       * Format: int64
+       * @description Bytes of distinct content across the owner's repositories.
+       */
+      storage_bytes: number | null
+    }
+    /** @description The server default and every owner that has limits of its own. */
+    LimitsListing: {
+      /** @description Applies to owners with nothing of their own; all null unless the operator configures it. */
+      defaults: components['schemas']['Limits']
+      /** @description Ordered by name. */
+      owners: components['schemas']['OwnerLimitsEntry'][]
+    }
     Lock: {
       /** Format: date-time */
       acquired_at: string
@@ -1308,6 +1413,31 @@ export interface components {
      * @enum {string}
      */
     OrgRole: 'owner' | 'member'
+    /**
+     * @description What an owner (a user or an organization) is.
+     * @enum {string}
+     */
+    OwnerKind: 'user' | 'org'
+    /** @description An owner's limits. Nothing is limited unless an operator sets a limit or a server default. */
+    OwnerLimits: {
+      /** @description The limits in force: the owner's own where set, else the server default, else null (unlimited). */
+      effective: components['schemas']['Limits']
+      kind: components['schemas']['OwnerKind']
+      /** @description Limits set for this owner alone; a null field follows the server default. */
+      own: components['schemas']['Limits']
+    }
+    OwnerLimitsEntry: {
+      limits: components['schemas']['OwnerLimits']
+      owner: string
+    }
+    /** @description What an owner uses against its limits. */
+    OwnerUsage: {
+      limits: components['schemas']['OwnerLimits']
+      owner: string
+      /** @description Ordered by name. */
+      repositories: components['schemas']['RepoUsage'][]
+      usage: components['schemas']['Usage']
+    }
     PutObjectResponse: {
       content: string
     }
@@ -1419,6 +1549,19 @@ export interface components {
       role: string
       slug: string
     }
+    RepoUsage: {
+      /**
+       * Format: int64
+       * @description Paths with a head revision.
+       */
+      files: number
+      /** @description `owner/name`. */
+      repository: string
+      /** Format: int64 */
+      revisions: number
+      /** Format: int64 */
+      stored_bytes: number
+    }
     ResendVerificationRequest: {
       email: string
     }
@@ -1480,6 +1623,18 @@ export interface components {
     }
     SetCreationRuleRequest: {
       scope: components['schemas']['CreationScope']
+    }
+    /** @description Fields left out stay as they are; a number sets the limit and `null` returns the field to the server default. */
+    SetLimitsRequest: {
+      /**
+       * Format: int64
+       * @description Organizations only; a user has no member limit.
+       */
+      members?: number | null
+      /** Format: int64 */
+      repositories?: number | null
+      /** Format: int64 */
+      storage_bytes?: number | null
     }
     SetMemberRequest: {
       role: string
@@ -1605,6 +1760,20 @@ export interface components {
       description?: string | null
       name?: string | null
     }
+    Usage: {
+      /**
+       * Format: int64
+       * @description Organization members; null for a user.
+       */
+      members: number | null
+      /** Format: int64 */
+      repositories: number
+      /**
+       * Format: int64
+       * @description Bytes of distinct content, counted once per repository.
+       */
+      stored_bytes: number
+    }
     VerifyEmailRequest: {
       /** @description The token from the verification link. */
       token: string
@@ -1666,6 +1835,35 @@ export interface operations {
         }
       }
       /** @description server_admin_required: service credentials cannot read the log */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_limits: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the server default and every owner with limits of its own */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LimitsListing']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_limits */
       403: {
         headers: {
           [name: string]: unknown
@@ -1775,6 +1973,60 @@ export interface operations {
       }
       /** @description org_not_empty or org_deleting */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  set_owner_limits: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a user or organization name */
+        owner: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetLimitsRequest']
+      }
+    }
+    responses: {
+      /** @description lowering a limit below current use deletes nothing; it only stops growth */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OwnerLimits']
+        }
+      }
+      /** @description invalid_request: a value out of range, or a member limit on a user */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_limits */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -3470,6 +3722,88 @@ export interface operations {
       }
     }
   }
+  owner_limits: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a user or organization name */
+        owner: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description all limits null means unlimited */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OwnerLimits']
+        }
+      }
+      /** @description not_namespace_owner or not_org_owner: only the owner, an administrator or a service credential with manage_limits may look */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  owner_usage: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a user or organization name */
+        owner: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description usage next to the limits in force, with every repository the owner has */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OwnerUsage']
+        }
+      }
+      /** @description not_namespace_owner or not_org_owner: only the owner, an administrator or a service credential with manage_limits may look */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   register: {
     parameters: {
       query?: never
@@ -4753,6 +5087,31 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  repo_usage: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description readable by anyone who can read the repository */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoUsage']
         }
       }
     }
