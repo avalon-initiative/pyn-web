@@ -1,21 +1,7 @@
-export type Visibility = 'public' | 'private'
+import type { Schemas } from '../api/schema'
 
-/** Mirrors the server's `RepoInfo`. */
-export interface RepoInfo {
-  owner: string
-  name: string
-  visibility: Visibility
-  lease_hours: number
-  /** Effective lock limit per user. */
-  max_locks_per_user: number
-  /** The stored setting alone; absent or null follows the server default. */
-  max_locks_per_user_setting?: number | null
-  /** True when the policy file sets the limit and the setting cannot change. */
-  max_locks_set_by_policy: boolean
-  created_at: string
-  /** The caller's role; absent when the server does not report one. */
-  role?: string | null
-}
+export type RepoInfo = Schemas['RepoInfo']
+export type Visibility = Schemas['Visibility']
 
 /** The fields of `CreateRepoRequest` and `UpdateRepoRequest` the UI sets. */
 export interface RepoSettings {
@@ -30,48 +16,11 @@ export interface RepoSettings {
 export type RepoFormValue = RepoSettings &
   Partial<Pick<RepoInfo, 'max_locks_per_user_setting' | 'max_locks_set_by_policy'>>
 
-/** Mirrors the server's `Member`. */
-export interface Member {
-  user: string
-  /** The effective role. */
-  role: string
-  /** What decides the role. */
-  source: 'direct' | 'team' | 'org_owner'
-}
-
-/** Mirrors the server's `RoleGrant`. */
-export interface RoleGrant {
-  role: string
-  permissions: string[]
-}
-
-/** Mirrors the server's `InviteInfo`. */
-export interface InviteInfo {
-  id: string
-  role: string
-  created_by: string
-  created_at: string
-  expires_at: string
-  revoked_at?: string | null
-  used_at?: string | null
-  used_by?: string | null
-}
-
-/** Mirrors the server's `Revision`, without the content. */
-export interface Revision {
-  id: number
-  path: string
-  author: string
-  message: string
-  created_at: string
-  restored_from?: number | null
-}
-
-/** Mirrors the server's `HistoryPage`. */
-export interface HistoryPage {
-  revisions: Revision[]
-  next_cursor: string | null
-}
+export type Member = Schemas['Member']
+export type RoleGrant = Schemas['RoleGrant']
+export type InviteInfo = Schemas['InviteInfo']
+export type Revision = Schemas['Revision']
+export type HistoryPage = Schemas['HistoryPage']
 
 export interface HistoryQuery {
   path?: string
@@ -80,20 +29,8 @@ export interface HistoryQuery {
   limit?: number
 }
 
-/** Mirrors the server's `AuditEntry`. */
-export interface AuditEntry {
-  id: number
-  at: string
-  actor: string
-  action: string
-  detail: string
-  path?: string | null
-}
-
-export interface AuditPage {
-  entries: AuditEntry[]
-  next_before: number | null
-}
+export type AuditEntry = Schemas['AuditEntry']
+export type AuditPage = Schemas['AuditPage']
 
 export interface AuditFilter {
   path: string

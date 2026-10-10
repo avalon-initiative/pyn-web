@@ -3,6 +3,12 @@
 Web UI for pyn. See `CLAUDE.md` for structure and rules. `npm run storybook` to browse the components; `npm run dev`
 (with the pyn server running) for the app.
 
+## API client
+
+`src/api/schema.gen.ts` is generated from the server's OpenAPI document (`pyn/docs/generated/openapi.json`) and typed
+calls go through `openapi-fetch` in `src/api/http.ts`. Regenerate with `npm run api:generate`; set `PYN_OPENAPI` to a
+path or URL if the pyn checkout is not a sibling directory. `npm run api:check` fails when the file is out of date.
+
 ## Routes
 
 | Route                                                                | Page                                                                                          |

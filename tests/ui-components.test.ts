@@ -259,6 +259,7 @@ describe('PynKeys', () => {
   const keys = [
     {
       id: 'aaaaaaaaaaaa',
+      user: 'alice',
       title: 'work laptop',
       algorithm: 'ssh-ed25519',
       fingerprint: 'SHA256:abc',

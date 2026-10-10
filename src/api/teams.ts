@@ -1,40 +1,51 @@
 import type { RepoTeam, TeamInfo } from '../types/team.types'
-import { send } from './auth'
+import { api, call } from './http'
 
 type Repo = { owner: string; name: string }
 
-const base = (org: string) => `/v1/orgs/${encodeURIComponent(org)}/teams`
-const team = (org: string, slug: string) => `${base(org)}/${encodeURIComponent(slug)}`
-const teamMember = (org: string, slug: string, user: string) =>
-  `${team(org, slug)}/members/${encodeURIComponent(user)}`
-const repoTeam = (r: Repo, slug: string) =>
-  `/v1/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.name)}/teams/${encodeURIComponent(slug)}`
-
-export const listTeams = (org: string) => send<TeamInfo[]>('GET', base(org))
+export const listTeams = (org: string) =>
+  call<TeamInfo[]>(api.GET('/v1/orgs/{org}/teams', { params: { path: { org } } }))
 
 export const createTeam = (org: string, t: { slug: string; name?: string; description?: string }) =>
-  send<TeamInfo>('POST', base(org), t)
+  call<TeamInfo>(api.POST('/v1/orgs/{org}/teams', { params: { path: { org } }, body: t }))
 
-export const getTeam = (org: string, slug: string) => send<TeamInfo>('GET', team(org, slug))
+export const getTeam = (org: string, team: string) =>
+  call<TeamInfo>(api.GET('/v1/orgs/{org}/teams/{team}', { params: { path: { org, team } } }))
 
-export const updateTeam = (org: string, slug: string, t: { name?: string; description?: string }) =>
-  send<TeamInfo>('PATCH', team(org, slug), t)
-
-export const deleteTeam = (org: string, slug: string) => send<void>('DELETE', team(org, slug))
-
-export const addTeamMember = (org: string, slug: string, user: string) =>
-  send<void>('PUT', teamMember(org, slug, user))
-
-export const removeTeamMember = (org: string, slug: string, user: string) =>
-  send<void>('DELETE', teamMember(org, slug, user))
-
-export const listRepoTeams = (r: Repo) =>
-  send<RepoTeam[]>(
-    'GET',
-    `/v1/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.name)}/teams`,
+export const updateTeam = (org: string, team: string, t: { name?: string; description?: string }) =>
+  call<TeamInfo>(
+    api.PATCH('/v1/orgs/{org}/teams/{team}', { params: { path: { org, team } }, body: t }),
   )
 
-export const setRepoTeam = (r: Repo, slug: string, role: string) =>
-  send<void>('PUT', repoTeam(r, slug), { role })
+export const deleteTeam = (org: string, team: string) =>
+  call<void>(api.DELETE('/v1/orgs/{org}/teams/{team}', { params: { path: { org, team } } }))
 
-export const removeRepoTeam = (r: Repo, slug: string) => send<void>('DELETE', repoTeam(r, slug))
+export const addTeamMember = (org: string, team: string, user: string) =>
+  call<void>(
+    api.PUT('/v1/orgs/{org}/teams/{team}/members/{user}', {
+      params: { path: { org, team, user } },
+    }),
+  )
+
+export const removeTeamMember = (org: string, team: string, user: string) =>
+  call<void>(
+    api.DELETE('/v1/orgs/{org}/teams/{team}/members/{user}', {
+      params: { path: { org, team, user } },
+    }),
+  )
+
+export const listRepoTeams = (r: Repo) =>
+  call<RepoTeam[]>(api.GET('/v1/repos/{owner}/{name}/teams', { params: { path: r } }))
+
+export const setRepoTeam = (r: Repo, team: string, role: string) =>
+  call<void>(
+    api.PUT('/v1/repos/{owner}/{name}/teams/{team}', {
+      params: { path: { ...r, team } },
+      body: { role },
+    }),
+  )
+
+export const removeRepoTeam = (r: Repo, team: string) =>
+  call<void>(
+    api.DELETE('/v1/repos/{owner}/{name}/teams/{team}', { params: { path: { ...r, team } } }),
+  )

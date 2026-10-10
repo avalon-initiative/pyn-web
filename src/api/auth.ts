@@ -1,4 +1,4 @@
-import { csrfHeaders, setCsrfToken } from '../state/csrf.state'
+import { setCsrfToken } from '../state/csrf.state'
 import type {
   RegisterForm,
   Registered,
@@ -7,31 +7,13 @@ import type {
   SignInForm,
 } from '../types/auth.types'
 import { ApiError } from './client'
+import { api, call } from './http'
 
-/** The `ApiError` for a non-2xx response, from the server's error body when it has one. */
-export async function failure(res: Response): Promise<ApiError> {
-  const err = await res
-    .json()
-    .catch(() => ({ code: 'error', message: `server returned ${res.status}` }))
-  const wait = Number.parseInt(res.headers.get('Retry-After') ?? '', 10)
-  return new ApiError(res.status, err.code, err.message, Number.isNaN(wait) ? undefined : wait)
-}
-
-export async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
-    method,
-    headers: { 'Content-Type': 'application/json', ...csrfHeaders(method) },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
-  if (!res.ok) throw await failure(res)
-  return res.status === 204 ? (undefined as T) : res.json()
-}
-
-export const fetchRegistration = () => send<RegistrationInfo>('GET', '/v1/registration')
+export const fetchRegistration = () => call<RegistrationInfo>(api.GET('/v1/registration'))
 
 /** The server sets the HttpOnly session cookie; the page only keeps the CSRF token. */
 export async function signIn(form: SignInForm): Promise<Session> {
-  const session = await send<Session>('POST', '/v1/session', form)
+  const session = await call<Session>(api.POST('/v1/session', { body: form }))
   setCsrfToken(session.csrf_token)
   return session
 }
@@ -39,7 +21,7 @@ export async function signIn(form: SignInForm): Promise<Session> {
 /** The session the browser's cookie already holds, or null when signed out. */
 export async function restoreSession(): Promise<Session | null> {
   try {
-    const session = await send<Session>('GET', '/v1/session')
+    const session = await call<Session>(api.GET('/v1/session'))
     setCsrfToken(session.csrf_token)
     return session
   } catch (e) {
@@ -49,22 +31,22 @@ export async function restoreSession(): Promise<Session | null> {
 }
 
 export const register = (form: RegisterForm) =>
-  send<Registered>('POST', '/v1/register', {
-    ...form,
-    email: form.email || null,
-    invite: form.invite || null,
-  })
+  call<Registered>(
+    api.POST('/v1/register', {
+      body: { ...form, email: form.email || null, invite: form.invite || null },
+    }),
+  )
 
 export const verifyEmail = (token: string) =>
-  send<Registered>('POST', '/v1/register/verify', { token })
+  call<Registered>(api.POST('/v1/register/verify', { body: { token } }))
 
 export const resendVerification = (email: string) =>
-  send<void>('POST', '/v1/register/resend', { email })
+  call<void>(api.POST('/v1/register/resend', { body: { email } }))
 
 /** Ends the session on the server; the caller forgets it either way. */
 export async function signOut(): Promise<void> {
   try {
-    await send('DELETE', '/v1/session')
+    await call<void>(api.DELETE('/v1/session'))
   } finally {
     setCsrfToken('')
   }

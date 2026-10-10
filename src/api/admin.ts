@@ -1,21 +1,29 @@
 import type { AccountInfo, AccountMe, AdminAccountStatus } from '../types/admin.types'
 import type { AuditPage } from '../types/repo.types'
-import { send } from './auth'
+import { api, call } from './http'
 
-const account = (user: string) => `/v1/admin/users/${encodeURIComponent(user)}`
+const path = (user: string) => ({ params: { path: { user } } })
 
-export const fetchMe = () => send<AccountMe>('GET', '/v1/me')
+export const fetchMe = () => call<AccountMe>(api.GET('/v1/me'))
 
 export const listAccounts = (status: AdminAccountStatus | '') =>
-  send<AccountInfo[]>('GET', `/v1/admin/users${status ? `?status=${status}` : ''}`)
+  call<AccountInfo[]>(
+    api.GET('/v1/admin/users', { params: { query: { status: status || undefined } } }),
+  )
 
 export const approveAccount = (user: string) =>
-  send<AccountInfo>('POST', `${account(user)}/approve`)
+  call<AccountInfo>(api.POST('/v1/admin/users/{user}/approve', path(user)))
 
 export const disableAccount = (user: string, reason: string) =>
-  send<AccountInfo>('POST', `${account(user)}/disable`, { reason: reason.trim() || null })
+  call<AccountInfo>(
+    api.POST('/v1/admin/users/{user}/disable', {
+      ...path(user),
+      body: { reason: reason.trim() || null },
+    }),
+  )
 
-export const enableAccount = (user: string) => send<AccountInfo>('POST', `${account(user)}/enable`)
+export const enableAccount = (user: string) =>
+  call<AccountInfo>(api.POST('/v1/admin/users/{user}/enable', path(user)))
 
 export const listServerAudit = (before?: number) =>
-  send<AuditPage>('GET', `/v1/admin/audit${before === undefined ? '' : `?before=${before}`}`)
+  call<AuditPage>(api.GET('/v1/admin/audit', { params: { query: { before } } }))

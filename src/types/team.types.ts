@@ -1,27 +1,8 @@
-/** Mirrors the server's `TeamRepo`. */
-export interface TeamRepo {
-  /** `owner/name`. */
-  repo: string
-  role: string
-}
+import type { Schemas } from '../api/schema'
 
-/** Mirrors the server's `TeamInfo`. */
-export interface TeamInfo {
-  slug: string
-  name: string
-  description: string
-  created_at: string
-  members: string[]
-  repos: TeamRepo[]
-}
-
-/** Mirrors the server's `RepoTeam`. */
-export interface RepoTeam {
-  slug: string
-  name: string
-  description: string
-  role: string
-}
+export type TeamRepo = Schemas['TeamRepo']
+export type TeamInfo = Schemas['TeamInfo']
+export type RepoTeam = Schemas['RepoTeam']
 
 /** What the team form emits; `slug` is only present when creating. */
 export interface TeamFormValue {
@@ -39,4 +20,4 @@ export interface Grantee {
   href?: string
 }
 
-export type MemberSource = 'direct' | 'team' | 'org_owner'
+export type MemberSource = Schemas['Member']['source']

@@ -13,54 +13,58 @@ import type {
 } from '../types/repo.types'
 import type { RepoSummary, TreeListing } from '../types/tree.types'
 import { contentUrl } from '../state/blob.state'
+import type { Registered } from '../types/auth.types'
 import type { FetchedContent } from '../types/blob.types'
-import { failure, send } from './auth'
+import { api, call, failure } from './http'
 
 type Repo = { owner: string; name: string }
 
-const base = (r: Repo) => `/v1/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.name)}`
+const at = (r: Repo) => ({ params: { path: r } })
+const blank = (v: string | null | undefined) => v || undefined
 
-function query(params: Record<string, string | number | undefined | null>): string {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params))
-    if (v !== undefined && v !== null && v !== '') q.set(k, String(v))
-  const s = q.toString()
-  return s ? `?${s}` : ''
-}
-
-export const listRepos = (owner?: string) => send<RepoInfo[]>('GET', `/v1/repos${query({ owner })}`)
+export const listRepos = (owner?: string) =>
+  call<RepoInfo[]>(api.GET('/v1/repos', { params: { query: { owner: blank(owner) } } }))
 
 export const createRepo = (owner: string, s: RepoSettings) =>
-  send<RepoInfo>('POST', '/v1/repos', {
-    owner,
-    ...s,
-    max_locks_per_user: s.max_locks_per_user ?? undefined,
-  })
+  call<RepoInfo>(
+    api.POST('/v1/repos', {
+      body: { owner, ...s, max_locks_per_user: s.max_locks_per_user ?? undefined },
+    }),
+  )
 
-export const getRepo = (r: Repo) => send<RepoInfo>('GET', base(r))
+export const getRepo = (r: Repo) => call<RepoInfo>(api.GET('/v1/repos/{owner}/{name}', at(r)))
 
-export const updateRepo = (r: Repo, s: Partial<RepoSettings>) => send<RepoInfo>('PATCH', base(r), s)
+export const updateRepo = (r: Repo, s: Partial<RepoSettings>) =>
+  call<RepoInfo>(api.PATCH('/v1/repos/{owner}/{name}', { ...at(r), body: s }))
 
-export const deleteRepo = (r: Repo) => send<void>('DELETE', base(r))
+export const deleteRepo = (r: Repo) => call<void>(api.DELETE('/v1/repos/{owner}/{name}', at(r)))
 
-export const repoMe = (r: Repo) => send<Me>('GET', `${base(r)}/me`)
+export const repoMe = (r: Repo) => call<Me>(api.GET('/v1/repos/{owner}/{name}/me', at(r)))
 
 export async function fetchFiles(r: Repo): Promise<FileRow[]> {
   const rows: FileRow[] = []
-  let after: string | null = null
+  let after: string | undefined
   do {
-    const page: FilePage = await send('GET', `${base(r)}/files${query({ after })}`)
+    const page: FilePage = await call(
+      api.GET('/v1/repos/{owner}/{name}/files', { params: { path: r, query: { after } } }),
+    )
     rows.push(...page.entries)
-    after = page.next_after
+    after = page.next_after ?? undefined
   } while (after)
   return rows
 }
 
 export const fetchTree = (r: Repo, path = '') =>
-  send<TreeListing>('GET', `${base(r)}/tree${query({ path })}`)
+  call<TreeListing>(
+    api.GET('/v1/repos/{owner}/{name}/tree', {
+      params: { path: r, query: { path: blank(path) } },
+    }),
+  )
 
 export const fetchSummary = (r: Repo, activity = 6) =>
-  send<RepoSummary>('GET', `${base(r)}/summary${query({ activity })}`)
+  call<RepoSummary>(
+    api.GET('/v1/repos/{owner}/{name}/summary', { params: { path: r, query: { activity } } }),
+  )
 
 /** Reads at most `limit` bytes of a file's head content, then stops the download. */
 export async function fetchContent(r: Repo, path: string, limit: number): Promise<FetchedContent> {
@@ -88,38 +92,78 @@ export async function fetchContent(r: Repo, path: string, limit: number): Promis
   return { bytes, truncated }
 }
 
-export const listLocks = (r: Repo) => send<LockInfo[]>('GET', `${base(r)}/locks`)
+export const listLocks = (r: Repo) =>
+  call<LockInfo[]>(api.GET('/v1/repos/{owner}/{name}/locks', at(r)))
 
-export const listMyLocks = () => send<MyLock[]>('GET', '/v1/me/locks')
+export const listMyLocks = () => call<MyLock[]>(api.GET('/v1/me/locks'))
 
 export const releaseLock = (r: Repo, path: string) =>
-  send<void>('POST', `${base(r)}/release`, { path })
+  call<void>(api.POST('/v1/repos/{owner}/{name}/release', { ...at(r), body: { path } }))
 
 export const forceUnlock = (r: Repo, path: string, reason: string) =>
-  send<LockInfo>('POST', `${base(r)}/force-unlock`, { path, reason })
+  call<LockInfo>(
+    api.POST('/v1/repos/{owner}/{name}/force-unlock', { ...at(r), body: { path, reason } }),
+  )
 
 export const fetchHistory = (r: Repo, q: HistoryQuery = {}) =>
-  send<HistoryPage>('GET', `${base(r)}/history${query({ ...q })}`)
+  call<HistoryPage>(
+    api.GET('/v1/repos/{owner}/{name}/history', {
+      params: {
+        path: r,
+        query: {
+          path: blank(q.path),
+          filter: blank(q.filter),
+          before: blank(q.before),
+          limit: q.limit,
+        },
+      },
+    }),
+  )
 
 export const listAudit = (r: Repo, f: Partial<AuditFilter>, before?: number) =>
-  send<AuditPage>('GET', `${base(r)}/audit${query({ ...f, before })}`)
+  call<AuditPage>(
+    api.GET('/v1/repos/{owner}/{name}/audit', {
+      params: {
+        path: r,
+        query: { path: blank(f.path), actor: blank(f.actor), action: blank(f.action), before },
+      },
+    }),
+  )
 
-export const listMembers = (r: Repo) => send<Member[]>('GET', `${base(r)}/members`)
+export const listMembers = (r: Repo) =>
+  call<Member[]>(api.GET('/v1/repos/{owner}/{name}/members', at(r)))
 
 export const setMember = (r: Repo, user: string, role: string) =>
-  send<void>('PUT', `${base(r)}/members/${encodeURIComponent(user)}`, { role })
+  call<void>(
+    api.PUT('/v1/repos/{owner}/{name}/members/{user}', {
+      params: { path: { ...r, user } },
+      body: { role },
+    }),
+  )
 
-export const addUser = (r: Repo, u: NewUser) => send<void>('POST', `${base(r)}/users`, u)
+export const addUser = (r: Repo, u: NewUser) =>
+  call<Registered>(api.POST('/v1/repos/{owner}/{name}/users', { ...at(r), body: u }))
 
-export const listRoles = (r: Repo) => send<RoleGrant[]>('GET', `${base(r)}/roles`)
+export const listRoles = (r: Repo) =>
+  call<RoleGrant[]>(api.GET('/v1/repos/{owner}/{name}/roles', at(r)))
 
 export const setRole = (r: Repo, role: string, permissions: string[]) =>
-  send<void>('PUT', `${base(r)}/roles/${encodeURIComponent(role)}`, { permissions })
+  call<void>(
+    api.PUT('/v1/repos/{owner}/{name}/roles/{role}', {
+      params: { path: { ...r, role } },
+      body: { permissions },
+    }),
+  )
 
-export const listInvites = (r: Repo) => send<InviteInfo[]>('GET', `${base(r)}/invites`)
+export const listInvites = (r: Repo) =>
+  call<InviteInfo[]>(api.GET('/v1/repos/{owner}/{name}/invites', at(r)))
 
 export const createInvite = (r: Repo, role: string, hours: number) =>
-  send<{ code: string; info: InviteInfo }>('POST', `${base(r)}/invites`, { role, hours })
+  call<{ code: string; info: InviteInfo }>(
+    api.POST('/v1/repos/{owner}/{name}/invites', { ...at(r), body: { role, hours } }),
+  )
 
 export const revokeInvite = (r: Repo, id: string) =>
-  send<void>('DELETE', `${base(r)}/invites/${encodeURIComponent(id)}`)
+  call<void>(
+    api.DELETE('/v1/repos/{owner}/{name}/invites/{id}', { params: { path: { ...r, id } } }),
+  )

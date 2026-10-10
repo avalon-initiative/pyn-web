@@ -1,14 +1,10 @@
 import type { SshKey } from '../types/auth.types'
-import { send } from './auth'
+import { api, call } from './http'
 
-export function listKeys(): Promise<SshKey[]> {
-  return send('GET', '/v1/keys')
-}
+export const listKeys = () => call<SshKey[]>(api.GET('/v1/keys'))
 
-export function addKey(key: string, title: string): Promise<SshKey> {
-  return send('POST', '/v1/keys', { key, title: title.trim() || null })
-}
+export const addKey = (key: string, title: string) =>
+  call<SshKey>(api.POST('/v1/keys', { body: { key, title: title.trim() || null } }))
 
-export function removeKey(id: string): Promise<void> {
-  return send('DELETE', `/v1/keys/${id}`)
-}
+export const removeKey = (id: string) =>
+  call<void>(api.DELETE('/v1/keys/{id}', { params: { path: { id } } }))
