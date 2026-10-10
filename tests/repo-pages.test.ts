@@ -117,7 +117,7 @@ describe('repository api', () => {
 
   const stub = (...bodies: unknown[]) => {
     const fn = vi.fn()
-    for (const b of bodies) fn.mockResolvedValueOnce({ ok: true, status: 200, json: async () => b })
+    for (const b of bodies) fn.mockResolvedValueOnce(new Response(JSON.stringify(b)))
     vi.stubGlobal('fetch', fn)
     return fn
   }
@@ -161,7 +161,7 @@ describe('repository api', () => {
 
   it('encodes path segments', async () => {
     const fn = stub({})
-    fn.mockResolvedValueOnce({ ok: true, status: 204 })
+    fn.mockResolvedValueOnce(new Response(null, { status: 204 }))
     await setMember({ owner: 'a', name: 'b.c' }, 'x y', 'reader')
     expect(fn.mock.calls[0][0]).toBe('/v1/repos/a/b.c/members/x%20y')
   })
@@ -169,12 +169,11 @@ describe('repository api', () => {
   it('turns a repo_not_found body into an ApiError', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 404,
-        headers: new Headers(),
-        json: async () => ({ code: 'repo_not_found', message: 'nope' }),
-      }),
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ code: 'repo_not_found', message: 'nope' }), {
+          status: 404,
+        }),
+      ),
     )
     await expect(fetchFiles({ owner: 'x', name: 'y' })).rejects.toMatchObject({
       status: 404,
@@ -319,6 +318,7 @@ describe('PynHistory', () => {
     id,
     path,
     author: 'alice',
+    content: '0'.repeat(64),
     message: `m${id}`,
     created_at: '2026-10-08T11:00:00Z',
     restored_from,
@@ -369,13 +369,13 @@ describe('history view', () => {
       id,
       path: 'a.ts',
       author: 'alice',
+      content: '0'.repeat(64),
       message: `m${id}`,
       created_at: '2026-10-08T11:00:00Z',
     })),
     next_cursor: next,
   })
-  const reply = (body: unknown, status = 200) =>
-    ({ ok: status < 400, status, headers: new Headers(), json: async () => body }) as Response
+  const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
 
   async function mountView(fn: ReturnType<typeof vi.fn>, url = '/alice/game/history') {
     vi.stubGlobal('fetch', fn)
@@ -565,14 +565,17 @@ describe('PynInvites', () => {
 })
 
 describe('blob view', () => {
-  const reply = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as Response
+  const reply = (body: unknown) => new Response(JSON.stringify(body))
   const listing = {
     path: '',
     entries: [{ name: 'docs', path: 'docs', kind: 'folder', mode: 'shared' }],
   }
 
   async function open(url: string) {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(listing)))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => reply(listing)),
+    )
     const router = makeRouter(createMemoryHistory())
     await router.push(url)
     const w = mount(RepoBlobView, {

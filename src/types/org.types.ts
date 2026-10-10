@@ -1,42 +1,22 @@
-export type OrgRole = 'owner' | 'member'
+import type { Schemas } from '../api/schema'
 
-/** Mirrors the server's `OrgInfo`. */
-export interface OrgInfo {
-  name: string
-  created_at: string
-  /** The caller's standing; absent or null when they are not a member. */
-  role?: OrgRole | null
-}
+export type OrgMember = Schemas['OrgMember']
+export type OrgRole = OrgMember['role']
 
-/** Mirrors the server's `OrgMember`. */
-export interface OrgMember {
-  user: string
-  role: OrgRole
-}
+/** The server types `role` as a plain string; it is `owner` or `member`. */
+export type OrgInfo = Omit<Schemas['OrgInfo'], 'role'> & { role?: OrgRole | null }
 
 export interface NewOrgMember {
   user: string
   role: OrgRole
 }
 
-export type MemberCreation = 'none' | 'private' | 'both'
-export type RuleEffect = 'allow' | 'deny'
-export type RuleKind = 'team' | 'user' | 'role'
-export type RuleScope = 'public' | 'private' | 'both'
-
-/** Mirrors the server's `CreationRuleInfo`. */
-export interface CreationRule {
-  effect: RuleEffect
-  kind: RuleKind
-  subject: string
-  scope: RuleScope
-}
-
-/** Mirrors the server's `RepoPolicyInfo`. */
-export interface RepoPolicy {
-  member_creation: MemberCreation
-  rules: CreationRule[]
-}
+export type CreationRule = Schemas['CreationRuleInfo']
+export type RepoPolicy = Schemas['RepoPolicyInfo']
+export type MemberCreation = RepoPolicy['member_creation']
+export type RuleEffect = CreationRule['effect']
+export type RuleKind = CreationRule['kind']
+export type RuleScope = CreationRule['scope']
 
 /** Identifies one rule: a subject holds at most one per effect. */
 export type RuleRef = Pick<CreationRule, 'effect' | 'kind' | 'subject'>

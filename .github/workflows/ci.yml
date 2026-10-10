@@ -28,6 +28,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The generated client must match the server's published OpenAPI document.
+      - name: API client drift
+        env:
+          PYN_OPENAPI: https://raw.githubusercontent.com/avalon-initiative/pyn/main/docs/generated/openapi.json
+        run: npm run api:check
+
       # prettier, eslint, vue-tsc, vitest.
       - name: Checks
         run: make check

@@ -11,6 +11,7 @@ type Story = StoryObj<typeof PynKeys>
 const keys = [
   {
     id: 'aaaaaaaaaaaa',
+    user: 'alice',
     title: 'work laptop',
     algorithm: 'ssh-ed25519',
     fingerprint: 'SHA256:bVz0kqJTy+oVP03XmSg3A9OmlgA/TUvtGJ2SJQP+qMI',
@@ -19,6 +20,7 @@ const keys = [
   },
   {
     id: 'bbbbbbbbbbbb',
+    user: 'alice',
     title: 'desktop',
     algorithm: 'ecdsa-sha2-nistp256',
     fingerprint: 'SHA256:LLK4D9e6kVbGiWgEmE4sJFWnqQPJMstHEmXo2YhqNJc',

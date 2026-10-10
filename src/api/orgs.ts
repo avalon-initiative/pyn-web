@@ -10,42 +10,56 @@ import type {
   RuleRef,
   RuleScope,
 } from '../types/org.types'
-import { send } from './auth'
+import { api, call } from './http'
+import type { Schemas } from './schema'
 
-const base = (org: string) => `/v1/orgs/${encodeURIComponent(org)}`
-const member = (org: string, user: string) => `${base(org)}/members/${encodeURIComponent(user)}`
+// The server types an organization's `role` as a plain string; it is `owner` or `member`.
+const asOrg = (o: Promise<Schemas['OrgInfo']>) => o as Promise<OrgInfo>
+const asOrgs = (o: Promise<Schemas['OrgInfo'][]>) => o as Promise<OrgInfo[]>
 
-export const listMyOrgs = () => send<OrgInfo[]>('GET', '/v1/me/orgs')
+const org_ = (org: string) => ({ params: { path: { org } } })
+const rule = (org: string, r: RuleRef) => ({ params: { path: { org, ...r } } })
 
-export const createOrg = (name: string) => send<OrgInfo>('POST', '/v1/orgs', { name })
+export const listMyOrgs = () => asOrgs(call(api.GET('/v1/me/orgs')))
 
-export const getOrg = (org: string) => send<OrgInfo>('GET', base(org))
+export const createOrg = (name: string) => asOrg(call(api.POST('/v1/orgs', { body: { name } })))
 
-export const deleteOrg = (org: string) => send<void>('DELETE', base(org))
+export const getOrg = (org: string) => asOrg(call(api.GET('/v1/orgs/{org}', org_(org))))
+
+export const deleteOrg = (org: string) => call<void>(api.DELETE('/v1/orgs/{org}', org_(org)))
 
 export const listOrgAudit = (org: string, before?: number) =>
-  send<AuditPage>('GET', `${base(org)}/audit${before === undefined ? '' : `?before=${before}`}`)
+  call<AuditPage>(api.GET('/v1/orgs/{org}/audit', { params: { path: { org }, query: { before } } }))
 
-export const listOrgMembers = (org: string) => send<OrgMember[]>('GET', `${base(org)}/members`)
+export const listOrgMembers = (org: string) =>
+  call<OrgMember[]>(api.GET('/v1/orgs/{org}/members', org_(org)))
 
 export const addOrgMember = (org: string, m: NewOrgMember) =>
-  send<OrgMember>('POST', `${base(org)}/members`, m)
+  call<OrgMember>(api.POST('/v1/orgs/{org}/members', { ...org_(org), body: m }))
 
 export const setOrgRole = (org: string, user: string, role: OrgRole) =>
-  send<OrgMember>('PATCH', member(org, user), { role })
+  call<OrgMember>(
+    api.PATCH('/v1/orgs/{org}/members/{user}', { params: { path: { org, user } }, body: { role } }),
+  )
 
 export const removeOrgMember = (org: string, user: string) =>
-  send<void>('DELETE', member(org, user))
+  call<void>(api.DELETE('/v1/orgs/{org}/members/{user}', { params: { path: { org, user } } }))
 
-const rule = (org: string, r: RuleRef) =>
-  `${base(org)}/repo-policy/rules/${r.effect}/${r.kind}/${encodeURIComponent(r.subject)}`
-
-export const getRepoPolicy = (org: string) => send<RepoPolicy>('GET', `${base(org)}/repo-policy`)
+export const getRepoPolicy = (org: string) =>
+  call<RepoPolicy>(api.GET('/v1/orgs/{org}/repo-policy', org_(org)))
 
 export const setMemberCreation = (org: string, member_creation: MemberCreation) =>
-  send<RepoPolicy>('PUT', `${base(org)}/repo-policy`, { member_creation })
+  call<RepoPolicy>(
+    api.PUT('/v1/orgs/{org}/repo-policy', { ...org_(org), body: { member_creation } }),
+  )
 
 export const setCreationRule = (org: string, r: RuleRef, scope: RuleScope) =>
-  send<CreationRule>('PUT', rule(org, r), { scope })
+  call<CreationRule>(
+    api.PUT('/v1/orgs/{org}/repo-policy/rules/{effect}/{kind}/{subject}', {
+      ...rule(org, r),
+      body: { scope },
+    }),
+  )
 
-export const removeCreationRule = (org: string, r: RuleRef) => send<void>('DELETE', rule(org, r))
+export const removeCreationRule = (org: string, r: RuleRef) =>
+  call<void>(api.DELETE('/v1/orgs/{org}/repo-policy/rules/{effect}/{kind}/{subject}', rule(org, r)))

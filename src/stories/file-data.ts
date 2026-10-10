@@ -50,6 +50,7 @@ export const fileEntry: TreeEntry = {
     id: 61,
     path: 'Source/useCount.ts',
     author: 'jamie',
+    content: '0000000000000000000000000000000000000000000000000000000000000000',
     message: 'Add counter',
     created_at: at,
   },

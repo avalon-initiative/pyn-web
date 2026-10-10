@@ -110,7 +110,11 @@ const join = (form: RegisterForm) =>
     pendingUser.value = form.username
     const { status } = await register(form)
     if (status === 'active') await begin((await signIn(form)).user)
-    else notice.value = { status, user: form.username }
+    else
+      notice.value = {
+        status: status === 'disabled' ? 'account_disabled' : status,
+        user: form.username,
+      }
   })
 
 const resend = (email: string) =>

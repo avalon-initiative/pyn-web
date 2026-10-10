@@ -7,12 +7,8 @@ import { makeRouter } from '../src/router'
 import { blockedStatus } from '../src/state/account.state'
 import { formatWait } from '../src/state/wait.state'
 
-const reply = (status: number, body: unknown, headers: Record<string, string> = {}) => ({
-  ok: status < 400,
-  status,
-  headers: new Headers(headers),
-  json: async () => body,
-})
+const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
+  new Response(body === null ? null : JSON.stringify(body), { status, headers })
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -31,7 +27,7 @@ describe('account api', () => {
   it('registers with the email and reports the status', async () => {
     const fn = vi
       .fn()
-      .mockResolvedValue(reply(201, { user: 'wendy', status: 'pending_verification' }))
+      .mockImplementation(async () => reply(201, { user: 'wendy', status: 'pending_verification' }))
     vi.stubGlobal('fetch', fn)
     const out = await register({ username: 'wendy', password: 'pw', email: 'w@example.com' })
     expect(out.status).toBe('pending_verification')
