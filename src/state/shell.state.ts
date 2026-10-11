@@ -21,7 +21,10 @@ const adminNav: NavItem = {
 /** The sidebar items; server administration shows only for administrators. */
 export const navItems = (admin: boolean): NavItem[] => (admin ? [...mainNav, adminNav] : mainNav)
 
-export const accountNav = [{ id: 'keys', label: 'SSH keys', href: '/_/settings/keys' }]
+export const accountNav = [
+  { id: 'keys', label: 'SSH keys', href: '/_/settings/keys' },
+  { id: 'tokens', label: 'Access tokens', href: '/_/settings/tokens' },
+]
 
 /** The sidebar item that matches the current route path, if any. */
 export function activeNav(path: string): string {
