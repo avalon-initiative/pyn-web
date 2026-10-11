@@ -293,6 +293,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/identities': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_identities']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/identities/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['unlink_identity']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/locks': {
     parameters: {
       query?: never
@@ -335,6 +367,54 @@ export interface paths {
     get?: never
     put: operations['change_password']
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oidc/authorize': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['authorize']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oidc/callback': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['callback']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/oidc/link': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['link']
     delete?: never
     options?: never
     head?: never
@@ -1052,6 +1132,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/sign-in-options': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['sign_in_options']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/tokens': {
     parameters: {
       query?: never
@@ -1286,6 +1382,24 @@ export interface components {
       code: string
       message: string
     }
+    /** @description A provider identity linked to an account. */
+    ExternalIdentityInfo: {
+      /** Format: date-time */
+      created_at: string
+      /** @description The address the provider last gave, if it vouched for one. */
+      email?: string | null
+      id: string
+      issuer: string
+      /** Format: date-time */
+      last_sign_in_at?: string | null
+      subject: string
+    }
+    ExternalProviderInfo: {
+      /** @description What to call it on the sign-in button. */
+      name: string
+      /** @description Send the browser here (a full page navigation, with an optional `return_to` path) to start signing in. */
+      sign_in_url: string
+    }
     FileEntry: {
       lock?: components['schemas']['Lock'] | null
       mode: components['schemas']['Mode']
@@ -1395,6 +1509,10 @@ export interface components {
       name: string
       owner: string
       path: string
+    }
+    /** @description Where to send the browser to link the provider to the signed-in account. */
+    OidcLink: {
+      url: string
     }
     /** @description An organization: a namespace that owns repositories. */
     OrgInfo: {
@@ -1676,6 +1794,12 @@ export interface components {
       registration: components['schemas']['RegistrationMode']
       /** @description Set once setup recorded a name. */
       server_name?: string | null
+    }
+    /** @description How people can sign in to this server. */
+    SignInOptions: {
+      external?: components['schemas']['ExternalProviderInfo'] | null
+      /** @description Whether anyone may sign in with a password. When false, server administrators still can. */
+      password: boolean
     }
     SshKeyInfo: {
       algorithm: string
@@ -2665,6 +2789,72 @@ export interface operations {
       }
     }
   }
+  list_identities: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the provider identities linked to the caller's account, oldest first */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ExternalIdentityInfo'][]
+        }
+      }
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  unlink_identity: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the link's id */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description external_identity_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description last_sign_in_method: the account has no password and no other link */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   my_locks: {
     parameters: {
       query?: never
@@ -2742,6 +2932,137 @@ export interface operations {
       }
       /** @description the current password is wrong */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  authorize: {
+    parameters: {
+      query?: {
+        /** @description a path in the web app to open after signing in, such as /repos */
+        return_to?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description to the provider; sets a short-lived cookie that ties the sign-in to this browser */
+      302: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description invalid_request: return_to is not a path in the web app */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description oidc_not_configured */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description external_provider_unavailable */
+      502: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  callback: {
+    parameters: {
+      query?: {
+        /** @description the authorization code */
+        code?: string
+        /** @description the state sent with the authorization request */
+        state?: string
+        /** @description set by the provider when the person did not sign in */
+        error?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description to the web app: the return_to path (or /) with the session cookie set, or /sign-in?error=<code> on failure */
+      302: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  link: {
+    parameters: {
+      query?: {
+        /** @description a path in the web app to open after linking */
+        return_to?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description send the browser to `url`; the provider identity it signs in as is linked to the caller's account */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OidcLink']
+        }
+      }
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description oidc_not_configured */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description external_provider_unavailable */
+      502: {
         headers: {
           [name: string]: unknown
         }
@@ -5342,6 +5663,25 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  sign_in_options: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SignInOptions']
         }
       }
     }
