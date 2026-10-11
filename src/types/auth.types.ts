@@ -24,3 +24,15 @@ export interface RegisterForm extends SignInForm {
 export type SshKey = Schemas['SshKeyInfo']
 
 export type VerifyOutcome = 'verifying' | 'verified' | 'invalid'
+
+export type SetupStatus = Schemas['SetupStatus']
+
+export interface SetupForm {
+  token: string
+  username: string
+  password: string
+  email: string
+  server_name: string
+  public_url: string
+  registration: RegistrationMode
+}

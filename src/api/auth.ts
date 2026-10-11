@@ -4,6 +4,8 @@ import type {
   Registered,
   RegistrationInfo,
   Session,
+  SetupForm,
+  SetupStatus,
   SignInForm,
 } from '../types/auth.types'
 import { ApiError } from './client'
@@ -51,3 +53,20 @@ export async function signOut(): Promise<void> {
     setCsrfToken('')
   }
 }
+
+export const fetchSetupStatus = () => call<SetupStatus>(api.GET('/v1/setup'))
+
+export const completeSetup = (form: SetupForm) =>
+  call<{ user: string }>(
+    api.POST('/v1/setup', {
+      body: {
+        token: form.token.trim(),
+        username: form.username,
+        password: form.password,
+        email: form.email || null,
+        server_name: form.server_name || null,
+        public_url: form.public_url || null,
+        registration: form.registration,
+      },
+    }),
+  )
