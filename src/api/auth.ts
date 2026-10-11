@@ -7,6 +7,7 @@ import type {
   SetupForm,
   SetupStatus,
   SignInForm,
+  SignInOptions,
 } from '../types/auth.types'
 import { ApiError } from './client'
 import { api, call } from './http'
@@ -70,3 +71,5 @@ export const completeSetup = (form: SetupForm) =>
       },
     }),
   )
+
+export const fetchSignInOptions = () => call<SignInOptions>(api.GET('/v1/sign-in-options'))

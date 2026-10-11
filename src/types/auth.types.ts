@@ -36,3 +36,6 @@ export interface SetupForm {
   public_url: string
   registration: RegistrationMode
 }
+
+export type SignInOptions = Schemas['SignInOptions']
+export type ExternalProvider = Schemas['ExternalProviderInfo']

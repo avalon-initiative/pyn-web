@@ -5,6 +5,8 @@ import { register, resendVerification, signIn, verifyEmail } from '../src/api/au
 import { ApiError, describeError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { blockedStatus } from '../src/state/account.state'
+import PynSignIn from '../src/components/PynSignIn.vue'
+import { externalSignInUrl, signInErrorMessage } from '../src/state/account.state'
 import { formatWait } from '../src/state/wait.state'
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
@@ -119,5 +121,44 @@ describe('VerifyEmailView', () => {
     const w = await open('/verify-email')
     expect(w.text()).toContain('Link not valid')
     expect(fn.mock.calls.some((c) => c[0] === '/v1/register/verify')).toBe(false)
+  })
+})
+
+describe('external sign-in', () => {
+  it('builds the start url with the page to return to', () => {
+    expect(externalSignInUrl('/v1/oidc/authorize', '/acme/game?x=1')).toBe(
+      '/v1/oidc/authorize?return_to=%2Facme%2Fgame%3Fx%3D1',
+    )
+    expect(externalSignInUrl('/v1/oidc/authorize?a=b')).toBe('/v1/oidc/authorize?a=b&return_to=%2F')
+  })
+
+  it('explains a provider error and falls back for unknown codes', () => {
+    expect(signInErrorMessage('external_account_not_linked')).toContain('No account is linked')
+    expect(signInErrorMessage('???')).toBe('Sign-in with the provider failed.')
+  })
+
+  const provider = { name: 'Acme SSO', sign_in_url: '/v1/oidc/authorize' }
+
+  it('offers the provider next to the password form', () => {
+    const w = mount(PynSignIn, { props: { registration: 'closed', external: provider } })
+    expect(w.find('a').text()).toBe('Sign in with Acme SSO')
+    expect(w.find('a').attributes('href')).toBe('/v1/oidc/authorize?return_to=%2F')
+    expect(w.find('input').exists()).toBe(true)
+  })
+
+  it('hides the password form until an administrator asks for it', async () => {
+    const w = mount(PynSignIn, {
+      props: { registration: 'closed', external: provider, passwordSignIn: false },
+    })
+    expect(w.find('input').exists()).toBe(false)
+    await w.find('button[type=button]').trigger('click')
+    expect(w.find('input').exists()).toBe(true)
+  })
+
+  it('shows the error the server sent back', () => {
+    const w = mount(PynSignIn, {
+      props: { registration: 'closed', callbackError: 'external_sign_in_failed' },
+    })
+    expect(w.find('[role=alert]').text()).toContain('did not complete')
   })
 })
