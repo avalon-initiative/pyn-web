@@ -26,6 +26,12 @@ export const accountNav = [
   { id: 'tokens', label: 'Access tokens', href: '/_/settings/tokens' },
 ]
 
+const identitiesNav = { id: 'identities', label: 'Linked sign-in', href: '/_/settings/identities' }
+
+/** The settings pages; linked sign-in shows only when the server offers a provider. */
+export const accountNavItems = (hasProvider: boolean) =>
+  hasProvider ? [...accountNav, identitiesNav] : accountNav
+
 /** The sidebar item that matches the current route path, if any. */
 export function activeNav(path: string): string {
   if (path === '/') return 'home'
