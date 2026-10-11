@@ -7,7 +7,7 @@ LOG_DIR := $(RUN_DIR)/logs
 PID_FILE := $(PID_DIR)/pyn-web.pid
 LOG_FILE := $(LOG_DIR)/pyn-web.log
 
-.PHONY: install help build run start stop restart status test fmt fmt-check lint check clean
+.PHONY: install help build run start stop restart status test fmt fmt-check lint boundary-check check clean
 
 install:
 	npm install
@@ -24,7 +24,8 @@ help:
 	@echo "  make test          run the test suite"
 	@echo "  make fmt           auto-format"
 	@echo "  make fmt-check     format check, no writes"
-	@echo "  make lint          linter"
+	@echo "  make lint          linter, type check and public-boundary check"
+	@echo "  make boundary-check  fail on private references or secrets in tracked files"
 	@echo "  make check         fmt-check + lint + test — what CI runs"
 	@echo "  make clean         remove build artifacts and PID/log files"
 
@@ -75,6 +76,10 @@ fmt-check:
 
 lint:
 	npm run lint && npm run typecheck
+	python3 scripts/check_public_boundary.py
+
+boundary-check:
+	python3 scripts/check_public_boundary.py
 
 check: fmt-check lint test
 
