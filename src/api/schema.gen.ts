@@ -4497,7 +4497,7 @@ export interface operations {
         path?: string
         /** @description only events by this user */
         actor?: string
-        /** @description checkout, release, checkin, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted or policy_changed */
+        /** @description checkout, release, checkin, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked or policy_changed */
         action?: string
         /** @description events older than this id */
         before?: number
