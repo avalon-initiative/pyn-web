@@ -939,6 +939,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/policy/preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['preview_policy']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/release': {
     parameters: {
       query?: never
@@ -1557,6 +1573,19 @@ export interface components {
       /** @description Ordered by name. */
       repositories: components['schemas']['RepoUsage'][]
       usage: components['schemas']['Usage']
+    }
+    /** @description What a proposed policy would change in the repository, without applying it. */
+    PolicyPreview: {
+      /** @description Live locks that would be released because their path becomes shared. */
+      released_locks: components['schemas']['Lock'][]
+      /** @description Paths that are shared now and would become exclusive. */
+      to_exclusive: string[]
+      /** @description Paths that are exclusive now and would become shared. */
+      to_shared: string[]
+    }
+    PolicyPreviewRequest: {
+      /** @description The proposed contents of `.pyn/pyn.toml`. */
+      content: string
     }
     PutObjectResponse: {
       content: string
@@ -4662,6 +4691,15 @@ export interface operations {
           'application/octet-stream': string
         }
       }
+      /** @description the part named by a single-range `Range: bytes=` header */
+      206: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/octet-stream': string
+        }
+      }
       /** @description revision_not_found */
       404: {
         headers: {
@@ -4670,6 +4708,13 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ErrorBody']
         }
+      }
+      /** @description the range lies outside the content; `Content-Range: bytes *\/<length>` */
+      416: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -5027,6 +5072,61 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['PutObjectResponse']
+        }
+      }
+      /** @description object_too_large: the upload exceeds the server's per-object limit */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  preview_policy: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PolicyPreviewRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PolicyPreview']
+        }
+      }
+      /** @description invalid_rules: the proposed policy does not parse */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the edit_policy permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
