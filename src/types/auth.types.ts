@@ -39,3 +39,5 @@ export interface SetupForm {
 
 export type SignInOptions = Schemas['SignInOptions']
 export type ExternalProvider = Schemas['ExternalProviderInfo']
+
+export type ExternalIdentity = Schemas['ExternalIdentityInfo']

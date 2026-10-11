@@ -4,6 +4,7 @@ import { scrollToHash } from './state/hash.state'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AccountView from './views/AccountView.vue'
 import KeysView from './views/KeysView.vue'
+import IdentitiesView from './views/IdentitiesView.vue'
 import TokensView from './views/TokensView.vue'
 import MyLocksView from './views/MyLocksView.vue'
 import NewRepoView from './views/NewRepoView.vue'
@@ -46,6 +47,7 @@ export const routes = [
       { path: '', redirect: '/_/settings/keys' },
       { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
       { path: 'tokens', name: 'tokens', component: TokensView, alias: '/_/tokens' },
+      { path: 'identities', name: 'identities', component: IdentitiesView },
     ],
   },
   { path: '/:owner/-', redirect: { name: 'owner' } },

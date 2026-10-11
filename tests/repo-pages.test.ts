@@ -81,6 +81,7 @@ describe('router', () => {
     expect(resolve('/_/keys').name).toBe('keys')
     expect(resolve('/_/settings/keys').name).toBe('keys')
     expect(resolve('/_/tokens').name).toBe('tokens')
+    expect(resolve('/_/settings/identities').name).toBe('identities')
     expect(resolve('/').name).toBe('repos')
   })
 })
