@@ -80,6 +80,7 @@ describe('router', () => {
     expect(resolve('/_/new').name).toBe('new-repo')
     expect(resolve('/_/keys').name).toBe('keys')
     expect(resolve('/_/settings/keys').name).toBe('keys')
+    expect(resolve('/_/tokens').name).toBe('tokens')
     expect(resolve('/').name).toBe('repos')
   })
 })
