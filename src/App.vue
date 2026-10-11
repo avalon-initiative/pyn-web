@@ -4,10 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import styles from './styles/App.module.scss'
 import PynShell from './components/PynShell.vue'
 import PynSideNav from './components/PynSideNav.vue'
+import PynSetup from './components/PynSetup.vue'
 import PynSignIn from './components/PynSignIn.vue'
 import PynTopBar from './components/PynTopBar.vue'
 import {
+  completeSetup,
   fetchRegistration,
+  fetchSetupStatus,
   register,
   resendVerification,
   restoreSession,
@@ -28,7 +31,14 @@ import { applyTheme, loadTheme, saveTheme } from './state/theme.state'
 import type { ThemeChoice } from './state/theme.state'
 import type { OrgInfo } from './types/org.types'
 import type { RepoInfo } from './types/repo.types'
-import type { BlockedStatus, RegisterForm, RegistrationInfo, SignInForm } from './types/auth.types'
+import type {
+  BlockedStatus,
+  RegisterForm,
+  RegistrationInfo,
+  SetupForm,
+  SetupStatus,
+  SignInForm,
+} from './types/auth.types'
 
 const router = useRouter()
 const route = useRoute()
@@ -98,6 +108,23 @@ async function attempt(action: () => Promise<void>) {
 }
 
 const pendingUser = ref('')
+const setup = ref<SetupStatus | null>(null)
+const setupDone = ref<SetupForm | null>(null)
+
+const finishSetup = (form: SetupForm) =>
+  attempt(async () => {
+    await completeSetup(form)
+    setupDone.value = form
+  })
+
+const enterAfterSetup = () =>
+  attempt(async () => {
+    if (!setupDone.value) return
+    const { username, password } = setupDone.value
+    await begin((await signIn({ username, password })).user)
+    setup.value = null
+    setupDone.value = null
+  })
 
 const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
@@ -144,6 +171,8 @@ function followLink(e: MouseEvent) {
 }
 
 onMounted(async () => {
+  const status = await fetchSetupStatus().catch(() => null)
+  if (status && !status.initialised) setup.value = status
   registration.value = await fetchRegistration().catch(() => null)
   const session = await restoreSession().catch(() => null)
   if (session) await begin(session.user)
@@ -153,7 +182,19 @@ onMounted(async () => {
 
 <template>
   <div :class="styles.page" @click="followLink">
-    <main v-if="ready && !user" :class="styles.signedOut">
+    <main v-if="ready && setup" :class="styles.signedOut">
+      <PynSetup
+        :server-name="setup.server_name ?? undefined"
+        :public-url="setup.public_url"
+        :registration="setup.registration"
+        :done="!!setupDone"
+        :busy="busy"
+        :error="error"
+        @finish="finishSetup"
+        @sign-in="enterAfterSetup"
+      />
+    </main>
+    <main v-else-if="ready && !user" :class="styles.signedOut">
       <RouterView v-if="route.name === 'verify-email'" />
       <PynSignIn
         v-else
