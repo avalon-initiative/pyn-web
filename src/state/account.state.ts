@@ -26,3 +26,25 @@ export const NOTICE_TEXT: Record<BlockedStatus, string> = {
   account_disabled:
     'An administrator disabled this account. Contact them to have it enabled again.',
 }
+
+const SIGN_IN_ERRORS: Record<string, string> = {
+  external_sign_in_failed: 'Sign-in with the provider did not complete. Try again.',
+  external_account_not_linked:
+    'No account is linked to that identity. Sign in with your password and link it, or ask an administrator.',
+  external_identity_taken: 'That identity is already linked to another account.',
+  external_provider_unavailable: 'The sign-in provider is not reachable right now.',
+  account_disabled: 'An administrator disabled this account.',
+  approval_pending: 'An administrator must approve this account before it can sign in.',
+  email_not_verified: 'Verify your email address before signing in.',
+  too_many_attempts: 'Too many attempts. Try again later.',
+}
+
+/** Text for the `error` code the server puts on the sign-in page after a provider round trip. */
+export const signInErrorMessage = (code: string) =>
+  SIGN_IN_ERRORS[code] ?? 'Sign-in with the provider failed.'
+
+/** The provider's start URL, asking to come back to `returnTo` (an app path). */
+export function externalSignInUrl(signInUrl: string, returnTo = '/'): string {
+  const join = signInUrl.includes('?') ? '&' : '?'
+  return `${signInUrl}${join}return_to=${encodeURIComponent(returnTo)}`
+}

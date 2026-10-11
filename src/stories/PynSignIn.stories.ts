@@ -42,3 +42,18 @@ export const AwaitingApproval: Story = {
 export const AccountDisabled: Story = {
   args: { notice: { status: 'account_disabled', user: 'wendy' } },
 }
+export const WithProvider: Story = {
+  args: { external: { name: 'Acme SSO', sign_in_url: '/v1/oidc/authorize' } },
+}
+export const ProviderOnly: Story = {
+  args: {
+    passwordSignIn: false,
+    external: { name: 'Acme SSO', sign_in_url: '/v1/oidc/authorize' },
+  },
+}
+export const ProviderRefusedAccount: Story = {
+  args: {
+    external: { name: 'Acme SSO', sign_in_url: '/v1/oidc/authorize' },
+    callbackError: 'external_account_not_linked',
+  },
+}

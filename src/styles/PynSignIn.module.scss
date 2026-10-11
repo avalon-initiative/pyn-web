@@ -78,3 +78,15 @@
   border-radius: var(--pyn-radius);
   font-size: 0.875rem;
 }
+
+.provider {
+  padding: var(--pyn-space-2) var(--pyn-space-4);
+  color: var(--pyn-text);
+  border: 1px solid var(--pyn-border);
+  border-radius: var(--pyn-radius);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+
+  @include m.focus-ring;
+}

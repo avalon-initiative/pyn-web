@@ -10,6 +10,7 @@ import PynTopBar from './components/PynTopBar.vue'
 import {
   completeSetup,
   fetchRegistration,
+  fetchSignInOptions,
   fetchSetupStatus,
   register,
   resendVerification,
@@ -38,6 +39,7 @@ import type {
   SetupForm,
   SetupStatus,
   SignInForm,
+  SignInOptions,
 } from './types/auth.types'
 
 const router = useRouter()
@@ -47,6 +49,8 @@ const admin = ref(false)
 const error = ref('')
 const busy = ref(false)
 const registration = ref<RegistrationInfo | null>(null)
+const signInOptions = ref<SignInOptions | null>(null)
+const callbackError = new URLSearchParams(window.location.search).get('error') ?? ''
 const notice = ref<{ status: BlockedStatus; user?: string } | null>(null)
 const resent = ref(false)
 const ready = ref(false)
@@ -174,6 +178,7 @@ onMounted(async () => {
   const status = await fetchSetupStatus().catch(() => null)
   if (status && !status.initialised) setup.value = status
   registration.value = await fetchRegistration().catch(() => null)
+  signInOptions.value = await fetchSignInOptions().catch(() => null)
   const session = await restoreSession().catch(() => null)
   if (session) await begin(session.user)
   ready.value = true
@@ -199,6 +204,10 @@ onMounted(async () => {
       <PynSignIn
         v-else
         :registration="registration?.registration ?? null"
+        :external="signInOptions?.external"
+        :password-sign-in="signInOptions?.password"
+        :return-to="route.fullPath"
+        :callback-error="callbackError"
         :email-verification="registration?.email_verification"
         :notice="notice"
         :resent="resent"
