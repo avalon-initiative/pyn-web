@@ -34,7 +34,10 @@ jobs:
           PYN_OPENAPI: https://raw.githubusercontent.com/avalon-initiative/pyn/main/docs/generated/openapi.json
         run: npm run api:check
 
-      # prettier, eslint, vue-tsc, vitest.
+      - name: Public boundary
+        run: make boundary-check
+
+      # prettier, eslint, vue-tsc, vitest and the public-boundary check.
       - name: Checks
         run: make check
 
