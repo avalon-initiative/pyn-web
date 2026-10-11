@@ -751,6 +751,7 @@ export interface paths {
     }
     get?: never
     put?: never
+    /** Lock an exclusive path for the caller. */
     post: operations['checkout']
     delete?: never
     options?: never
@@ -947,6 +948,7 @@ export interface paths {
     }
     get?: never
     put?: never
+    /** Unlock a path the caller holds. */
     post: operations['release']
     delete?: never
     options?: never
@@ -1598,7 +1600,7 @@ export interface components {
       created_at: string
       /**
        * Format: int32
-       * @description How long a checkout lasts before it expires unless renewed.
+       * @description How long a lock lasts before it expires unless renewed.
        */
       lease_hours: number
       /**
