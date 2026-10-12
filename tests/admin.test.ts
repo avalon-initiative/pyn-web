@@ -106,7 +106,16 @@ describe('PynAccounts', () => {
 
 describe('PynAudit plain', () => {
   it('hides the filter form', () => {
-    const entries = [{ id: 1, at: '2026-10-07T09:00:00Z', actor: 'root', action: 'x', detail: 'y' }]
+    const entries = [
+      {
+        id: 1,
+        at: '2026-10-07T09:00:00Z',
+        actor: 'root',
+        hash: 'a'.repeat(64),
+        action: 'x',
+        detail: 'y',
+      },
+    ]
     const w = mount(PynAudit, { props: { entries, plain: true } })
     expect(w.find('form').exists()).toBe(false)
     expect(w.text()).toContain('Oct 07 2026')

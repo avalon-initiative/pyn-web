@@ -28,6 +28,8 @@ const change = (id: number, path: string, author: string, message: string, hours
   id,
   path,
   author,
+  commit: id,
+  hash: 'b'.repeat(64),
   message,
   content: 'c0ffee',
   created_at: ago(hours),

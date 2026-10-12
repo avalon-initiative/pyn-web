@@ -50,6 +50,8 @@ export const fileEntry: TreeEntry = {
     id: 61,
     path: 'Source/useCount.ts',
     author: 'jamie',
+    commit: 61,
+    hash: 'b'.repeat(64),
     content: '0000000000000000000000000000000000000000000000000000000000000000',
     message: 'Add counter',
     created_at: at,
