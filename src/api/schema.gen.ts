@@ -1010,6 +1010,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/merge': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Merge a branch or commit into a branch. */
+    post: operations['merge']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/merge/preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Preview a merge. */
+    post: operations['preview_merge']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/objects': {
     parameters: {
       query?: never
@@ -1775,6 +1809,92 @@ export interface components {
      * @enum {string}
      */
     MemberSource: 'direct' | 'team' | 'org_owner'
+    /** @description A path the merge changes in the target, with the content it ends up with. */
+    MergeChange: {
+      /** @description The git blob id of the merged content. */
+      content: string
+      file_mode: components['schemas']['FileMode']
+      inputs: components['schemas']['MergeInputs'] | null
+      mode: components['schemas']['Mode']
+      path: string
+      /**
+       * Format: int64
+       * @description A revision of the path that holds exactly this content and file mode, when one does.
+       */
+      revision: number | null
+    }
+    MergeConflict: {
+      inputs: components['schemas']['MergeInputs']
+      kind: components['schemas']['MergeConflictKind']
+      mode: components['schemas']['Mode']
+      path: string
+    }
+    /** @enum {string} */
+    MergeConflictKind:
+      'content' | 'both_added' | 'binary' | 'delete_modify' | 'file_mode' | 'exclusive_conversion'
+    /**
+     * @description Whether a merge may or must fast-forward.
+     * @enum {string}
+     */
+    MergeFastForward: 'allow' | 'never' | 'only'
+    /** @description The versions a path's merge is made from; a side is null where the path does not exist. */
+    MergeInputs: {
+      base: components['schemas']['MergeSide'] | null
+      /** @description The base's bytes, base64, when no revision holds it (a virtual base), so a client can still merge against it. */
+      base_inline: string | null
+      ours: components['schemas']['MergeSide'] | null
+      theirs: components['schemas']['MergeSide'] | null
+    }
+    /** @enum {string} */
+    MergeOutcome: 'up_to_date' | 'fast_forward' | 'merge' | 'conflicted'
+    /** @description What a merge does, or did. */
+    MergeReport: {
+      /** @description The merge base commits; more than one means a criss-cross history. */
+      bases: string[]
+      /** @description Paths whose content changes in the target, ordered by path. */
+      changes: components['schemas']['MergeChange'][]
+      /** @description The commit the merge wrote; null for a preview and for an up-to-date merge. */
+      commit: string | null
+      conflicts: components['schemas']['MergeConflict'][]
+      outcome: components['schemas']['MergeOutcome']
+      source: string
+      target: string
+      /** @description The target's head the merge was computed on; null for a branch with no commits. */
+      target_commit: string | null
+      /** @description True when the bases were merged into a virtual one. */
+      virtual_base: boolean
+    }
+    /** @description A source (a branch, or a commit) merged into a target branch. */
+    MergeRequest: {
+      /** @description The commit the caller saw as the target's head; if the branch has moved the answer is `merge_stale`. */
+      expect_target?: string | null
+      fast_forward?: components['schemas']['MergeFastForward'] | null
+      /** @description The merge commit's message; `Merge branch '<source>' into <target>` if omitted. */
+      message?: string | null
+      /** @description The content chosen for each conflicted path (and optionally for a path that merged cleanly). */
+      resolutions?: components['schemas']['MergeResolution'][]
+      /** @description A branch name, or a commit id or abbreviation of at least 4 digits. */
+      source: string
+      /** @description The branch that moves; the default branch if omitted. */
+      target?: string | null
+    }
+    /** @description The content chosen for one path of a merge: an uploaded object, by its blob id. */
+    MergeResolution: {
+      content: string
+      file_mode?: components['schemas']['FileMode'] | null
+      path: string
+    }
+    /** @description One version of a path in a merge. */
+    MergeSide: {
+      /** @description The git blob id of the content. */
+      content: string
+      file_mode: components['schemas']['FileMode']
+      /**
+       * Format: int64
+       * @description The revision that holds this version; null for the virtual base of a criss-cross merge.
+       */
+      revision: number | null
+    }
     /** @description Chunk digests to check against the server's object store. */
     MissingObjectsRequest: {
       /** @description SHA-256 hex of each chunk's bytes; at most 10000. */
@@ -5803,6 +5923,127 @@ export interface operations {
       }
       /** @description needs manage_users and every permission the role grants */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  merge: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MergeRequest']
+      }
+    }
+    responses: {
+      /** @description the outcome and, unless the source was already in the target, the commit the target now points at */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MergeReport']
+        }
+      }
+      /** @description invalid_request for a resolution the merge does not need, object_missing for resolved content that was not uploaded, ambiguous_commit for the source */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the checkin permission, and the edit_policy permission when the merge brings a different policy file into the default branch */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found, or commit_not_found for the source */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description merge_conflict when a conflict has no resolution (nothing is written), merge_stale when the target moved, not_fast_forward, lock_required, lock_held or stale_base for a resolution on an exclusive path */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  preview_merge: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MergeRequest']
+      }
+    }
+    responses: {
+      /** @description what the merge would do and what would conflict; nothing is written, and `message`, `expect_target` and `resolutions` are ignored */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MergeReport']
+        }
+      }
+      /** @description ambiguous_commit for the source, or invalid_request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found, or commit_not_found for the source */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description not_fast_forward when only a fast-forward was asked for */
+      409: {
         headers: {
           [name: string]: unknown
         }
