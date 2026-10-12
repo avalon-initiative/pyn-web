@@ -1963,8 +1963,13 @@ export interface components {
       created_at: string
       /** @description The git file mode of the content. */
       file_mode: components['schemas']['FileMode']
-      /** @description SHA-256 hex over the revision's canonical encoding, v1 or v2 by `author_identity` (docs/concepts/integrity.md). */
+      /** @description SHA-256 hex over the revision's canonical encoding, by `hash_version` (docs/concepts/integrity.md). */
       hash: string
+      /**
+       * Format: int32
+       * @description The encoding `hash` uses: 1 or 2. Version 2 requires `author_identity`, version 1 forbids it.
+       */
+      hash_version: number
       /** Format: int64 */
       id: number
       /**
@@ -2189,7 +2194,7 @@ export interface components {
       token: string
     }
     /**
-     * @description One break found by verification: `hash_mismatch` (a record's fields do not give its hash) or `broken_link` (it does
+     * @description One break found by verification: `hash_mismatch` (a record's fields do not give its hash), `version_mismatch` (a revision's `hash_version` disagrees with its stored fields) or `broken_link` (it does
      *     not follow the record before it). Revision breaks carry `path` and `revision`; audit breaks carry `event`.
      */
     VerifyProblem: {

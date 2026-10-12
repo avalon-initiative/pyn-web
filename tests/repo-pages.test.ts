@@ -324,6 +324,7 @@ describe('PynHistory', () => {
     commit: 'a'.repeat(40),
     file_mode: '100644' as const,
     hash: 'b'.repeat(64),
+    hash_version: 1,
     message: `m${id}`,
     created_at: '2026-10-08T11:00:00Z',
     restored_from,

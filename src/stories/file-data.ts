@@ -53,6 +53,7 @@ export const fileEntry: TreeEntry = {
     commit: 'a'.repeat(40),
     file_mode: '100644' as const,
     hash: 'b'.repeat(64),
+    hash_version: 1,
     content: '0000000000000000000000000000000000000000000000000000000000000000',
     message: 'Add counter',
     created_at: at,
