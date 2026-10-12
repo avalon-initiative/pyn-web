@@ -321,6 +321,8 @@ describe('PynHistory', () => {
     path,
     author: 'alice',
     content: '0'.repeat(64),
+    commit: id,
+    hash: 'b'.repeat(64),
     message: `m${id}`,
     created_at: '2026-10-08T11:00:00Z',
     restored_from,
@@ -439,6 +441,7 @@ describe('PynAudit', () => {
       id: 1,
       at: '2026-10-08T11:00:00Z',
       actor: 'alice',
+      hash: 'a'.repeat(64),
       action: 'repo_created',
       detail: 'alice/game',
     },
@@ -446,7 +449,11 @@ describe('PynAudit', () => {
 
   it('shows the repository audit actions and emits the filter and load-more', async () => {
     const w = mount(PynAudit, {
-      props: { entries, filter: { path: '', actor: '', action: '' }, hasMore: true },
+      props: {
+        entries,
+        filter: { path: '', actor: '', action: '' },
+        hasMore: true,
+      },
     })
     expect(w.text()).toContain('repo_created')
     expect(w.findAll('option').map((o) => o.text())).toEqual(

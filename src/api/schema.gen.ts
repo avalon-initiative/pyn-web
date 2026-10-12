@@ -726,6 +726,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/changesets': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Check several paths in atomically as one commit with one message. */
+    post: operations['changeset']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/checkin': {
     parameters: {
       query?: never
@@ -753,6 +770,40 @@ export interface paths {
     put?: never
     /** Lock an exclusive path for the caller. */
     post: operations['checkout']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/commits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['list_commits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/commits/{commit}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['get_commit']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -955,6 +1006,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/objects/chunk': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['put_chunk']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/objects/missing': {
     parameters: {
       query?: never
@@ -1045,6 +1112,23 @@ export interface paths {
     }
     get?: never
     put: operations['set_role']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/snapshot': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['snapshot']
+    put?: never
     post?: never
     delete?: never
     options?: never
@@ -1144,6 +1228,23 @@ export interface paths {
     get?: never
     put?: never
     post: operations['add_user']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/verify': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Needs `read`; the audit log is also checked for callers with `view_audit`. */
+    get: operations['verify']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -1294,7 +1395,7 @@ export interface components {
     }
     /** @description Chunks already uploaded as objects, to be joined into one object. */
     AssembleObjectRequest: {
-      /** @description Hashes of stored chunks, in order; each at most 4 MiB. */
+      /** @description SHA-256 hex digests of stored chunks, in order; each at most 4 MiB. */
       chunks: string[]
     }
     AuditEntry: {
@@ -1303,9 +1404,13 @@ export interface components {
       /** Format: date-time */
       at: string
       detail: string
+      /** @description SHA-256 hex over the event's canonical encoding, which includes `previous`. */
+      hash: string
       /** Format: int64 */
       id: number
       path?: string | null
+      /** @description The hash of the preceding event in the same log; absent for the first. */
+      previous?: string | null
     }
     AuditPage: {
       /** @description Newest first. */
@@ -1321,10 +1426,28 @@ export interface components {
       current?: string | null
       new: string
     }
+    /** @description One path of a changeset. */
+    ChangesetEntry: {
+      /** Format: int64 */
+      base_revision?: number | null
+      /** @description Blob id returned by `PUT /v1/repos/{owner}/{name}/objects`. */
+      content: string
+      path: string
+    }
+    /** @description Paths checked in together: every base and lock check passes or nothing is written. */
+    ChangesetRequest: {
+      entries: components['schemas']['ChangesetEntry'][]
+      message: string
+    }
+    ChangesetResponse: {
+      changeset: string
+      /** @description One revision per requested path, in request order. */
+      revisions: components['schemas']['Revision'][]
+    }
     CheckinRequest: {
       /** Format: int64 */
       base_revision?: number | null
-      /** @description Hash returned by `PUT /v1/repos/{owner}/{name}/objects`. */
+      /** @description Blob id returned by `PUT /v1/repos/{owner}/{name}/objects`. */
       content: string
       message: string
       path: string
@@ -1336,6 +1459,31 @@ export interface components {
        */
       base_revision?: number | null
       path: string
+    }
+    /**
+     * @description One atomic write: a single checkin or a whole changeset. Commits are numbered 1, 2, ... per repository, and the
+     *     repository as of commit N is the newest revision at or before N of every path.
+     */
+    Commit: {
+      author: string
+      /** @description Set when the commit was made as a changeset. */
+      changeset?: string | null
+      /** Format: date-time */
+      created_at: string
+      /** Format: int64 */
+      id: number
+      message: string
+      /** @description The revisions the commit made, ordered by path. */
+      revisions: components['schemas']['Revision'][]
+    }
+    CommitPage: {
+      /** @description Newest first. */
+      commits: components['schemas']['Commit'][]
+      /**
+       * Format: int64
+       * @description Pass as `before` to fetch the next, older page; null on the last page.
+       */
+      next_before: number | null
     }
     CreateInviteRequest: {
       /**
@@ -1553,13 +1701,13 @@ export interface components {
      * @enum {string}
      */
     MemberSource: 'direct' | 'team' | 'org_owner'
-    /** @description Content hashes to check against the server's object store. */
+    /** @description Chunk digests to check against the server's object store. */
     MissingObjectsRequest: {
-      /** @description SHA-256 hex hashes; at most 10000. */
+      /** @description SHA-256 hex of each chunk's bytes; at most 10000. */
       hashes: string[]
     }
     MissingObjectsResponse: {
-      /** @description The hashes from the request that the server does not store. */
+      /** @description The digests from the request that the server does not store. */
       missing: string[]
     }
     /** @enum {string} */
@@ -1634,6 +1782,7 @@ export interface components {
       content: string
     }
     PutObjectResponse: {
+      /** @description The object's git blob id; for a chunk upload, the SHA-256 hex of its bytes. */
       content: string
     }
     RegisterRequest: {
@@ -1778,15 +1927,31 @@ export interface components {
     }
     Revision: {
       author: string
-      /** @description SHA-256 hex of the content. */
+      /** @description Shared by the revisions checked in together as one changeset; absent for a single-path checkin. */
+      changeset?: string | null
+      /**
+       * Format: int64
+       * @description The repository-wide commit this revision belongs to; see `Commit`.
+       */
+      commit: number
+      /** @description The content's git blob id (SHA-256 hex of `blob <len>\0` followed by the content). */
       content: string
       /** Format: date-time */
       created_at: string
+      /** @description SHA-256 hex over the revision's canonical encoding (docs/concepts/integrity.md). */
+      hash: string
       /** Format: int64 */
       id: number
+      /**
+       * @description The content string this revision's `hash` covers, when it differs from `content`: revisions that predate blob
+       *     ids, whose hash covers the SHA-256 hex of the bare content.
+       */
+      legacy_content?: string | null
       message: string
       mode?: components['schemas']['Mode'] | null
       path: string
+      /** @description The hash of the path's previous revision; absent for the first. */
+      previous?: string | null
       /**
        * Format: int64
        * @description Set when this revision restored the content of an earlier one.
@@ -1877,6 +2042,28 @@ export interface components {
       external?: components['schemas']['ExternalProviderInfo'] | null
       /** @description Whether anyone may sign in with a password. When false, server administrators still can. */
       password: boolean
+    }
+    /** @description A path as of a commit. A shared path is identified by its `content` id, an exclusive one by its `revision`. */
+    SnapshotEntry: {
+      /** @description The content's git blob id at that revision. */
+      content: string
+      /** @description The mode recorded with the revision. */
+      mode: components['schemas']['Mode']
+      path: string
+      /** Format: int64 */
+      revision: number
+    }
+    /** @description The whole repository as of one commit. */
+    SnapshotPage: {
+      /**
+       * Format: int64
+       * @description The commit the entries are as of; 0 for a repository with no commits.
+       */
+      commit: number
+      /** @description Ordered by path. */
+      entries: components['schemas']['SnapshotEntry'][]
+      /** @description Pass as `after` to fetch the next page; null on the last page. */
+      next_after: string | null
     }
     SshKeyInfo: {
       algorithm: string
@@ -1978,6 +2165,30 @@ export interface components {
     VerifyEmailRequest: {
       /** @description The token from the verification link. */
       token: string
+    }
+    /**
+     * @description One break found by verification: `hash_mismatch` (a record's fields do not give its hash) or `broken_link` (it does
+     *     not follow the record before it). Revision breaks carry `path` and `revision`; audit breaks carry `event`.
+     */
+    VerifyProblem: {
+      /** Format: int64 */
+      event?: number | null
+      kind: string
+      path?: string | null
+      /** Format: int64 */
+      revision?: number | null
+    }
+    VerifyReport: {
+      /**
+       * Format: int64
+       * @description Events checked; null when the audit log was not checked (a single path, or no `view_audit`).
+       */
+      audit_events: number | null
+      /** Format: int64 */
+      paths: number
+      problems: components['schemas']['VerifyProblem'][]
+      /** Format: int64 */
+      revisions: number
     }
     /**
      * @description Public: anyone, signed in or not, may read the repository. Private: members only, and everyone else gets 404.
@@ -4572,7 +4783,7 @@ export interface operations {
         path?: string
         /** @description only events by this user */
         actor?: string
-        /** @description checkout, release, checkin, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked or policy_changed */
+        /** @description checkout, release, checkin, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked, policy_changed or mode_converted */
         action?: string
         /** @description events older than this id */
         before?: number
@@ -4600,6 +4811,52 @@ export interface operations {
       }
       /** @description needs view_audit */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  changeset: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangesetRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChangesetResponse']
+        }
+      }
+      /** @description object_missing, invalid_path, or invalid_request for an empty or repeated path or .pyn/pyn.toml */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description lock_required, lock_held or stale_base; nothing was checked in */
+      409: {
         headers: {
           [name: string]: unknown
         }
@@ -4701,6 +4958,70 @@ export interface operations {
       }
       /** @description lock_held, lock_limit_reached or stale_base */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_commits: {
+    parameters: {
+      query?: {
+        /** @description return commits older than this number */
+        before?: number
+        /** @description page size, default 50, max 200 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommitPage']
+        }
+      }
+    }
+  }
+  get_commit: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+        /** @description commit number */
+        commit: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Commit']
+        }
+      }
+      /** @description commit_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5106,18 +5427,29 @@ export interface operations {
       }
       cookie?: never
     }
+    /** @description the content; its `Content-Length` is the declared length that the blob id's header covers */
     requestBody: {
       content: {
         'application/octet-stream': number[]
       }
     }
     responses: {
+      /** @description the content's git blob id */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
           'application/json': components['schemas']['PutObjectResponse']
+        }
+      }
+      /** @description invalid_request without a `Content-Length`; length_mismatch when the body is not that long */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
       /** @description object_too_large: the upload exceeds the server's per-object limit */
@@ -5149,7 +5481,7 @@ export interface operations {
       }
     }
     responses: {
-      /** @description the hash of the chunks' concatenation, ready to check in */
+      /** @description the blob id of the chunks' concatenation, ready to check in */
       200: {
         headers: {
           [name: string]: unknown
@@ -5159,6 +5491,54 @@ export interface operations {
         }
       }
       /** @description invalid_request for a malformed hash, an oversized chunk or too many chunks; object_missing when a chunk was not uploaded */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description object_too_large */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  put_chunk: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    /** @description one chunk, at most 4 MiB */
+    requestBody: {
+      content: {
+        'application/octet-stream': number[]
+      }
+    }
+    responses: {
+      /** @description the chunk's key: the SHA-256 hex of its bytes */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PutObjectResponse']
+        }
+      }
+      /** @description invalid_request for a chunk over 4 MiB */
       400: {
         headers: {
           [name: string]: unknown
@@ -5413,6 +5793,46 @@ export interface operations {
       }
       /** @description needs manage_roles */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  snapshot: {
+    parameters: {
+      query?: {
+        /** @description commit number; the newest if omitted */
+        commit?: number
+        /** @description return paths after this one */
+        after?: string
+        /** @description page size, default 200, max 1000 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SnapshotPage']
+        }
+      }
+      /** @description commit_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5707,6 +6127,42 @@ export interface operations {
       }
       /** @description user_exists */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  verify: {
+    parameters: {
+      query?: {
+        /** @description check only this path; the audit log is then not checked */
+        path?: string
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['VerifyReport']
+        }
+      }
+      /** @description path_not_found for a path without revisions */
+      404: {
         headers: {
           [name: string]: unknown
         }
