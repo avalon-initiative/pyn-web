@@ -24,18 +24,20 @@ export const GameRepository: Story = {
       {
         path: 'Content/World/Main.umap',
         mode: 'exclusive',
+        file_mode: '100644',
         revision: 61,
         lock: lock('Content/World/Main.umap', 'alice', 222),
       },
-      { path: 'Content/World/Dungeon.umap', mode: 'exclusive', revision: 184 },
+      { path: 'Content/World/Dungeon.umap', mode: 'exclusive', file_mode: '100644', revision: 184 },
       {
         path: 'Content/Enemies/Boss.uasset',
         mode: 'exclusive',
+        file_mode: '100644',
         revision: 12,
         lock: lock('Content/Enemies/Boss.uasset', 'bob', 15),
       },
-      { path: 'Source/Player.cpp', mode: 'shared', revision: 382 },
-      { path: 'Source/Enemy.cpp', mode: 'shared', revision: 97 },
+      { path: 'Source/Player.cpp', mode: 'shared', file_mode: '100644', revision: 382 },
+      { path: 'Source/Enemy.cpp', mode: 'shared', file_mode: '100644', revision: 97 },
     ],
   },
 }

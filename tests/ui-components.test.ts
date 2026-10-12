@@ -49,9 +49,9 @@ describe('files state', () => {
 
   it('groups rows by top-level folder, keeping order', () => {
     const rows = [
-      { path: 'Content/a.umap', mode: 'exclusive' as const },
-      { path: 'README.md', mode: 'shared' as const },
-      { path: 'Content/b.umap', mode: 'exclusive' as const },
+      { path: 'Content/a.umap', mode: 'exclusive' as const, file_mode: '100644' as const },
+      { path: 'README.md', mode: 'shared' as const, file_mode: '100644' as const },
+      { path: 'Content/b.umap', mode: 'exclusive' as const, file_mode: '100644' as const },
     ]
     const groups = groupByTopLevel(rows)
     expect(groups.map((g) => [g.name, g.rows.length])).toEqual([
@@ -83,8 +83,14 @@ describe('PynFileList', () => {
       props: {
         now,
         rows: [
-          { path: 'Content/a.umap', mode: 'exclusive', revision: 3, lock: lock('bob', 60) },
-          { path: 'Source/a.cpp', mode: 'shared', revision: 9 },
+          {
+            path: 'Content/a.umap',
+            mode: 'exclusive',
+            file_mode: '100644' as const,
+            revision: 3,
+            lock: lock('bob', 60),
+          },
+          { path: 'Source/a.cpp', mode: 'shared', file_mode: '100644' as const, revision: 9 },
         ],
       },
     })
@@ -97,7 +103,15 @@ describe('PynFileList', () => {
     const w = mount(PynFileList, {
       props: {
         now,
-        rows: [{ path: 'Content/World/Main.umap', mode: 'exclusive', revision: null, lock: null }],
+        rows: [
+          {
+            path: 'Content/World/Main.umap',
+            mode: 'exclusive',
+            file_mode: '100644' as const,
+            revision: null,
+            lock: null,
+          },
+        ],
       },
     })
     expect(w.text()).toContain('Content/World/')
