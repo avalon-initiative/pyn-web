@@ -21,14 +21,14 @@ app shows only the setup wizard, which needs the setup token from the server's l
 
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Dev server |
-| `npm run build` | Production build into `dist/` |
-| `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` | Checks run in CI |
-| `npm run storybook` | Browse the components |
-| `npm run api:generate` | Regenerate the API client types from the server's OpenAPI document |
-| `npm run api:check` | Fail when the generated types are out of date |
+| Command                                                                 | What it does                                                       |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `npm run dev`                                                           | Dev server                                                         |
+| `npm run build`                                                         | Production build into `dist/`                                      |
+| `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` | Checks run in CI                                                   |
+| `npm run storybook`                                                     | Browse the components                                              |
+| `npm run api:generate`                                                  | Regenerate the API client types from the server's OpenAPI document |
+| `npm run api:check`                                                     | Fail when the generated types are out of date                      |
 
 ## API client
 
@@ -38,15 +38,15 @@ sibling directory.
 
 ## Routes
 
-| Route | Page |
-| --- | --- |
-| `/` | repositories you belong to, with your role |
-| `/_/new`, `/_/new-org` | create a repository or an organization |
-| `/_/locks` | locks you hold, across repositories |
-| `/_/settings/{keys,tokens,identities}` | account settings (`/_/keys` and `/_/tokens` also work) |
-| `/_/admin/accounts` | server administration of accounts |
-| `/:owner` | an owner's repositories; `/:owner/-/{members,teams,audit,settings}` for an organization |
-| `/:owner/:name` | files and lock state; `tree/<path>` for a folder, `blob/<path>` for a file |
+| Route                                                                | Page                                                                                          |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `/`                                                                  | repositories you belong to, with your role                                                    |
+| `/_/new`, `/_/new-org`                                               | create a repository or an organization                                                        |
+| `/_/locks`                                                           | locks you hold, across repositories                                                           |
+| `/_/settings/{keys,tokens,identities}`                               | account settings (`/_/keys` and `/_/tokens` also work)                                        |
+| `/_/admin/accounts`                                                  | server administration of accounts                                                             |
+| `/:owner`                                                            | an owner's repositories; `/:owner/-/{members,teams,audit,settings}` for an organization       |
+| `/:owner/:name`                                                      | files and lock state; `tree/<path>` for a folder, `blob/<path>` for a file                    |
 | `/:owner/:name/{locks,history,audit,members,roles,invites,settings}` | repository pages; tabs follow the caller's permissions from `GET /v1/repos/{owner}/{name}/me` |
 
 An account with no role in a repository, or any outsider to a private one, sees "Repository not found".
