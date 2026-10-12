@@ -726,6 +726,42 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/branches': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['list_branches']
+    put?: never
+    /** Create a branch at a commit. */
+    post: operations['create_branch']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/branches/{branch}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_branch']
+    put?: never
+    post?: never
+    /** Delete a branch's name; its commits stay. */
+    delete: operations['delete_branch']
+    options?: never
+    head?: never
+    /** Rename a branch other than the default one. */
+    patch: operations['rename_branch']
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/changesets': {
     parameters: {
       query?: never
@@ -1421,6 +1457,16 @@ export interface components {
        */
       next_before: number | null
     }
+    /** @description A branch: a name pointing at a commit. The default branch's `.pyn/pyn.toml` is the repository's policy. */
+    Branch: {
+      /** @description The commit the branch points at; null only for the default branch of a repository with no commits. */
+      commit: string | null
+      /** Format: date-time */
+      created_at: string
+      created_by: string
+      default: boolean
+      name: string
+    }
     ChangePasswordRequest: {
       /** @description Required when the account already has a password. */
       current?: string | null
@@ -1437,6 +1483,8 @@ export interface components {
     }
     /** @description Paths checked in together: every base and lock check passes or nothing is written. */
     ChangesetRequest: {
+      /** @description The branch the commit is made on; the default branch if omitted. */
+      branch?: string | null
       entries: components['schemas']['ChangesetEntry'][]
       message: string
     }
@@ -1446,8 +1494,13 @@ export interface components {
       revisions: components['schemas']['Revision'][]
     }
     CheckinRequest: {
-      /** Format: int64 */
+      /**
+       * Format: int64
+       * @description A shared path's revision on the branch, or an exclusive path's newest revision on any branch.
+       */
       base_revision?: number | null
+      /** @description The branch the commit is made on; the default branch if omitted. */
+      branch?: string | null
       /** @description Blob id returned by `PUT /v1/repos/{owner}/{name}/objects`. */
       content: string
       file_mode?: components['schemas']['FileMode'] | null
@@ -1463,8 +1516,8 @@ export interface components {
       path: string
     }
     /**
-     * @description One atomic write: a single checkin or a whole changeset, recorded as a git commit on the repository's single
-     *     mainline. `id` is the git commit id, so a commit can be fetched with a unique abbreviation of at least 4 digits.
+     * @description One atomic write: a single checkin or a whole changeset, recorded as a git commit on a branch. `id` is the git
+     *     commit id, so a commit can be fetched with a unique abbreviation of at least 4 digits.
      */
     Commit: {
       author: components['schemas']['Person']
@@ -1478,7 +1531,7 @@ export interface components {
       created_at: string
       id: string
       message: string
-      /** @description Empty for the first commit. */
+      /** @description Empty for the first commit of the repository, otherwise the commit it was made on top of. */
       parents: string[]
       /** @description The revisions the commit made, ordered by path. */
       revisions: components['schemas']['Revision'][]
@@ -1492,6 +1545,12 @@ export interface components {
       commits: components['schemas']['Commit'][]
       /** @description Pass as `before` to fetch the next, older page; null on the last page. */
       next_before: string | null
+    }
+    CreateBranchRequest: {
+      /** @description Git ref rules apply: no spaces, none of `~ ^ : ? * [ \`, no `..`. */
+      name: string
+      /** @description A branch name, or a commit id or abbreviation of at least 4 digits; the default branch's head if omitted. */
+      start?: string | null
     }
     CreateInviteRequest: {
       /**
@@ -1844,6 +1903,9 @@ export interface components {
     ReleaseRequest: {
       path: string
     }
+    RenameBranchRequest: {
+      name: string
+    }
     RepoInfo: {
       /** Format: date-time */
       created_at: string
@@ -1887,18 +1949,14 @@ export interface components {
     RepoSummary: {
       /** @description Newest first. */
       activity: components['schemas']['ActivityEntry'][]
-      /**
-       * Format: int32
-       * @description Provisional: always 1 until branches arrive.
-       */
+      /** Format: int32 */
       branch_count: number
-      /** @description Provisional: the single mainline until branches arrive. */
       default_branch: string
       /** Format: int64 */
       exclusive_files: number
       /**
        * Format: int64
-       * @description Paths with at least one revision.
+       * @description Paths with at least one revision on the default branch.
        */
       files: number
       /** @description Live locks with their holders, ordered by path. */
@@ -1940,6 +1998,8 @@ export interface components {
        * @description The current head the caller is looking at; must still be the head.
        */
       base_revision: number
+      /** @description The branch the restore is committed on; the default branch if omitted. */
+      branch?: string | null
       /** @description `<path>@r<base_revision>`, confirming the caller knows which head is being replaced. */
       confirm: string
       message?: string | null
@@ -4851,6 +4911,250 @@ export interface operations {
       }
     }
   }
+  list_branches: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the default branch first, then by name */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Branch'][]
+        }
+      }
+    }
+  }
+  create_branch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateBranchRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Branch']
+        }
+      }
+      /** @description invalid_branch_name, commit_not_found or ambiguous_commit for the start point, or invalid_request when the repository has no commit to start from */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_exists: the name is taken, or is a folder of another branch's name */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_branch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+        /** @description the branch's name; a slash may be sent as is or as %2F */
+        branch: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Branch']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_branch: {
+    parameters: {
+      query?: {
+        /** @description delete a branch whose commits are not all on the default branch */
+        force?: boolean
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+        /** @description the branch's name; a slash may be sent as is or as %2F */
+        branch: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description invalid_request for the default branch */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_merged without force */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  rename_branch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+        /** @description the branch's name; a slash may be sent as is or as %2F */
+        branch: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RenameBranchRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Branch']
+        }
+      }
+      /** @description invalid_branch_name, or invalid_request for the default branch */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_exists */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   changeset: {
     parameters: {
       query?: never
@@ -4879,6 +5183,15 @@ export interface operations {
       }
       /** @description object_missing, invalid_path, or invalid_request for an empty or repeated path or .pyn/pyn.toml */
       400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -4934,6 +5247,15 @@ export interface operations {
       }
       /** @description checking in .pyn/pyn.toml needs the edit_policy permission */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5001,6 +5323,8 @@ export interface operations {
   list_commits: {
     parameters: {
       query?: {
+        /** @description list the commits this branch contains; the default branch if omitted */
+        branch?: string
         /** @description return commits older than this commit (an id or unique abbreviation) */
         before?: string
         /** @description page size, default 50, max 200 */
@@ -5023,6 +5347,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommitPage']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
@@ -5076,8 +5409,10 @@ export interface operations {
       query: {
         /** @description repo-relative path */
         path: string
-        /** @description revision number; the head if omitted */
+        /** @description revision number; the path's revision on the branch if omitted */
         revision?: number
+        /** @description the branch whose revision is read when no revision is given; the default branch if omitted */
+        branch?: string
       }
       header?: never
       path: {
@@ -5107,7 +5442,7 @@ export interface operations {
           'application/octet-stream': string
         }
       }
-      /** @description revision_not_found */
+      /** @description revision_not_found or branch_not_found */
       404: {
         headers: {
           [name: string]: unknown
@@ -5128,6 +5463,8 @@ export interface operations {
   list_files: {
     parameters: {
       query?: {
+        /** @description the branch to read; the default branch if omitted */
+        branch?: string
         /** @description return paths after this one */
         after?: string
         /** @description page size, default 200, max 1000 */
@@ -5150,6 +5487,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['FilePage']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
@@ -5204,6 +5550,8 @@ export interface operations {
   history: {
     parameters: {
       query?: {
+        /** @description the branch to read; the default branch if omitted */
+        branch?: string
         /** @description one path's revisions, oldest first; excludes the other parameters */
         path?: string
         /** @description glob over paths for repository history; no slash matches at any depth */
@@ -5234,6 +5582,15 @@ export interface operations {
       }
       /** @description invalid_request for a bad filter or cursor, or path combined with them */
       400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5752,6 +6109,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
       /** @description lock_required, lock_held, stale_base or confirmation_required */
       409: {
         headers: {
@@ -5845,8 +6211,10 @@ export interface operations {
   snapshot: {
     parameters: {
       query?: {
-        /** @description commit id or unique abbreviation; the newest if omitted */
+        /** @description commit id or unique abbreviation; excludes branch */
         commit?: string
+        /** @description the branch whose head is shown; the default branch if neither commit nor branch is given */
+        branch?: string
         /** @description return paths after this one */
         after?: string
         /** @description page size, default 200, max 1000 */
@@ -5880,7 +6248,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description commit_not_found */
+      /** @description commit_not_found or branch_not_found */
       404: {
         headers: {
           [name: string]: unknown
@@ -6072,6 +6440,8 @@ export interface operations {
   tree: {
     parameters: {
       query?: {
+        /** @description the branch to read; the default branch if omitted */
+        branch?: string
         /** @description folder to list; the root if omitted or empty */
         path?: string
       }
@@ -6103,7 +6473,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description path_not_found */
+      /** @description path_not_found or branch_not_found */
       404: {
         headers: {
           [name: string]: unknown
