@@ -1547,6 +1547,11 @@ export interface components {
        * @description Revision the caller's copy is at (omit if none); must equal the head.
        */
       base_revision?: number | null
+      /**
+       * @description The branch the lock is for: the path must be exclusive under that branch's effective policy. The default
+       *     branch if omitted.
+       */
+      branch?: string | null
       path: string
     }
     /**
@@ -1824,6 +1829,7 @@ export interface components {
       revision: number | null
     }
     MergeConflict: {
+      conversion?: components['schemas']['MergeConversion'] | null
       inputs: components['schemas']['MergeInputs']
       kind: components['schemas']['MergeConflictKind']
       mode: components['schemas']['Mode']
@@ -1832,6 +1838,31 @@ export interface components {
     /** @enum {string} */
     MergeConflictKind:
       'content' | 'both_added' | 'binary' | 'delete_modify' | 'file_mode' | 'exclusive_conversion'
+    /** @description The conversion of a path to exclusive that a merge conflict met, and the shared version it stranded. */
+    MergeConversion: {
+      /** Format: date-time */
+      at: string
+      /** @description Who made the policy change. */
+      by: string
+      /** Format: date-time */
+      diverged_at: string
+      diverged_by: string
+      /**
+       * Format: int64
+       * @description The diverged shared revision the conversion stranded, with its author and time.
+       */
+      diverged_revision: number
+      /**
+       * Format: int64
+       * @description The policy revision in force at the conversion.
+       */
+      policy_revision?: number | null
+      /**
+       * Format: int64
+       * @description The conversion revision, the first of the path's exclusive line.
+       */
+      revision: number
+    }
     /**
      * @description Whether a merge may or must fast-forward.
      * @enum {string}
@@ -1858,6 +1889,11 @@ export interface components {
       conflicts: components['schemas']['MergeConflict'][]
       outcome: components['schemas']['MergeOutcome']
       source: string
+      /**
+       * @description Shared versions on other branches that the policy file a merge into the default branch brought stranded;
+       *     empty for a preview and for every other merge.
+       */
+      stranded?: components['schemas']['StrandedVersion'][]
       target: string
       /** @description The target's head the merge was computed on; null for a branch with no commits. */
       target_commit: string | null
@@ -1976,6 +2012,8 @@ export interface components {
     PolicyPreview: {
       /** @description Live locks that would be released because their path becomes shared. */
       released_locks: components['schemas']['Lock'][]
+      /** @description Diverged shared versions on other branches of the paths that would become exclusive; each would be stranded. */
+      stranded?: components['schemas']['StrandedVersion'][]
       /** @description Paths that are shared now and would become exclusive. */
       to_exclusive: string[]
       /** @description Paths that are exclusive now and would become shared. */
@@ -2167,6 +2205,11 @@ export interface components {
        * @description Set when this revision restored the content of an earlier one.
        */
       restored_from?: number | null
+      /**
+       * @description Only in the response to checking in or restoring `.pyn/pyn.toml` on the default branch: the diverged shared
+       *     versions on other branches that the change stranded. Empty, and omitted, everywhere else.
+       */
+      stranded?: components['schemas']['StrandedVersion'][]
     }
     RoleGrant: {
       permissions: string[]
@@ -2283,6 +2326,33 @@ export interface components {
       last_used_at?: string | null
       title: string
       user: string
+    }
+    /**
+     * @description A shared version a branch holds of a path that became exclusive on the default branch (decision #38). It stays in
+     *     history but can no longer merge into the path's single line.
+     */
+    StrandedVersion: {
+      /** @description Who made the stranded revision. */
+      author: string
+      /** @description The branch that holds the version. */
+      branch: string
+      /** @description Who created the branch; the audit log tells them (`version_stranded`). */
+      branch_owner: string
+      /** @description The commit the revision belongs to. */
+      commit: string
+      /**
+       * Format: int64
+       * @description The conversion revision the default branch made when the path became exclusive; absent in a preview.
+       */
+      conversion?: number | null
+      /** Format: date-time */
+      created_at: string
+      path: string
+      /**
+       * Format: int64
+       * @description The stranded revision of the path.
+       */
+      revision: number
     }
     /** @description A team of an organization with its members and repository roles. */
     TeamInfo: {
@@ -4994,7 +5064,7 @@ export interface operations {
         path?: string
         /** @description only events by this user */
         actor?: string
-        /** @description checkout, release, checkin, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked, policy_changed or mode_converted */
+        /** @description checkout, release, checkin, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked, policy_changed, mode_converted or version_stranded */
         action?: string
         /** @description events older than this id */
         before?: number
@@ -5420,8 +5490,17 @@ export interface operations {
           'application/json': components['schemas']['Lock']
         }
       }
-      /** @description not_exclusive or invalid_path */
+      /** @description not_exclusive (under the branch's effective policy) or invalid_path */
       400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
