@@ -939,6 +939,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/objects/assemble': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['assemble_object']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/objects/missing': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['missing_objects']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/policy/preview': {
     parameters: {
       query?: never
@@ -1260,6 +1292,11 @@ export interface components {
       /** @description An existing active user, who becomes the organization's first owner. */
       owner: string
     }
+    /** @description Chunks already uploaded as objects, to be joined into one object. */
+    AssembleObjectRequest: {
+      /** @description Hashes of stored chunks, in order; each at most 4 MiB. */
+      chunks: string[]
+    }
     AuditEntry: {
       action: string
       actor: string
@@ -1516,6 +1553,15 @@ export interface components {
      * @enum {string}
      */
     MemberSource: 'direct' | 'team' | 'org_owner'
+    /** @description Content hashes to check against the server's object store. */
+    MissingObjectsRequest: {
+      /** @description SHA-256 hex hashes; at most 10000. */
+      hashes: string[]
+    }
+    MissingObjectsResponse: {
+      /** @description The hashes from the request that the server does not store. */
+      missing: string[]
+    }
     /** @enum {string} */
     Mode: 'shared' | 'exclusive'
     /** @description A live lock the caller holds, with the repository it is in. */
@@ -5076,6 +5122,91 @@ export interface operations {
       }
       /** @description object_too_large: the upload exceeds the server's per-object limit */
       413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  assemble_object: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AssembleObjectRequest']
+      }
+    }
+    responses: {
+      /** @description the hash of the chunks' concatenation, ready to check in */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PutObjectResponse']
+        }
+      }
+      /** @description invalid_request for a malformed hash, an oversized chunk or too many chunks; object_missing when a chunk was not uploaded */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description object_too_large */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  missing_objects: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MissingObjectsRequest']
+      }
+    }
+    responses: {
+      /** @description the requested hashes the server does not store */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MissingObjectsResponse']
+        }
+      }
+      /** @description invalid_request for a malformed hash or more than 10000 hashes */
+      400: {
         headers: {
           [name: string]: unknown
         }
