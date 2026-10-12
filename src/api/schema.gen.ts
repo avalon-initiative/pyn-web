@@ -1432,6 +1432,7 @@ export interface components {
       base_revision?: number | null
       /** @description Blob id returned by `PUT /v1/repos/{owner}/{name}/objects`. */
       content: string
+      file_mode?: components['schemas']['FileMode'] | null
       path: string
     }
     /** @description Paths checked in together: every base and lock check passes or nothing is written. */
@@ -1449,6 +1450,7 @@ export interface components {
       base_revision?: number | null
       /** @description Blob id returned by `PUT /v1/repos/{owner}/{name}/objects`. */
       content: string
+      file_mode?: components['schemas']['FileMode'] | null
       message: string
       path: string
     }
@@ -1461,29 +1463,35 @@ export interface components {
       path: string
     }
     /**
-     * @description One atomic write: a single checkin or a whole changeset. Commits are numbered 1, 2, ... per repository, and the
-     *     repository as of commit N is the newest revision at or before N of every path.
+     * @description One atomic write: a single checkin or a whole changeset, recorded as a git commit on the repository's single
+     *     mainline. `id` is the git commit id, so a commit can be fetched with a unique abbreviation of at least 4 digits.
      */
     Commit: {
-      author: string
+      author: components['schemas']['Person']
       /** @description Set when the commit was made as a changeset. */
       changeset?: string | null
-      /** Format: date-time */
+      committer: components['schemas']['Person']
+      /**
+       * Format: date-time
+       * @description The author and committer time, in whole seconds.
+       */
       created_at: string
-      /** Format: int64 */
-      id: number
+      id: string
       message: string
+      /** @description Empty for the first commit. */
+      parents: string[]
       /** @description The revisions the commit made, ordered by path. */
       revisions: components['schemas']['Revision'][]
+      /** @description The commit's `gpgsig` header, when it is signed. */
+      signature?: string | null
+      /** @description The id of the root git tree of the repository as of this commit. */
+      tree: string
     }
     CommitPage: {
       /** @description Newest first. */
       commits: components['schemas']['Commit'][]
-      /**
-       * Format: int64
-       * @description Pass as `before` to fetch the next, older page; null on the last page.
-       */
-      next_before: number | null
+      /** @description Pass as `before` to fetch the next, older page; null on the last page. */
+      next_before: string | null
     }
     CreateInviteRequest: {
       /**
@@ -1604,6 +1612,8 @@ export interface components {
       sign_in_url: string
     }
     FileEntry: {
+      /** @description The head revision's git file mode; `100644` when there is no revision. */
+      file_mode: components['schemas']['FileMode']
       lock?: components['schemas']['Lock'] | null
       mode: components['schemas']['Mode']
       path: string
@@ -1613,6 +1623,11 @@ export interface components {
        */
       revision?: number | null
     }
+    /**
+     * @description Git's file mode for a file: regular, executable or symbolic link (whose content is the link target).
+     * @enum {string}
+     */
+    FileMode: '100644' | '100755' | '120000'
     FilePage: {
       entries: components['schemas']['FileEntry'][]
       /** @description Pass as `after` to fetch the next page; null on the last page. */
@@ -1767,6 +1782,16 @@ export interface components {
       /** @description Ordered by name. */
       repositories: components['schemas']['RepoUsage'][]
       usage: components['schemas']['Usage']
+    }
+    /** @description A commit's author or committer, apart from the time (the commit's `created_at`). */
+    Person: {
+      email: string
+      name: string
+      /**
+       * Format: int32
+       * @description Minutes east of UTC.
+       */
+      offset_minutes: number
     }
     /** @description What a proposed policy would change in the repository, without applying it. */
     PolicyPreview: {
@@ -1927,18 +1952,18 @@ export interface components {
     }
     Revision: {
       author: string
+      author_identity?: components['schemas']['Person'] | null
       /** @description Shared by the revisions checked in together as one changeset; absent for a single-path checkin. */
       changeset?: string | null
-      /**
-       * Format: int64
-       * @description The repository-wide commit this revision belongs to; see `Commit`.
-       */
-      commit: number
+      /** @description The id of the commit this revision belongs to; see `Commit`. */
+      commit: string
       /** @description The content's git blob id (SHA-256 hex of `blob <len>\0` followed by the content). */
       content: string
       /** Format: date-time */
       created_at: string
-      /** @description SHA-256 hex over the revision's canonical encoding (docs/concepts/integrity.md). */
+      /** @description The git file mode of the content. */
+      file_mode: components['schemas']['FileMode']
+      /** @description SHA-256 hex over the revision's canonical encoding, v1 or v2 by `author_identity` (docs/concepts/integrity.md). */
       hash: string
       /** Format: int64 */
       id: number
@@ -2043,11 +2068,11 @@ export interface components {
       /** @description Whether anyone may sign in with a password. When false, server administrators still can. */
       password: boolean
     }
-    /** @description A path as of a commit. A shared path is identified by its `content` id, an exclusive one by its `revision`. */
+    /** @description A path as of a commit: the revision the commit's ancestry gives it. `mode` is what `.pyn/pyn.toml` says at that commit. */
     SnapshotEntry: {
       /** @description The content's git blob id at that revision. */
       content: string
-      /** @description The mode recorded with the revision. */
+      file_mode: components['schemas']['FileMode']
       mode: components['schemas']['Mode']
       path: string
       /** Format: int64 */
@@ -2055,11 +2080,8 @@ export interface components {
     }
     /** @description The whole repository as of one commit. */
     SnapshotPage: {
-      /**
-       * Format: int64
-       * @description The commit the entries are as of; 0 for a repository with no commits.
-       */
-      commit: number
+      /** @description The id of the commit the entries are as of; null for a repository with no commits. */
+      commit: string | null
       /** @description Ordered by path. */
       entries: components['schemas']['SnapshotEntry'][]
       /** @description Pass as `after` to fetch the next page; null on the last page. */
@@ -2171,6 +2193,8 @@ export interface components {
      *     not follow the record before it). Revision breaks carry `path` and `revision`; audit breaks carry `event`.
      */
     VerifyProblem: {
+      /** @description The commit id, for a problem in a commit record. */
+      commit?: string | null
       /** Format: int64 */
       event?: number | null
       kind: string
@@ -2184,6 +2208,8 @@ export interface components {
        * @description Events checked; null when the audit log was not checked (a single path, or no `view_audit`).
        */
       audit_events: number | null
+      /** Format: int64 */
+      commits: number
       /** Format: int64 */
       paths: number
       problems: components['schemas']['VerifyProblem'][]
@@ -4970,8 +4996,8 @@ export interface operations {
   list_commits: {
     parameters: {
       query?: {
-        /** @description return commits older than this number */
-        before?: number
+        /** @description return commits older than this commit (an id or unique abbreviation) */
+        before?: string
         /** @description page size, default 50, max 200 */
         limit?: number
       }
@@ -5005,8 +5031,8 @@ export interface operations {
         owner: string
         /** @description The repository's name within its owner. */
         name: string
-        /** @description commit number */
-        commit: number
+        /** @description commit id, or a unique abbreviation of at least 4 hex digits */
+        commit: string
       }
       cookie?: never
     }
@@ -5018,6 +5044,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Commit']
+        }
+      }
+      /** @description ambiguous_commit */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
       /** @description commit_not_found */
@@ -5805,8 +5840,8 @@ export interface operations {
   snapshot: {
     parameters: {
       query?: {
-        /** @description commit number; the newest if omitted */
-        commit?: number
+        /** @description commit id or unique abbreviation; the newest if omitted */
+        commit?: string
         /** @description return paths after this one */
         after?: string
         /** @description page size, default 200, max 1000 */
@@ -5829,6 +5864,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SnapshotPage']
+        }
+      }
+      /** @description ambiguous_commit */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
       /** @description commit_not_found */
