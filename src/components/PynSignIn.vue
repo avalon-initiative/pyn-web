@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { PynAccountNotice } from '@avalon-initiative/pyn-common-ui'
 import { computed, ref } from 'vue'
 import styles from '../styles/PynSignIn.module.scss'
-import PynAccountNotice from './PynAccountNotice.vue'
 import { externalSignInUrl, signInErrorMessage } from '../state/account.state'
 import type {
   BlockedStatus,

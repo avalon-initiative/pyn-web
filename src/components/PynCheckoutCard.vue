@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PynLockIcon from './PynLockIcon.vue'
+import { PynLockIcon } from '@avalon-initiative/pyn-common-ui'
 import styles from '../styles/PynCheckoutCard.module.scss'
 </script>
 

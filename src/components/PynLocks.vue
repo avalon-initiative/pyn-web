@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import PynLockIcon from './PynLockIcon.vue'
-import PynModeChip from './PynModeChip.vue'
 import styles from '../styles/PynLocks.module.scss'
-import { formatDateTime, formatLease } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynLockIcon,
+  PynModeChip,
+  formatDateTime,
+  formatLease,
+} from '@avalon-initiative/pyn-common-ui'
 import type { LockInfo } from '../types/lock.types'
 
 defineProps<{ locks: LockInfo[]; canForce?: boolean; now?: Date; busy?: boolean; error?: string }>()

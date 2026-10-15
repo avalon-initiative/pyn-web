@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import PynLockIcon from './PynLockIcon.vue'
 import styles from '../styles/PynMyLocks.module.scss'
-import { formatDateTime, formatLease } from '@avalon-initiative/pyn-common-ui'
+import { PynLockIcon, formatDateTime, formatLease } from '@avalon-initiative/pyn-common-ui'
 import { myLockKey } from '../state/my-locks.state'
 import { repoPath, repoSlug } from '../state/repo.state'
 import type { MyLock, ReleaseFailure } from '../types/lock.types'

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PynIcon from './PynIcon.vue'
+import { PynIcon } from '@avalon-initiative/pyn-common-ui'
 import styles from '../styles/PynSideNav.module.scss'
 import { orgPath } from '../state/org.state'
 import { repoPath, repoSlug } from '../state/repo.state'

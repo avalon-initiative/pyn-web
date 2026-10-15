@@ -1,7 +1,6 @@
 <script setup lang="ts">
+import { PynLockBadge, PynModeChip } from '@avalon-initiative/pyn-common-ui'
 import styles from '../styles/PynFileList.module.scss'
-import PynLockBadge from './PynLockBadge.vue'
-import PynModeChip from './PynModeChip.vue'
 import { splitPath } from '../state/files.state'
 import type { FileRow } from '../types/lock.types'
 
