@@ -1,7 +1,6 @@
+import { PynIdentities, accountNav, accountNavItems } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import PynIdentities from '../src/components/PynIdentities.vue'
-import { accountNav, accountNavItems } from '../src/state/shell.state'
 
 const provider = { name: 'Acme SSO', sign_in_url: '/v1/oidc/authorize' }
 const identities = [

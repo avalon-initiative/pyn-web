@@ -8,7 +8,7 @@ import type {
   OrgRole,
   RepoPolicy,
   RuleScope,
-} from '../types/org.types'
+} from '@avalon-initiative/pyn-common-ui'
 import { api, call } from './http'
 
 const org_ = (org: string) => ({ params: { path: { org } } })

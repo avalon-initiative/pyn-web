@@ -1,4 +1,4 @@
-import type { RepoInfo } from '../types/repo.types'
+import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 export const sampleRepos: RepoInfo[] = [
   ['alice', 'castle-quest', 'private'],

@@ -4,7 +4,7 @@ import { inject, onMounted, ref } from 'vue'
 import { listOrgAudit } from '../api/orgs'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import type { AuditEntry } from '../types/repo.types'
+import type { AuditEntry } from '@avalon-initiative/pyn-common-ui'
 
 const { name, org } = inject(orgKey)!
 const entries = ref<AuditEntry[]>([])

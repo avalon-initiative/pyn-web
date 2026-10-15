@@ -1,4 +1,4 @@
-import type { SshKey } from '../types/auth.types'
+import type { SshKey } from '@avalon-initiative/pyn-common-ui'
 import { api, call } from './http'
 
 export const listKeys = () => call<SshKey[]>(api.GET('/v1/keys'))

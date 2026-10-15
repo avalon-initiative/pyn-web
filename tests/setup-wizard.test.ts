@@ -1,8 +1,7 @@
+import { PynSetup, stepComplete } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import PynSetup from '../src/components/PynSetup.vue'
-import { stepComplete } from '../src/state/setup.state'
-import type { SetupForm } from '../src/types/auth.types'
+import type { SetupForm } from '@avalon-initiative/pyn-common-ui'
 
 const blank: SetupForm = {
   token: '',

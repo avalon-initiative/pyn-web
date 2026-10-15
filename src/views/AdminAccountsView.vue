@@ -4,6 +4,9 @@ import {
   PynAudit,
   PynPageNotFound,
   applyUpdate,
+  PynViewGroup,
+  PynViewHeader,
+  PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import {
@@ -15,9 +18,12 @@ import {
 } from '../api/admin'
 import { useAction } from '../state/action.state'
 import { sessionKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
-import type { AccountInfo, AdminAccountStatus, DisableRequest } from '../types/admin.types'
-import type { AuditEntry } from '../types/repo.types'
+import type {
+  AccountInfo,
+  AdminAccountStatus,
+  DisableRequest,
+} from '@avalon-initiative/pyn-common-ui'
+import type { AuditEntry } from '@avalon-initiative/pyn-common-ui'
 
 const { user, admin } = inject(sessionKey)!
 const status = ref<AdminAccountStatus | ''>('')
@@ -63,10 +69,8 @@ onMounted(() => {
 
 <template>
   <PynPageNotFound v-if="!admin" />
-  <div v-else :class="styles.stack">
-    <header :class="styles.header">
-      <h1 :class="styles.title">Accounts</h1>
-    </header>
+  <PynViewStack v-else>
+    <PynViewHeader title="Accounts" />
     <PynAccounts
       :accounts="accounts"
       :status="status"
@@ -78,8 +82,7 @@ onMounted(() => {
       @enable="enable"
       @disable="disable"
     />
-    <section>
-      <h2 :class="styles.groupTitle">Server audit log</h2>
+    <PynViewGroup title="Server audit log">
       <PynAudit
         plain
         :entries="entries"
@@ -88,6 +91,6 @@ onMounted(() => {
         :error="log.error.value"
         @more="loadAudit(true)"
       />
-    </section>
-  </div>
+    </PynViewGroup>
+  </PynViewStack>
 </template>

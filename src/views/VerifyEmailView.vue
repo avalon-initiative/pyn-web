@@ -4,7 +4,8 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { resendVerification, verifyEmail } from '../api/auth'
 import { useAction } from '../state/action.state'
-import type { Registered, VerifyOutcome } from '../types/auth.types'
+import type { VerifyOutcome } from '@avalon-initiative/pyn-common-ui'
+import type { Registered } from '../types/auth.types'
 
 const route = useRoute()
 const outcome = ref<VerifyOutcome>('verifying')

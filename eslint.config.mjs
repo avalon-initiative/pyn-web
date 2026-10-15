@@ -4,7 +4,7 @@ import vue from 'eslint-plugin-vue'
 import globals from 'globals'
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'storybook-static/**', 'coverage/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'coverage/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...vue.configs['flat/essential'],
@@ -15,7 +15,7 @@ export default tseslint.config(
       parserOptions: { parser: tseslint.parser },
     },
     rules: {
-      // Styling lives in a co-located .module.scss, never a <style> block.
+      // Styling comes from pyn-common-ui, never a <style> block.
       'vue/no-restricted-block': ['error', { element: 'style' }],
       'vue/multi-word-component-names': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],

@@ -4,7 +4,7 @@ import { computed, inject, onMounted, ref } from 'vue'
 import { listRoles, setRole } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
-import type { RoleGrant } from '../types/repo.types'
+import type { RoleGrant } from '@avalon-initiative/pyn-common-ui'
 
 const { target, permissions } = inject(repoKey)!
 const grants = ref<RoleGrant[]>([])

@@ -5,13 +5,14 @@ import {
   PynTopBar,
   accountActions,
   applyUpdate,
+  navItems,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { sessionKey } from '../src/state/context.state'
-import { activeNav, navItems } from '../src/state/shell.state'
-import { accounts } from '../src/stories/admin-data'
+import { activeNav } from '../src/state/shell.state'
+import { accounts } from './fixtures/admin-data'
 import AdminAccountsView from '../src/views/AdminAccountsView.vue'
 import { makeRouter } from '../src/router'
 import { createMemoryHistory } from 'vue-router'

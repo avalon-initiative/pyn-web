@@ -4,6 +4,7 @@ import {
   type RepoSettings,
   repoPath,
   ownerChoices,
+  PynViewHeader,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -11,8 +12,7 @@ import { listMyOrgs } from '../api/orgs'
 import { createRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { sessionKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
-import type { OrgInfo } from '../types/org.types'
+import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 
 const user = inject(sessionKey)!.user
 const router = useRouter()
@@ -37,9 +37,7 @@ const create = (settings: RepoSettings) =>
 </script>
 
 <template>
-  <header :class="styles.header">
-    <h1 :class="styles.title">New repository</h1>
-  </header>
+  <PynViewHeader title="New repository" />
   <PynRepoForm
     :owner="owner"
     :owners="owners"

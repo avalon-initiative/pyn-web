@@ -13,6 +13,7 @@ import {
   orgTabs,
   ownerChoices,
   ruleSubjects,
+  mainNav,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -21,9 +22,8 @@ import { createMemoryHistory } from 'vue-router'
 import { describeError, ApiError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { orgKey, sessionKey } from '../src/state/context.state'
-import { mainNav } from '../src/state/shell.state'
-import { orgMembers, orgs, repoPolicy, teams } from '../src/stories/org-data'
-import { sampleRepos } from '../src/stories/shell-data'
+import { orgMembers, orgs, repoPolicy, teams } from './fixtures/org-data'
+import { sampleRepos } from './fixtures/shell-data'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
 import OrgSettingsView from '../src/views/OrgSettingsView.vue'
 

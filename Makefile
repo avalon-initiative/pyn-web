@@ -84,5 +84,5 @@ boundary-check:
 check: fmt-check lint test
 
 clean:
-	rm -rf dist storybook-static
+	rm -rf dist
 	rm -rf $(RUN_DIR)

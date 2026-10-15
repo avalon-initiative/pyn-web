@@ -5,14 +5,14 @@ import {
   isOrgOwner,
   teamPath,
   type TeamFormValue,
+  PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createTeam, listTeams } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
-import type { TeamInfo } from '../types/team.types'
+import type { TeamInfo } from '@avalon-initiative/pyn-common-ui'
 
 const { name, org } = inject(orgKey)!
 const router = useRouter()
@@ -43,7 +43,7 @@ onMounted(async () => {
 
 <template>
   <PynTeamList v-if="loaded" :org="name" :teams="teams" />
-  <p v-else-if="list.error.value" :class="styles.error" role="alert">{{ list.error.value }}</p>
+  <PynViewError v-else-if="list.error.value">{{ list.error.value }}</PynViewError>
   <PynTeamForm
     v-if="loaded && isOrgOwner(org)"
     :busy="create.busy.value"

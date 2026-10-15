@@ -20,16 +20,16 @@ import {
   readmeEntry,
   renderMarkdown,
   resolveRelative,
+  PynRepoLanding,
 } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { fetchContent } from '../src/api/repos'
-import PynRepoLanding from '../src/components/PynRepoLanding.vue'
 import { makeRouter } from '../src/router'
 import { hashId, scrollToHash } from '../src/state/hash.state'
-import { codeText, fileEntry, imageSrc, lockedEntry, readmeText } from '../src/stories/file-data'
-import { now, repo, rootEntries, rootListing, summary } from '../src/stories/landing-data'
+import { codeText, fileEntry, imageSrc, lockedEntry, readmeText } from './fixtures/file-data'
+import { now, repo, rootEntries, rootListing, summary } from './fixtures/landing-data'
 
 const r = { owner: 'acme', name: 'castle-quest' }
 const bytes = (s: string) => new TextEncoder().encode(s)

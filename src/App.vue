@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import styles from './styles/App.module.scss'
-import PynSetup from './components/PynSetup.vue'
 import {
   completeSetup,
   fetchRegistration,
@@ -22,7 +20,7 @@ import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { internalPath } from './state/links.state'
 import { sortRepos } from './state/repo.state'
-import { activeNav, navItems } from './state/shell.state'
+import { activeNav } from './state/shell.state'
 import {
   PynShell,
   PynSignIn,
@@ -33,19 +31,20 @@ import {
   repoSlug,
   saveTheme,
   sortOrgs,
+  PynSetup,
+  navItems,
 } from '@avalon-initiative/pyn-common-ui'
 import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
-import type { OrgInfo } from './types/org.types'
-import type { RepoInfo } from './types/repo.types'
+import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 import type {
   BlockedStatus,
   RegisterForm,
-  RegistrationInfo,
   SetupForm,
   SetupStatus,
   SignInForm,
-  SignInOptions,
-} from './types/auth.types'
+} from '@avalon-initiative/pyn-common-ui'
+import type { RegistrationInfo, SignInOptions } from './types/auth.types'
 
 const router = useRouter()
 const route = useRoute()
@@ -191,8 +190,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div :class="styles.page" @click="followLink">
-    <main v-if="ready && setup" :class="styles.signedOut">
+  <div @click="followLink">
+    <main v-if="ready && setup">
       <PynSetup
         :server-name="setup.server_name ?? undefined"
         :public-url="setup.public_url"
@@ -204,7 +203,7 @@ onMounted(async () => {
         @sign-in="enterAfterSetup"
       />
     </main>
-    <main v-else-if="ready && !user" :class="styles.signedOut">
+    <main v-else-if="ready && !user">
       <RouterView v-if="route.name === 'verify-email'" />
       <PynSignIn
         v-else

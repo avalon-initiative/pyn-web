@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { PynIdentities } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listIdentities, startLink, unlinkIdentity } from '../api/identities'
 import { fetchSignInOptions } from '../api/auth'
-import PynIdentities from '../components/PynIdentities.vue'
 import { useAction } from '../state/action.state'
-import type { ExternalIdentity, ExternalProvider } from '../types/auth.types'
+import type { ExternalIdentity, ExternalProvider } from '@avalon-initiative/pyn-common-ui'
 
 const identities = ref<ExternalIdentity[]>([])
 const provider = ref<ExternalProvider | null>(null)

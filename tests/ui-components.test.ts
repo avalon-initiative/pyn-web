@@ -109,7 +109,7 @@ describe('PynFileList', () => {
 })
 
 describe('repo rules', () => {
-  it('has no <style> block in any component (styles live in src/styles/*.module.scss)', () => {
+  it('has no <style> block in any component (styling comes from pyn-common-ui)', () => {
     const dir = join(import.meta.dirname, '../src')
     const vues = (d: string): string[] =>
       readdirSync(d, { withFileTypes: true }).flatMap((e) =>

@@ -4,6 +4,8 @@ import {
   PynRepoNotFound,
   repoTabs,
   isOrgOwner,
+  PynViewError,
+  PynViewSummary,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -12,9 +14,8 @@ import { getOrg } from '../api/orgs'
 import { getRepo, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
-import type { OrgInfo } from '../types/org.types'
-import type { RepoInfo } from '../types/repo.types'
+import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
 const user = inject(sessionKey)!.user
@@ -76,7 +77,7 @@ const tabs = computed(() =>
 
 <template>
   <PynRepoNotFound v-if="notFound" :slug="`${owner}/${name}`" />
-  <p v-else-if="error" :class="styles.error" role="alert">{{ error }}</p>
+  <PynViewError v-else-if="error">{{ error }}</PynViewError>
   <template v-else-if="repo">
     <PynRepoHeader
       :owner="repo.owner"
@@ -88,9 +89,9 @@ const tabs = computed(() =>
       :tabs="permissions.includes('read') ? tabs : undefined"
       :current="section"
     />
-    <p v-if="!permissions.includes('read')" :class="styles.summary">
+    <PynViewSummary v-if="!permissions.includes('read')">
       You have no role in this repository. Ask an admin to add you or send an invitation.
-    </p>
+    </PynViewSummary>
     <RouterView v-else />
   </template>
 </template>

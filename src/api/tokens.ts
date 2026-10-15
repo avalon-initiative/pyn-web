@@ -1,4 +1,4 @@
-import type { CreatedToken, TokenForm, TokenInfo } from '../types/token.types'
+import type { CreatedToken, TokenForm, TokenInfo } from '@avalon-initiative/pyn-common-ui'
 import { api, call } from './http'
 
 export const listTokens = () => call<TokenInfo[]>(api.GET('/v1/tokens'))

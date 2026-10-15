@@ -4,7 +4,7 @@ import { inject, onMounted, ref } from 'vue'
 import { listAudit } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
-import type { AuditEntry } from '../types/repo.types'
+import type { AuditEntry } from '@avalon-initiative/pyn-common-ui'
 
 const { target } = inject(repoKey)!
 const filter = ref<AuditFilter>({ path: '', actor: '', action: '' })

@@ -5,13 +5,13 @@ import {
   type RepoSettings,
   repoPath,
   repoSlug,
+  PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
 import { inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteRepo, updateRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
 
 const { repo, target, reload } = inject(repoKey)!
 const router = useRouter()
@@ -33,7 +33,7 @@ const remove = () =>
 </script>
 
 <template>
-  <div v-if="repo" :class="styles.stack">
+  <PynViewStack v-if="repo">
     <PynRepoForm
       :key="repoSlug(repo)"
       :owner="repo.owner"
@@ -49,5 +49,5 @@ const remove = () =>
       :error="removing.error.value"
       @remove="remove"
     />
-  </div>
+  </PynViewStack>
 </template>

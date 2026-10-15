@@ -1,7 +1,6 @@
+import { PynTokens, expiryFromDate, parseRepos } from '@avalon-initiative/pyn-common-ui'
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import PynTokens from '../src/components/PynTokens.vue'
-import { expiryFromDate, parseRepos } from '../src/state/token.state'
 
 const tokens = [
   {

@@ -1,6 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
-import type { OrgInfo } from '../types/org.types'
-import type { RepoInfo } from '../types/repo.types'
+import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 export interface SessionContext {
   user: Ref<string>

@@ -13,8 +13,8 @@ import { addUser, listMembers, listRoles, setMember } from '../api/repos'
 import { listTeams, listRepoTeams, removeRepoTeam, setRepoTeam } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
-import type { Member } from '../types/repo.types'
-import type { RepoTeam, TeamInfo } from '../types/team.types'
+import type { Member } from '@avalon-initiative/pyn-common-ui'
+import type { RepoTeam, TeamInfo } from '@avalon-initiative/pyn-common-ui'
 
 const { target, permissions, org } = inject(repoKey)!
 const members = ref<Member[]>([])

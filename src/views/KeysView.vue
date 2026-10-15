@@ -3,7 +3,7 @@ import { PynKeys } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { addKey, listKeys, removeKey } from '../api/keys'
 import { useAction } from '../state/action.state'
-import type { SshKey } from '../types/auth.types'
+import type { SshKey } from '@avalon-initiative/pyn-common-ui'
 
 const keys = ref<SshKey[]>([])
 const { busy, error, attempt } = useAction()

@@ -27,7 +27,6 @@ app shows only the setup wizard, which needs the setup token from the server's l
 | `npm run dev`                                                           | Dev server                                                         |
 | `npm run build`                                                         | Production build into `dist/`                                      |
 | `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` | Checks run in CI                                                   |
-| `npm run storybook`                                                     | Browse the components                                              |
 | `npm run api:generate`                                                  | Regenerate the API client types from the server's OpenAPI document |
 | `npm run api:check`                                                     | Fail when the generated types are out of date                      |
 

@@ -1,5 +1,10 @@
-import type { OrgInfo, OrgMember, RepoPolicy } from '../types/org.types'
-import type { RepoTeam, TeamInfo } from '../types/team.types'
+import type {
+  OrgInfo,
+  OrgMember,
+  RepoPolicy,
+  RepoTeam,
+  TeamInfo,
+} from '@avalon-initiative/pyn-common-ui'
 
 export const orgs: OrgInfo[] = [
   { name: 'studio', created_at: '2026-09-02T08:00:00Z', role: 'owner' },

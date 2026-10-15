@@ -1,6 +1,5 @@
 node_modules
 dist/
-storybook-static/
 
 # -----------------------------------------------------------------------------
 # Common patterns — OS junk, editors, secrets, scratch. Stack-specific entries
