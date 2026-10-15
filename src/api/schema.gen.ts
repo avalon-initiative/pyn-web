@@ -771,7 +771,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Check several paths in atomically as one commit with one message. */
+    /** Check several paths in and remove others atomically as one commit with one message. */
     post: operations['changeset']
     delete?: never
     options?: never
@@ -1506,6 +1506,15 @@ export interface components {
       current?: string | null
       new: string
     }
+    /** @description One path a changeset removes. The path stays in history as a deletion revision (`Revision.deleted`). */
+    ChangesetDeletion: {
+      /**
+       * Format: int64
+       * @description The path's revision on the branch: the one being removed.
+       */
+      base_revision?: number | null
+      path: string
+    }
     /** @description One path of a changeset. */
     ChangesetEntry: {
       /** Format: int64 */
@@ -1515,16 +1524,21 @@ export interface components {
       file_mode?: components['schemas']['FileMode'] | null
       path: string
     }
-    /** @description Paths checked in together: every base and lock check passes or nothing is written. */
+    /**
+     * @description Paths checked in and removed together: every base and lock check passes or nothing is written. An exclusive path,
+     *     written or removed, needs the caller's live lock, which the commit consumes.
+     */
     ChangesetRequest: {
       /** @description The branch the commit is made on; the default branch if omitted. */
       branch?: string | null
+      /** @description Paths to remove; a changeset needs at least one entry or deletion. */
+      deletions?: components['schemas']['ChangesetDeletion'][]
       entries: components['schemas']['ChangesetEntry'][]
       message: string
     }
     ChangesetResponse: {
       changeset: string
-      /** @description One revision per requested path, in request order. */
+      /** @description One revision per requested path: the entries in request order, then the deletions. */
       revisions: components['schemas']['Revision'][]
     }
     CheckinRequest: {
@@ -2185,6 +2199,11 @@ export interface components {
       content: string
       /** Format: date-time */
       created_at: string
+      /**
+       * @description The revision removes the path from its branch; `content` and `file_mode` are those of the version removed.
+       *     Its `hash_version` is 3.
+       */
+      deleted?: boolean
       /** @description The git file mode of the content. */
       file_mode: components['schemas']['FileMode']
       /** @description SHA-256 hex over the revision's canonical encoding, by `hash_version` (docs/concepts/integrity.md). */
@@ -5070,7 +5089,7 @@ export interface operations {
         path?: string
         /** @description only events by this user */
         actor?: string
-        /** @description checkout, release, checkin, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked, policy_changed, mode_converted or version_stranded */
+        /** @description checkout, release, checkin, delete, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked, policy_changed, mode_converted or version_stranded */
         action?: string
         /** @description events older than this id */
         before?: number
@@ -5377,7 +5396,7 @@ export interface operations {
           'application/json': components['schemas']['ChangesetResponse']
         }
       }
-      /** @description object_missing, invalid_path, or invalid_request for an empty or repeated path or .pyn/pyn.toml */
+      /** @description object_missing, invalid_path, or invalid_request for an empty changeset, a repeated path or .pyn/pyn.toml */
       400: {
         headers: {
           [name: string]: unknown
@@ -5386,7 +5405,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description branch_not_found */
+      /** @description branch_not_found, or path_not_found for a deletion of a path the branch does not have */
       404: {
         headers: {
           [name: string]: unknown
