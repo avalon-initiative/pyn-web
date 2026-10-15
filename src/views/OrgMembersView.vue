@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import {
+  PynOrgMembers,
+  isOrgOwner,
+  orgPath,
+  type NewOrgMember,
+} from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { addOrgMember, listOrgMembers, removeOrgMember, setOrgRole } from '../api/orgs'
-import PynOrgMembers from '../components/PynOrgMembers.vue'
 import { useAction } from '../state/action.state'
 import { orgKey, sessionKey } from '../state/context.state'
-import { isOrgOwner, orgPath } from '../state/org.state'
-import type { NewOrgMember, OrgMember, OrgRole } from '../types/org.types'
+import type { OrgMember, OrgRole } from '../types/org.types'
 
 const { name, org, reload } = inject(orgKey)!
 const user = inject(sessionKey)!.user

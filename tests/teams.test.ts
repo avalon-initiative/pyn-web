@@ -1,17 +1,9 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { computed, ref } from 'vue'
-import { createMemoryHistory } from 'vue-router'
-import { describeError, ApiError } from '../src/api/client'
-import { setRepoTeam } from '../src/api/teams'
-import PynTeamDelete from '../src/components/PynTeamDelete.vue'
-import PynTeamDetail from '../src/components/PynTeamDetail.vue'
-import PynTeamForm from '../src/components/PynTeamForm.vue'
-import PynTeamGrant from '../src/components/PynTeamGrant.vue'
-import PynTeamList from '../src/components/PynTeamList.vue'
-import { makeRouter } from '../src/router'
-import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
 import {
+  PynTeamDelete,
+  PynTeamDetail,
+  PynTeamForm,
+  PynTeamGrant,
+  PynTeamList,
   isEditable,
   personGrantees,
   splitRepo,
@@ -19,7 +11,15 @@ import {
   teamGrantees,
   teamPath,
   ungrantedTeams,
-} from '../src/state/team.state'
+} from '@avalon-initiative/pyn-common-ui'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { computed, ref } from 'vue'
+import { createMemoryHistory } from 'vue-router'
+import { describeError, ApiError } from '../src/api/client'
+import { setRepoTeam } from '../src/api/teams'
+import { makeRouter } from '../src/router'
+import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
 import { orgs, repoTeams, teams } from '../src/stories/org-data'
 import OrgTeamsView from '../src/views/OrgTeamsView.vue'
 import OrgTeamView from '../src/views/OrgTeamView.vue'

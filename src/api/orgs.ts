@@ -1,13 +1,12 @@
+import type { NewOrgMember, RuleRef } from '@avalon-initiative/pyn-common-ui'
 import type { AuditPage } from '../types/repo.types'
 import type {
   CreationRule,
   MemberCreation,
-  NewOrgMember,
   OrgInfo,
   OrgMember,
   OrgRole,
   RepoPolicy,
-  RuleRef,
   RuleScope,
 } from '../types/org.types'
 import { api, call } from './http'

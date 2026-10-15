@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { PynOrgForm, orgPath } from '@avalon-initiative/pyn-common-ui'
 import { useRouter } from 'vue-router'
 import { createOrg } from '../api/orgs'
-import PynOrgForm from '../components/PynOrgForm.vue'
 import { useAction } from '../state/action.state'
-import { orgPath } from '../state/org.state'
 import styles from '../styles/View.module.scss'
 
 const router = useRouter()

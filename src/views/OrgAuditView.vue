@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { PynAudit, PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
+import { PynAudit, PynPageNotFound, isOrgOwner } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { listOrgAudit } from '../api/orgs'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import { isOrgOwner } from '../state/org.state'
 import type { AuditEntry } from '../types/repo.types'
 
 const { name, org } = inject(orgKey)!

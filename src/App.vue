@@ -22,7 +22,6 @@ import { listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { internalPath } from './state/links.state'
-import { sortOrgs } from './state/org.state'
 import { sortRepos } from './state/repo.state'
 import { activeNav, navItems } from './state/shell.state'
 import {
@@ -33,6 +32,7 @@ import {
   loadTheme,
   repoSlug,
   saveTheme,
+  sortOrgs,
 } from '@avalon-initiative/pyn-common-ui'
 import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
 import type { OrgInfo } from './types/org.types'

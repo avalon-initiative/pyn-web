@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { type NewUser, PynAddPerson, PynMembers } from '@avalon-initiative/pyn-common-ui'
+import {
+  type NewUser,
+  PynAddPerson,
+  PynMembers,
+  PynTeamGrant,
+  personGrantees,
+  teamGrantees,
+  ungrantedTeams,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { addUser, listMembers, listRoles, setMember } from '../api/repos'
 import { listTeams, listRepoTeams, removeRepoTeam, setRepoTeam } from '../api/teams'
-import PynTeamGrant from '../components/PynTeamGrant.vue'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
-import { personGrantees, teamGrantees, ungrantedTeams } from '../state/team.state'
 import type { Member } from '../types/repo.types'
 import type { RepoTeam, TeamInfo } from '../types/team.types'
 

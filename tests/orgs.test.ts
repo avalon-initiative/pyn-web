@@ -4,20 +4,23 @@ import {
   PynRepoHeader,
   PynSideNav,
   PynTopBar,
+  PynOrgDelete,
+  PynOrgForm,
+  PynOrgList,
+  PynOrgRepoPolicy,
+  PynOrgMembers,
+  orgPath,
+  orgTabs,
+  ownerChoices,
+  ruleSubjects,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
 import { createMemoryHistory } from 'vue-router'
 import { describeError, ApiError } from '../src/api/client'
-import PynOrgDelete from '../src/components/PynOrgDelete.vue'
-import PynOrgForm from '../src/components/PynOrgForm.vue'
-import PynOrgList from '../src/components/PynOrgList.vue'
-import PynOrgRepoPolicy from '../src/components/PynOrgRepoPolicy.vue'
-import PynOrgMembers from '../src/components/PynOrgMembers.vue'
 import { makeRouter } from '../src/router'
 import { orgKey, sessionKey } from '../src/state/context.state'
-import { orgPath, orgTabs, ownerChoices, ruleSubjects } from '../src/state/org.state'
 import { mainNav } from '../src/state/shell.state'
 import { orgMembers, orgs, repoPolicy, teams } from '../src/stories/org-data'
 import { sampleRepos } from '../src/stories/shell-data'

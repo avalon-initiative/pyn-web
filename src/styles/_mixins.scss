@@ -41,15 +41,6 @@
   }
 }
 
-@mixin form {
-  @include card;
-  max-width: 40rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--pyn-space-3);
-  padding: var(--pyn-space-4);
-}
-
 @mixin field {
   display: flex;
   flex-direction: column;

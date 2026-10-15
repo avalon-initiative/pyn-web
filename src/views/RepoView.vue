@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { PynRepoHeader, PynRepoNotFound, repoTabs } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynRepoHeader,
+  PynRepoNotFound,
+  repoTabs,
+  isOrgOwner,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
@@ -7,7 +12,6 @@ import { getOrg } from '../api/orgs'
 import { getRepo, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
-import { isOrgOwner } from '../state/org.state'
 import styles from '../styles/View.module.scss'
 import type { OrgInfo } from '../types/org.types'
 import type { RepoInfo } from '../types/repo.types'
