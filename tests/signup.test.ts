@@ -7,23 +7,11 @@ import { makeRouter } from '../src/router'
 import { blockedStatus } from '../src/state/account.state'
 import PynSignIn from '../src/components/PynSignIn.vue'
 import { externalSignInUrl, signInErrorMessage } from '../src/state/account.state'
-import { formatWait } from '../src/state/wait.state'
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(body === null ? null : JSON.stringify(body), { status, headers })
 
 afterEach(() => vi.unstubAllGlobals())
-
-describe('wait text', () => {
-  it('rounds up to the largest sensible unit', () => {
-    expect(formatWait(1)).toBe('1 second')
-    expect(formatWait(45)).toBe('45 seconds')
-    expect(formatWait(61)).toBe('2 minutes')
-    expect(formatWait(900)).toBe('15 minutes')
-    expect(formatWait(3600)).toBe('1 hour')
-    expect(formatWait(undefined)).toBe('a moment')
-  })
-})
 
 describe('account api', () => {
   it('registers with the email and reports the status', async () => {

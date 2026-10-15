@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import styles from '../styles/PynTeamDetail.module.scss'
-import { formatDate } from '../state/datetime.state'
+import { formatDate } from '@avalon-initiative/pyn-common-ui'
 import { repoPath } from '../state/repo.state'
 import { splitRepo } from '../state/team.state'
 import type { TeamInfo } from '../types/team.types'

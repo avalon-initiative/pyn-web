@@ -1,4 +1,4 @@
-import { formatDateTime } from './datetime.state'
+import { formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import type { AccountInfo, AdminAccountStatus } from '../types/admin.types'
 
 export const STATUS_FILTERS: { id: AdminAccountStatus | ''; label: string }[] = [

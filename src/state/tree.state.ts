@@ -1,4 +1,4 @@
-import { formatDate } from './datetime.state'
+import { formatDate } from '@avalon-initiative/pyn-common-ui'
 import { repoPath } from './repo.state'
 import type { ActivityEntry, Crumb } from '../types/tree.types'
 

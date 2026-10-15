@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import styles from '../styles/PynAccounts.module.scss'
-import { formatDateTime } from '../state/datetime.state'
+import { formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import { accountActions, disabledNote, STATUS_FILTERS, statusLabel } from '../state/admin.state'
 import type { AccountInfo, AdminAccountStatus, DisableRequest } from '../types/admin.types'
 

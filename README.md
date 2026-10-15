@@ -12,6 +12,7 @@ The server is the only authority: this app is a client of its API and enforces n
 Start a pyn server first (`make dev` in the `pyn` repo brings one up with a seeded demo), then:
 
 ```bash
+export NODE_AUTH_TOKEN=$(gh auth token)   # needs read:packages; see .npmrc
 npm ci
 npm run dev        # http://localhost:5173, sign in as alice or bob (alice-password, bob-password)
 ```

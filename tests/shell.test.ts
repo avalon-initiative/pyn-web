@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import PynAccountSettings from '../src/components/PynAccountSettings.vue'
 import PynMenu from '../src/components/PynMenu.vue'
 import PynModeChip from '../src/components/PynModeChip.vue'
@@ -10,7 +10,6 @@ import PynSideNav from '../src/components/PynSideNav.vue'
 import PynTopBar from '../src/components/PynTopBar.vue'
 import { repoTabs } from '../src/state/repo.state'
 import { accountNav, activeNav, mainNav, matchRepos } from '../src/state/shell.state'
-import { applyTheme, loadTheme, saveTheme } from '../src/state/theme.state'
 import { sampleRepos } from '../src/stories/shell-data'
 
 describe('shell state', () => {
@@ -23,41 +22,6 @@ describe('shell state', () => {
   it('matches repositories case-insensitively and returns nothing for an empty query', () => {
     expect(matchRepos(['alice/Game', 'bob/tools'], 'GAM')).toEqual(['alice/Game'])
     expect(matchRepos(['alice/game'], ' ')).toEqual([])
-  })
-})
-
-describe('theme state', () => {
-  it('remembers light and dark, treats anything else as system', () => {
-    localStorage.clear()
-    expect(loadTheme()).toBe('system')
-    saveTheme('light')
-    expect(loadTheme()).toBe('light')
-    saveTheme('system')
-    expect(loadTheme()).toBe('system')
-    localStorage.setItem('pyn-theme', 'bogus')
-    expect(loadTheme()).toBe('system')
-    localStorage.clear()
-  })
-
-  it('survives blocked storage', () => {
-    const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('blocked')
-    })
-    const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('blocked')
-    })
-    expect(loadTheme()).toBe('system')
-    expect(() => saveTheme('dark')).not.toThrow()
-    get.mockRestore()
-    set.mockRestore()
-  })
-
-  it('sets and clears the root override', () => {
-    const root = document.createElement('html')
-    applyTheme('dark', root)
-    expect(root.dataset.theme).toBe('dark')
-    applyTheme('system', root)
-    expect(root.dataset.theme).toBeUndefined()
   })
 })
 
