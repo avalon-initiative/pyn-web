@@ -1,5 +1,5 @@
 import { ApiError } from '../api/client'
-import type { BlockedStatus } from '../types/auth.types'
+import type { BlockedStatus } from '@avalon-initiative/pyn-common-ui'
 
 const BLOCKED: Record<string, BlockedStatus> = {
   email_not_verified: 'pending_verification',

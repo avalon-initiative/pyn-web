@@ -8,9 +8,6 @@ const api = process.env.PYN_API ?? 'http://127.0.0.1:7878'
 export default defineConfig({
   plugins: [vue()],
   resolve: { dedupe: ['vue'] },
-  css: {
-    modules: { generateScopedName: 'pyn_[name]__[local]__[hash:base64:5]' },
-  },
   server: {
     proxy: { '/v1': api, '/healthz': api },
   },

@@ -3,11 +3,9 @@ import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
 import { fetchContent, fetchSummary, fetchTree } from '../api/repos'
-import PynRepoLanding from '../components/PynRepoLanding.vue'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useHashScroll } from '../state/hash.state'
-import styles from '../styles/View.module.scss'
 import {
   fileBody,
   folderParam,
@@ -17,6 +15,8 @@ import {
   type RepoSummary,
   type TreeEntry,
   type TreeListing,
+  PynViewError,
+  PynRepoLanding,
 } from '@avalon-initiative/pyn-common-ui'
 
 const { target, repo } = inject(repoKey)!
@@ -93,7 +93,7 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <template>
-  <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
+  <PynViewError v-if="error">{{ error }}</PynViewError>
   <PynRepoLanding
     v-if="repo"
     :repo="repo"

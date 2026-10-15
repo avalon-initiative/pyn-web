@@ -1,6 +1,5 @@
-import type { LockInfo } from '../types/lock.types'
-import type { RepoInfo } from '../types/repo.types'
-import type { Schemas } from '../api/schema'
+import type { LockInfo, RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { Schemas } from '../../src/api/schema'
 
 type TreeEntry = Schemas['TreeEntry']
 type TreeListing = Schemas['TreeListing']

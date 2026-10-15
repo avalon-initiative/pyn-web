@@ -8,6 +8,7 @@ import {
   teamCandidates,
   teamPath,
   type TeamFormValue,
+  PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -16,8 +17,7 @@ import { listOrgMembers } from '../api/orgs'
 import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
-import type { TeamInfo } from '../types/team.types'
+import type { TeamInfo } from '@avalon-initiative/pyn-common-ui'
 
 const { name, org } = inject(orgKey)!
 const route = useRoute()
@@ -86,7 +86,7 @@ watch(
 </script>
 
 <template>
-  <p v-if="page.error.value" :class="styles.error" role="alert">{{ page.error.value }}</p>
+  <PynViewError v-if="page.error.value">{{ page.error.value }}</PynViewError>
   <PynPageNotFound v-else-if="loaded && notFound" />
   <template v-else-if="loaded && team">
     <PynTeamDetail

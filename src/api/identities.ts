@@ -1,4 +1,4 @@
-import type { ExternalIdentity } from '../types/auth.types'
+import type { ExternalIdentity } from '@avalon-initiative/pyn-common-ui'
 import { api, call } from './http'
 
 export const listIdentities = () => call<ExternalIdentity[]>(api.GET('/v1/me/identities'))

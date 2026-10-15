@@ -8,15 +8,15 @@ import {
   folderParam,
   formatAgo,
   treePath,
+  PynCheckoutCard,
+  PynLockedFiles,
+  PynRepoDetails,
+  PynRepoLanding,
 } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { fetchSummary, fetchTree } from '../src/api/repos'
-import PynCheckoutCard from '../src/components/PynCheckoutCard.vue'
-import PynLockedFiles from '../src/components/PynLockedFiles.vue'
-import PynRepoDetails from '../src/components/PynRepoDetails.vue'
-import PynRepoLanding from '../src/components/PynRepoLanding.vue'
 import { makeRouter } from '../src/router'
 import {
   folderListing,
@@ -25,7 +25,7 @@ import {
   rootEntries,
   rootListing,
   summary,
-} from '../src/stories/landing-data'
+} from './fixtures/landing-data'
 
 const r = { owner: 'acme', name: 'castle-quest' }
 

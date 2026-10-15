@@ -1,4 +1,4 @@
-import type { RepoTeam, TeamInfo } from '../types/team.types'
+import type { RepoTeam, TeamInfo } from '@avalon-initiative/pyn-common-ui'
 import { api, call } from './http'
 
 type Repo = { owner: string; name: string }

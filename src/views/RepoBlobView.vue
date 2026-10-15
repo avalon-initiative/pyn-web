@@ -6,7 +6,6 @@ import { fetchContent, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useHashScroll } from '../state/hash.state'
-import styles from '../styles/View.module.scss'
 import {
   PynFileView,
   contentUrl,
@@ -22,6 +21,7 @@ import {
   type FileBody,
   type LineRange,
   type TreeEntry,
+  PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
 
 const { target } = inject(repoKey)!
@@ -92,7 +92,7 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <template>
-  <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
+  <PynViewError v-if="error">{{ error }}</PynViewError>
   <PynFileView
     :owner="target.owner"
     :name="target.name"

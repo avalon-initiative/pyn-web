@@ -1,4 +1,5 @@
-import type { AccountInfo, AccountMe, AdminAccountStatus } from '../types/admin.types'
+import type { AccountInfo, AdminAccountStatus } from '@avalon-initiative/pyn-common-ui'
+import type { AccountMe } from '../types/admin.types'
 import type { AuditPage } from '../types/repo.types'
 import { api, call } from './http'
 

@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { PynOrgHeader, PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
+import { PynOrgHeader, PynPageNotFound, PynViewError } from '@avalon-initiative/pyn-common-ui'
 import { computed, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOrg } from '../api/orgs'
 import { ApiError } from '../api/client'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
-import type { OrgInfo } from '../types/org.types'
+import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
 const name = computed(() => String(route.params.owner))
@@ -43,7 +42,7 @@ provide(orgKey, { name, org, reload: async () => void (await load()) })
 </script>
 
 <template>
-  <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
+  <PynViewError v-if="error">{{ error }}</PynViewError>
   <template v-else-if="loaded">
     <template v-if="org">
       <PynOrgHeader

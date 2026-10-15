@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { PynTokens } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { createToken, listTokens, revokeToken } from '../api/tokens'
-import PynTokens from '../components/PynTokens.vue'
 import { useAction } from '../state/action.state'
-import type { TokenForm, TokenInfo } from '../types/token.types'
+import type { TokenForm, TokenInfo } from '@avalon-initiative/pyn-common-ui'
 
 const tokens = ref<TokenInfo[]>([])
 const secret = ref('')

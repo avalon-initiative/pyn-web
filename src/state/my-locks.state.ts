@@ -1,5 +1,5 @@
 import { ApiError, describeError } from '../api/client'
-import type { MyLock, ReleaseFailure } from '../types/lock.types'
+import type { MyLock, ReleaseFailure } from '@avalon-initiative/pyn-common-ui'
 
 /** Releases each lock in turn and returns the failures; a 401 aborts the whole run. */
 export async function releaseEach(

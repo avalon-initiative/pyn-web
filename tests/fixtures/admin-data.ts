@@ -1,4 +1,4 @@
-import type { AccountInfo } from '../types/admin.types'
+import type { AccountInfo } from '@avalon-initiative/pyn-common-ui'
 
 export const accounts: AccountInfo[] = [
   {

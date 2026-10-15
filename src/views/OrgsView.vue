@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { PynOrgList, sortOrgs } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynOrgList,
+  sortOrgs,
+  PynViewAction,
+  PynViewError,
+  PynViewHeader,
+} from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listMyOrgs } from '../api/orgs'
 import { useAction } from '../state/action.state'
-import styles from '../styles/View.module.scss'
-import type { OrgInfo } from '../types/org.types'
+import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 
 const orgs = ref<OrgInfo[]>([])
 const loaded = ref(false)
@@ -19,12 +24,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <header :class="styles.header">
-    <h1 :class="styles.title">Organizations</h1>
-    <span :class="styles.actions">
-      <a href="/_/new-org" :class="styles.action">New organization</a>
-    </span>
-  </header>
-  <p v-if="error" :class="styles.error" role="alert">{{ error }}</p>
+  <PynViewHeader title="Organizations">
+    <PynViewAction href="/_/new-org" primary>New organization</PynViewAction>
+  </PynViewHeader>
+  <PynViewError v-if="error">{{ error }}</PynViewError>
   <PynOrgList v-else-if="loaded" :orgs="orgs" />
 </template>

@@ -1,4 +1,4 @@
-import type { Schemas } from '../api/schema'
+import type { Schemas } from '../../src/api/schema'
 import { lock, now } from './landing-data'
 
 export const readmeText = `# Castle Quest

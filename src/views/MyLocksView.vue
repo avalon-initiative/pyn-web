@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { PynMyLocks } from '@avalon-initiative/pyn-common-ui'
+import { PynMyLocks, PynViewHeader } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listMyLocks, releaseLock } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { releaseEach } from '../state/my-locks.state'
-import styles from '../styles/View.module.scss'
-import type { MyLock, ReleaseFailure } from '../types/lock.types'
+import type { MyLock, ReleaseFailure } from '@avalon-initiative/pyn-common-ui'
 
 const locks = ref<MyLock[]>([])
 const failures = ref<ReleaseFailure[]>([])
@@ -35,9 +34,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <header :class="styles.header">
-    <h1 :class="styles.title">Your active locks</h1>
-  </header>
+  <PynViewHeader title="Your active locks" />
   <PynMyLocks
     v-if="loaded"
     :locks="locks"

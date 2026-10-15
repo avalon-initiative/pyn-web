@@ -5,6 +5,8 @@ import {
   PynOrgRepoPolicy,
   isOrgOwner,
   type RuleRef,
+  PynViewError,
+  PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -19,8 +21,7 @@ import {
 import { listTeams } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import styles from '../styles/View.module.scss'
-import type { MemberCreation, RepoPolicy, RuleScope } from '../types/org.types'
+import type { MemberCreation, RepoPolicy, RuleScope } from '@avalon-initiative/pyn-common-ui'
 
 const { name, org } = inject(orgKey)!
 const router = useRouter()
@@ -72,7 +73,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="owner" :class="styles.stack">
+  <PynViewStack v-if="owner">
     <PynOrgRepoPolicy
       v-if="policy"
       :policy="policy"
@@ -84,15 +85,15 @@ onMounted(() => {
       @set-rule="setRule"
       @remove-rule="removeRule"
     />
-    <p v-else-if="policing.error.value" :class="styles.error" role="alert">
+    <PynViewError v-else-if="policing.error.value">
       {{ policing.error.value }}
-    </p>
+    </PynViewError>
     <PynOrgDelete
       :name="name"
       :busy="removing.busy.value"
       :error="removing.error.value"
       @remove="remove"
     />
-  </div>
+  </PynViewStack>
   <PynPageNotFound v-else />
 </template>

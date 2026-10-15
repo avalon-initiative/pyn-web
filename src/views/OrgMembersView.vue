@@ -10,7 +10,7 @@ import { useRouter } from 'vue-router'
 import { addOrgMember, listOrgMembers, removeOrgMember, setOrgRole } from '../api/orgs'
 import { useAction } from '../state/action.state'
 import { orgKey, sessionKey } from '../state/context.state'
-import type { OrgMember, OrgRole } from '../types/org.types'
+import type { OrgMember, OrgRole } from '@avalon-initiative/pyn-common-ui'
 
 const { name, org, reload } = inject(orgKey)!
 const user = inject(sessionKey)!.user

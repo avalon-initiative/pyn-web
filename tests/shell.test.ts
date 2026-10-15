@@ -8,11 +8,14 @@ import {
   PynSideNav,
   PynTopBar,
   repoTabs,
+  accountNav,
+  mainNav,
+  matchRepos,
 } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { accountNav, activeNav, mainNav, matchRepos } from '../src/state/shell.state'
-import { sampleRepos } from '../src/stories/shell-data'
+import { activeNav } from '../src/state/shell.state'
+import { sampleRepos } from './fixtures/shell-data'
 
 describe('shell state', () => {
   it('matches the active sidebar item by path', () => {

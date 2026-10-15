@@ -1,13 +1,7 @@
-import type { FilePage, FileRow, LockInfo, Me, MyLock } from '../types/lock.types'
-import type {
-  AuditPage,
-  HistoryPage,
-  HistoryQuery,
-  InviteInfo,
-  Member,
-  RepoInfo,
-  RoleGrant,
-} from '../types/repo.types'
+import type { FileRow, LockInfo, MyLock } from '@avalon-initiative/pyn-common-ui'
+import type { FilePage, Me } from '../types/lock.types'
+import type { InviteInfo, Member, RepoInfo, RoleGrant } from '@avalon-initiative/pyn-common-ui'
+import type { AuditPage, HistoryPage, HistoryQuery } from '../types/repo.types'
 import {
   type AuditFilter,
   type FetchedContent,

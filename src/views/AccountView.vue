@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { PynAccountSettings } from '@avalon-initiative/pyn-common-ui'
+import { PynAccountSettings, accountNavItems } from '@avalon-initiative/pyn-common-ui'
 import { useRoute } from 'vue-router'
 import { fetchSignInOptions } from '../api/auth'
-import { accountNavItems } from '../state/shell.state'
 
 const route = useRoute()
 const hasProvider = ref(false)
