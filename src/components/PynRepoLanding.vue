@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { PynBreadcrumb } from '@avalon-initiative/pyn-common-ui'
+import { PynBranchBar, PynBreadcrumb } from '@avalon-initiative/pyn-common-ui'
 import { computed } from 'vue'
 import PynActivity from './PynActivity.vue'
-import PynBranchBar from './PynBranchBar.vue'
 import PynCheckoutCard from './PynCheckoutCard.vue'
 import PynLockedFiles from './PynLockedFiles.vue'
 import PynReadme from './PynReadme.vue'

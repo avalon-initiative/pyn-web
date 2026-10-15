@@ -1,11 +1,15 @@
-import { PynMenu, PynModeChip, PynSearch } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynMenu,
+  PynModeChip,
+  PynRepoHeader,
+  PynSearch,
+  PynShell,
+  PynSideNav,
+  PynTopBar,
+} from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PynAccountSettings from '../src/components/PynAccountSettings.vue'
-import PynRepoHeader from '../src/components/PynRepoHeader.vue'
-import PynShell from '../src/components/PynShell.vue'
-import PynSideNav from '../src/components/PynSideNav.vue'
-import PynTopBar from '../src/components/PynTopBar.vue'
 import { repoTabs } from '../src/state/repo.state'
 import { accountNav, activeNav, mainNav, matchRepos } from '../src/state/shell.state'
 import { sampleRepos } from '../src/stories/shell-data'
