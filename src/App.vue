@@ -2,11 +2,8 @@
 import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import styles from './styles/App.module.scss'
-import PynShell from './components/PynShell.vue'
-import PynSideNav from './components/PynSideNav.vue'
 import PynSetup from './components/PynSetup.vue'
 import PynSignIn from './components/PynSignIn.vue'
-import PynTopBar from './components/PynTopBar.vue'
 import {
   completeSetup,
   fetchRegistration,
@@ -28,7 +25,14 @@ import { internalPath } from './state/links.state'
 import { sortOrgs } from './state/org.state'
 import { repoSlug, sortRepos } from './state/repo.state'
 import { activeNav, navItems } from './state/shell.state'
-import { applyTheme, loadTheme, saveTheme } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynShell,
+  PynSideNav,
+  PynTopBar,
+  applyTheme,
+  loadTheme,
+  saveTheme,
+} from '@avalon-initiative/pyn-common-ui'
 import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
 import type { OrgInfo } from './types/org.types'
 import type { RepoInfo } from './types/repo.types'
