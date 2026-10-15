@@ -1,9 +1,14 @@
-import { PynAudit, PynPageNotFound, PynTopBar } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynAccounts,
+  PynAudit,
+  PynPageNotFound,
+  PynTopBar,
+  accountActions,
+  applyUpdate,
+} from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import PynAccounts from '../src/components/PynAccounts.vue'
-import { accountActions, applyUpdate } from '../src/state/admin.state'
 import { sessionKey } from '../src/state/context.state'
 import { activeNav, navItems } from '../src/state/shell.state'
 import { accounts } from '../src/stories/admin-data'

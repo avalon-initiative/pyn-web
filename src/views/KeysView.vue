@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { PynKeys } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { addKey, listKeys, removeKey } from '../api/keys'
-import PynKeys from '../components/PynKeys.vue'
 import { useAction } from '../state/action.state'
 import type { SshKey } from '../types/auth.types'
 

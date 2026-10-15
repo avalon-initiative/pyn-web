@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { PynAudit, PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynAccounts,
+  PynAudit,
+  PynPageNotFound,
+  applyUpdate,
+} from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import {
   approveAccount,
@@ -8,9 +13,7 @@ import {
   listAccounts,
   listServerAudit,
 } from '../api/admin'
-import PynAccounts from '../components/PynAccounts.vue'
 import { useAction } from '../state/action.state'
-import { applyUpdate } from '../state/admin.state'
 import { sessionKey } from '../state/context.state'
 import styles from '../styles/View.module.scss'
 import type { AccountInfo, AdminAccountStatus, DisableRequest } from '../types/admin.types'
