@@ -2171,6 +2171,12 @@ export interface components {
     Revision: {
       author: string
       author_identity?: components['schemas']['Person'] | null
+      /**
+       * Format: int64
+       * @description The revision this one was based on, the committing branch's revision of the path; absent when the branch had
+       *     none. Not covered by `hash`; `pyn verify` checks that it names an older revision of the path.
+       */
+      base?: number | null
       /** @description Shared by the revisions checked in together as one changeset; absent for a single-path checkin. */
       changeset?: string | null
       /** @description The id of the commit this revision belongs to; see `Commit`. */
@@ -2198,7 +2204,7 @@ export interface components {
       message: string
       mode?: components['schemas']['Mode'] | null
       path: string
-      /** @description The hash of the path's previous revision; absent for the first. */
+      /** @description The hash of the path's previous revision by number; absent for the first. */
       previous?: string | null
       /**
        * Format: int64
@@ -2444,8 +2450,8 @@ export interface components {
       token: string
     }
     /**
-     * @description One break found by verification: `hash_mismatch` (a record's fields do not give its hash), `version_mismatch` (a revision's `hash_version` disagrees with its stored fields) or `broken_link` (it does
-     *     not follow the record before it). Revision breaks carry `path` and `revision`; audit breaks carry `event`.
+     * @description One break found by verification: `hash_mismatch` (a record's fields do not give its hash), `version_mismatch` (a revision's `hash_version` disagrees with its stored fields), `broken_link` (it does
+     *     not follow the record before it) or `base_mismatch` (a revision's base is not an older revision of its path). Revision breaks carry `path` and `revision`; audit breaks carry `event`.
      */
     VerifyProblem: {
       /** @description The commit id, for a problem in a commit record. */
