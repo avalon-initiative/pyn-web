@@ -3,17 +3,26 @@ import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
 import { fetchContent, fetchTree } from '../api/repos'
-import PynFileView from '../components/PynFileView.vue'
 import { useAction } from '../state/action.state'
-import { contentUrl, entryAt, fileBody, fileKind, parentOf, VIEW_LIMIT } from '../state/blob.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useHashScroll } from '../state/hash.state'
-import { lineHash, parseLineHash } from '../state/lines.state'
-import { folderParam, treePath } from '../state/tree.state'
 import styles from '../styles/View.module.scss'
-import type { LineRange } from '../types/code.types'
-import type { FileBody } from '../types/blob.types'
-import type { TreeEntry } from '../types/tree.types'
+import {
+  PynFileView,
+  contentUrl,
+  entryAt,
+  fileBody,
+  fileKind,
+  folderParam,
+  lineHash,
+  parentOf,
+  parseLineHash,
+  treePath,
+  VIEW_LIMIT,
+  type FileBody,
+  type LineRange,
+  type TreeEntry,
+} from '@avalon-initiative/pyn-common-ui'
 
 const { target } = inject(repoKey)!
 const user = inject(sessionKey)!.user

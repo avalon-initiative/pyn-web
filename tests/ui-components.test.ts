@@ -1,15 +1,19 @@
-import { PynAccountNotice, PynLockBadge } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynAccountNotice,
+  PynFileList,
+  PynLockBadge,
+  groupByTopLevel,
+  splitPath,
+} from '@avalon-initiative/pyn-common-ui'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import PynFileList from '../src/components/PynFileList.vue'
 import PynKeys from '../src/components/PynKeys.vue'
 import PynResendForm from '../src/components/PynResendForm.vue'
 import PynSignIn from '../src/components/PynSignIn.vue'
 import PynVerifyEmail from '../src/components/PynVerifyEmail.vue'
 import { csrfHeaders, setCsrfToken } from '../src/state/csrf.state'
-import { groupByTopLevel, splitPath } from '../src/state/files.state'
 
 const now = new Date('2026-10-08T12:00:00Z')
 const lock = (owner: string, minutesLeft: number) => ({
@@ -67,11 +71,10 @@ describe('PynFileList', () => {
           {
             path: 'Content/a.umap',
             mode: 'exclusive',
-            file_mode: '100644' as const,
             revision: 3,
             lock: lock('bob', 60),
           },
-          { path: 'Source/a.cpp', mode: 'shared', file_mode: '100644' as const, revision: 9 },
+          { path: 'Source/a.cpp', mode: 'shared', revision: 9 },
         ],
       },
     })
@@ -88,7 +91,6 @@ describe('PynFileList', () => {
           {
             path: 'Content/World/Main.umap',
             mode: 'exclusive',
-            file_mode: '100644' as const,
             revision: null,
             lock: null,
           },

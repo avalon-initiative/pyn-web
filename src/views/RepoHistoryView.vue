@@ -2,11 +2,10 @@
 import { inject, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchHistory } from '../api/repos'
-import PynHistory from '../components/PynHistory.vue'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
-import { historyQuery } from '../state/history.state'
 import type { Revision } from '../types/repo.types'
+import { PynHistory, historyQuery } from '@avalon-initiative/pyn-common-ui'
 
 const { target } = inject(repoKey)!
 const route = useRoute()
