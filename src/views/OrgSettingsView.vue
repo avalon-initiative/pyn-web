@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynPageNotFound,
+  PynOrgDelete,
+  PynOrgRepoPolicy,
+  isOrgOwner,
+  type RuleRef,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -11,13 +17,10 @@ import {
   setMemberCreation,
 } from '../api/orgs'
 import { listTeams } from '../api/teams'
-import PynOrgDelete from '../components/PynOrgDelete.vue'
-import PynOrgRepoPolicy from '../components/PynOrgRepoPolicy.vue'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import { isOrgOwner } from '../state/org.state'
 import styles from '../styles/View.module.scss'
-import type { MemberCreation, RepoPolicy, RuleRef, RuleScope } from '../types/org.types'
+import type { MemberCreation, RepoPolicy, RuleScope } from '../types/org.types'
 
 const { name, org } = inject(orgKey)!
 const router = useRouter()

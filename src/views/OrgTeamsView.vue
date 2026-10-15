@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import {
+  PynTeamForm,
+  PynTeamList,
+  isOrgOwner,
+  teamPath,
+  type TeamFormValue,
+} from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createTeam, listTeams } from '../api/teams'
-import PynTeamForm from '../components/PynTeamForm.vue'
-import PynTeamList from '../components/PynTeamList.vue'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import { isOrgOwner } from '../state/org.state'
-import { teamPath } from '../state/team.state'
 import styles from '../styles/View.module.scss'
-import type { TeamFormValue, TeamInfo } from '../types/team.types'
+import type { TeamInfo } from '../types/team.types'
 
 const { name, org } = inject(orgKey)!
 const router = useRouter()

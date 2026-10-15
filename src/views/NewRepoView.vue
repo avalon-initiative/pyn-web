@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { PynRepoForm, type RepoSettings, repoPath } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynRepoForm,
+  type RepoSettings,
+  repoPath,
+  ownerChoices,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { listMyOrgs } from '../api/orgs'
 import { createRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { sessionKey } from '../state/context.state'
-import { ownerChoices } from '../state/org.state'
 import styles from '../styles/View.module.scss'
 import type { OrgInfo } from '../types/org.types'
 

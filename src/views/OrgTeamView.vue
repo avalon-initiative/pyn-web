@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynPageNotFound,
+  PynTeamDelete,
+  PynTeamDetail,
+  PynTeamForm,
+  isOrgOwner,
+  teamCandidates,
+  teamPath,
+  type TeamFormValue,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
 import { listOrgMembers } from '../api/orgs'
 import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from '../api/teams'
-import PynTeamDelete from '../components/PynTeamDelete.vue'
-import PynTeamDetail from '../components/PynTeamDetail.vue'
-import PynTeamForm from '../components/PynTeamForm.vue'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import { isOrgOwner } from '../state/org.state'
-import { teamCandidates, teamPath } from '../state/team.state'
 import styles from '../styles/View.module.scss'
-import type { TeamFormValue, TeamInfo } from '../types/team.types'
+import type { TeamInfo } from '../types/team.types'
 
 const { name, org } = inject(orgKey)!
 const route = useRoute()

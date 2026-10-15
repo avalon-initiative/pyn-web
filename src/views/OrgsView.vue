@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { PynOrgList, sortOrgs } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listMyOrgs } from '../api/orgs'
-import PynOrgList from '../components/PynOrgList.vue'
 import { useAction } from '../state/action.state'
-import { sortOrgs } from '../state/org.state'
 import styles from '../styles/View.module.scss'
 import type { OrgInfo } from '../types/org.types'
 
