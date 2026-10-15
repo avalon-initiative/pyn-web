@@ -5,59 +5,10 @@
   }
 }
 
-// Narrow screens; each component owns its responsive behaviour.
-@mixin narrow {
-  @media (max-width: 40rem) {
-    @content;
-  }
-}
-
 @mixin card {
   background: var(--pyn-surface);
   border: 1px solid var(--pyn-border);
   border-radius: var(--pyn-radius);
-}
-
-@mixin list {
-  @include card;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-@mixin item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--pyn-space-4);
-  padding: var(--pyn-space-3) var(--pyn-space-4);
-
-  & + & {
-    border-top: 1px solid var(--pyn-border);
-  }
-
-  @include narrow {
-    flex-wrap: wrap;
-  }
-}
-
-@mixin field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--pyn-space-1);
-  color: var(--pyn-text-muted);
-  font-size: 0.875rem;
-}
-
-@mixin input {
-  padding: var(--pyn-space-2) var(--pyn-space-3);
-  color: var(--pyn-text);
-  background: var(--pyn-bg);
-  border: 1px solid var(--pyn-border);
-  border-radius: var(--pyn-radius);
-  font: inherit;
-
-  @include focus-ring;
 }
 
 @mixin button($color: var(--pyn-text)) {
@@ -99,12 +50,4 @@
   background: var(--pyn-danger-bg);
   border-radius: var(--pyn-radius);
   font-size: 0.875rem;
-}
-
-@mixin pill {
-  padding: 0 var(--pyn-space-2);
-  color: var(--pyn-text-muted);
-  border: 1px solid var(--pyn-border);
-  border-radius: var(--pyn-radius-pill);
-  font-size: 0.75rem;
 }

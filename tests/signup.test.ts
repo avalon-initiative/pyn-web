@@ -1,3 +1,4 @@
+import { PynSignIn, externalSignInUrl, signInErrorMessage } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
@@ -5,8 +6,6 @@ import { register, resendVerification, signIn, verifyEmail } from '../src/api/au
 import { ApiError, describeError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { blockedStatus } from '../src/state/account.state'
-import PynSignIn from '../src/components/PynSignIn.vue'
-import { externalSignInUrl, signInErrorMessage } from '../src/state/account.state'
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(body === null ? null : JSON.stringify(body), { status, headers })

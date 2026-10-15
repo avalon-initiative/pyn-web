@@ -1,7 +1,11 @@
 import {
   PynAccountNotice,
   PynFileList,
+  PynKeys,
   PynLockBadge,
+  PynResendForm,
+  PynSignIn,
+  PynVerifyEmail,
   groupByTopLevel,
   splitPath,
 } from '@avalon-initiative/pyn-common-ui'
@@ -9,10 +13,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import PynKeys from '../src/components/PynKeys.vue'
-import PynResendForm from '../src/components/PynResendForm.vue'
-import PynSignIn from '../src/components/PynSignIn.vue'
-import PynVerifyEmail from '../src/components/PynVerifyEmail.vue'
 import { csrfHeaders, setCsrfToken } from '../src/state/csrf.state'
 
 const now = new Date('2026-10-08T12:00:00Z')

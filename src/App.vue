@@ -3,7 +3,6 @@ import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import styles from './styles/App.module.scss'
 import PynSetup from './components/PynSetup.vue'
-import PynSignIn from './components/PynSignIn.vue'
 import {
   completeSetup,
   fetchRegistration,
@@ -26,6 +25,7 @@ import { sortRepos } from './state/repo.state'
 import { activeNav, navItems } from './state/shell.state'
 import {
   PynShell,
+  PynSignIn,
   PynSideNav,
   PynTopBar,
   applyTheme,

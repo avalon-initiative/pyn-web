@@ -1,4 +1,5 @@
 import {
+  PynAccountSettings,
   PynMenu,
   PynModeChip,
   PynRepoHeader,
@@ -10,7 +11,6 @@ import {
 } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import PynAccountSettings from '../src/components/PynAccountSettings.vue'
 import { accountNav, activeNav, mainNav, matchRepos } from '../src/state/shell.state'
 import { sampleRepos } from '../src/stories/shell-data'
 

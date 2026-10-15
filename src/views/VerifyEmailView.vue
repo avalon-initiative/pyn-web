@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { PynVerifyEmail } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { resendVerification, verifyEmail } from '../api/auth'
-import PynVerifyEmail from '../components/PynVerifyEmail.vue'
 import { useAction } from '../state/action.state'
 import type { Registered, VerifyOutcome } from '../types/auth.types'
 
