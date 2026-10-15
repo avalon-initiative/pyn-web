@@ -1,4 +1,4 @@
-import { formatWait } from '../state/wait.state'
+import { formatWait } from '@avalon-initiative/pyn-common-ui'
 
 export class ApiError extends Error {
   constructor(

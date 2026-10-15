@@ -4,8 +4,8 @@ import PynIcon from './PynIcon.vue'
 import PynMenu from './PynMenu.vue'
 import PynSearch from './PynSearch.vue'
 import styles from '../styles/PynTopBar.module.scss'
-import { themeChoices } from '../state/theme.state'
-import type { ThemeChoice } from '../state/theme.state'
+import { themeChoices } from '@avalon-initiative/pyn-common-ui'
+import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
 import type { MenuItem } from '../types/shell.types'
 
 const props = defineProps<{ user: string; repos: string[]; theme: ThemeChoice; admin?: boolean }>()

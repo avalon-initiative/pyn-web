@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import styles from '../styles/PynActivity.module.scss'
-import { formatDateTime } from '../state/datetime.state'
+import { formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import { activityVerb, formatAgo } from '../state/tree.state'
 import type { ActivityEntry } from '../types/tree.types'
 

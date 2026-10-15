@@ -19,6 +19,7 @@
     "api:check": "node scripts/gen-api.mjs --check"
   },
   "dependencies": {
+    "@avalon-initiative/pyn-common-ui": "0.1.1",
     "dompurify": "3.4.16",
     "highlight.js": "11.12.0",
     "marked": "18.1.0",

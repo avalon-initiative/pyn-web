@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import styles from '../styles/PynTokens.module.scss'
-import { formatDate } from '../state/datetime.state'
+import { formatDate } from '@avalon-initiative/pyn-common-ui'
 import { expiryFromDate, parseRepos, TOKEN_PERMISSIONS } from '../state/token.state'
 import type { TokenForm, TokenInfo } from '../types/token.types'
 

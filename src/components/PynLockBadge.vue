@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import PynLockIcon from './PynLockIcon.vue'
 import styles from '../styles/PynLockBadge.module.scss'
-import { formatLease, lockState } from '../state/lease.state'
+import { formatLease, lockState } from '@avalon-initiative/pyn-common-ui'
 import type { LockInfo } from '../types/lock.types'
 
 const props = defineProps<{

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import styles from '../styles/PynKeys.module.scss'
-import { formatDate } from '../state/datetime.state'
+import { formatDate } from '@avalon-initiative/pyn-common-ui'
 import type { SshKey } from '../types/auth.types'
 
 defineProps<{

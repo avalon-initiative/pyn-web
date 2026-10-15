@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import styles from '../styles/PynOrgHeader.module.scss'
-import { formatDate } from '../state/datetime.state'
+import { formatDate } from '@avalon-initiative/pyn-common-ui'
 import { orgPath, orgTabs } from '../state/org.state'
 import type { OrgRole } from '../types/org.types'
 

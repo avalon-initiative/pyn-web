@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
 import styles from '../styles/PynHistory.module.scss'
-import { formatDateTime } from '../state/datetime.state'
+import { formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import { FILTER_DEBOUNCE_MS } from '../state/history.state'
 import type { Revision } from '../types/repo.types'
 

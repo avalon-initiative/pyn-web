@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import styles from '../styles/PynTeamList.module.scss'
-import { formatDate } from '../state/datetime.state'
+import { formatDate } from '@avalon-initiative/pyn-common-ui'
 import { teamPath } from '../state/team.state'
 import type { TeamInfo } from '../types/team.types'
 

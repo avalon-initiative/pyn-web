@@ -11,7 +11,6 @@ import PynSignIn from '../src/components/PynSignIn.vue'
 import PynVerifyEmail from '../src/components/PynVerifyEmail.vue'
 import { csrfHeaders, setCsrfToken } from '../src/state/csrf.state'
 import { groupByTopLevel, splitPath } from '../src/state/files.state'
-import { formatLease, lockState } from '../src/state/lease.state'
 
 const now = new Date('2026-10-08T12:00:00Z')
 const lock = (owner: string, minutesLeft: number) => ({
@@ -19,23 +18,6 @@ const lock = (owner: string, minutesLeft: number) => ({
   owner,
   acquired_at: '2026-10-08T09:00:00Z',
   expires_at: new Date(now.getTime() + minutesLeft * 60_000).toISOString(),
-})
-
-describe('lease state', () => {
-  it('formats time left', () => {
-    expect(formatLease(lock('a', 222).expires_at, now)).toBe('3h 42m')
-    expect(formatLease(lock('a', 12).expires_at, now)).toBe('12m')
-    expect(formatLease(lock('a', 0.5).expires_at, now)).toBe('<1m')
-    expect(formatLease(lock('a', -1).expires_at, now)).toBe('expired')
-  })
-
-  it('classifies locks for the viewer', () => {
-    expect(lockState(undefined, 'me', now)).toBe('available')
-    expect(lockState(lock('bob', 120), 'me', now)).toBe('locked')
-    expect(lockState(lock('me', 120), 'me', now)).toBe('mine')
-    expect(lockState(lock('bob', 10), 'me', now)).toBe('expiring')
-    expect(lockState(lock('bob', -10), 'me', now)).toBe('available')
-  })
 })
 
 describe('files state', () => {

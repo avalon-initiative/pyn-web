@@ -1,7 +1,8 @@
 import type { Preview } from '@storybook/vue3'
-import '../src/styles/global.scss'
-import { applyTheme } from '../src/state/theme.state'
-import type { ThemeChoice } from '../src/state/theme.state'
+import '@avalon-initiative/pyn-common-ui/tokens.css'
+import '@avalon-initiative/pyn-common-ui/global.css'
+import { applyTheme } from '@avalon-initiative/pyn-common-ui'
+import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
 
 const preview: Preview = {
   parameters: { layout: 'padded' },

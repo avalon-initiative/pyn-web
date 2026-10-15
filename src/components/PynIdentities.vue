@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import styles from '../styles/PynIdentities.module.scss'
-import { formatDate } from '../state/datetime.state'
+import { formatDate } from '@avalon-initiative/pyn-common-ui'
 import type { ExternalIdentity, ExternalProvider } from '../types/auth.types'
 
 defineProps<{

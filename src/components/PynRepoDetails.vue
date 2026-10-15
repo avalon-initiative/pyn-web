@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import styles from '../styles/PynRepoDetails.module.scss'
-import { formatDate, formatDateTime } from '../state/datetime.state'
+import { formatDate, formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import { formatAgo } from '../state/tree.state'
 import type { Visibility } from '../types/repo.types'
 

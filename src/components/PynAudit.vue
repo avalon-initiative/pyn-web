@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import styles from '../styles/PynAudit.module.scss'
-import { formatDateTime } from '../state/datetime.state'
+import { formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import { AUDIT_ACTIONS } from '../state/repo.state'
 import type { AuditEntry, AuditFilter } from '../types/repo.types'
 
