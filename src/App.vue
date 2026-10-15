@@ -23,7 +23,7 @@ import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { internalPath } from './state/links.state'
 import { sortOrgs } from './state/org.state'
-import { repoSlug, sortRepos } from './state/repo.state'
+import { sortRepos } from './state/repo.state'
 import { activeNav, navItems } from './state/shell.state'
 import {
   PynShell,
@@ -31,6 +31,7 @@ import {
   PynTopBar,
   applyTheme,
   loadTheme,
+  repoSlug,
   saveTheme,
 } from '@avalon-initiative/pyn-common-ui'
 import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'

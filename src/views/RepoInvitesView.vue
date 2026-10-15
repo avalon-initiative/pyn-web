@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { PynInvites } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { createInvite, listInvites, listRoles, revokeInvite } from '../api/repos'
-import PynInvites from '../components/PynInvites.vue'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
 import type { InviteInfo } from '../types/repo.types'

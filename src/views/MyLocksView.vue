@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { PynMyLocks } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listMyLocks, releaseLock } from '../api/repos'
-import PynMyLocks from '../components/PynMyLocks.vue'
 import { useAction } from '../state/action.state'
 import { releaseEach } from '../state/my-locks.state'
 import styles from '../styles/View.module.scss'

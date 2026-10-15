@@ -1,26 +1,33 @@
-import { PynHistory, PynRepoNav, PynRepoNotFound } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynAddPerson,
+  PynAudit,
+  PynHistory,
+  PynInvites,
+  PynLocks,
+  PynMembers,
+  PynMyLocks,
+  PynRepoDelete,
+  PynRepoForm,
+  PynRepoList,
+  PynRepoNav,
+  PynRepoNotFound,
+  PynRoles,
+  parseLockLimit,
+  repoPath,
+  repoTabs,
+} from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { ApiError, describeError } from '../src/api/client'
 import { createRepo, fetchFiles, setMember, updateRepo } from '../src/api/repos'
-import PynAddPerson from '../src/components/PynAddPerson.vue'
-import PynAudit from '../src/components/PynAudit.vue'
-import PynInvites from '../src/components/PynInvites.vue'
-import PynLocks from '../src/components/PynLocks.vue'
-import PynMembers from '../src/components/PynMembers.vue'
-import PynMyLocks from '../src/components/PynMyLocks.vue'
-import PynRepoDelete from '../src/components/PynRepoDelete.vue'
-import PynRepoForm from '../src/components/PynRepoForm.vue'
-import PynRepoList from '../src/components/PynRepoList.vue'
-import PynRoles from '../src/components/PynRoles.vue'
 import RepoBlobView from '../src/views/RepoBlobView.vue'
 import RepoHistoryView from '../src/views/RepoHistoryView.vue'
 import { repoKey, sessionKey } from '../src/state/context.state'
 import { internalPath } from '../src/state/links.state'
 import { releaseEach } from '../src/state/my-locks.state'
-import { parseLockLimit, repoPath, repoTabs, sortRepos } from '../src/state/repo.state'
+import { sortRepos } from '../src/state/repo.state'
 import { makeRouter } from '../src/router'
 
 const now = new Date('2026-10-08T12:00:00Z')
