@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import {
   approveAccount,
@@ -9,7 +10,6 @@ import {
 } from '../api/admin'
 import PynAccounts from '../components/PynAccounts.vue'
 import PynAudit from '../components/PynAudit.vue'
-import PynPageNotFound from '../components/PynPageNotFound.vue'
 import { useAction } from '../state/action.state'
 import { applyUpdate } from '../state/admin.state'
 import { sessionKey } from '../state/context.state'

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import PynIcon from './PynIcon.vue'
 import styles from '../styles/PynBranchBar.module.scss'
-import { formatDateTime } from '@avalon-initiative/pyn-common-ui'
+import { PynIcon, formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import { formatAgo } from '../state/tree.state'
 
 defineProps<{

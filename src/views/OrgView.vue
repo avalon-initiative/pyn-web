@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
 import { computed, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOrg } from '../api/orgs'
 import { ApiError } from '../api/client'
 import PynOrgHeader from '../components/PynOrgHeader.vue'
-import PynPageNotFound from '../components/PynPageNotFound.vue'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
 import styles from '../styles/View.module.scss'

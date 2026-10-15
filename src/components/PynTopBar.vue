@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import PynIcon from './PynIcon.vue'
-import PynMenu from './PynMenu.vue'
-import PynSearch from './PynSearch.vue'
 import styles from '../styles/PynTopBar.module.scss'
-import { themeChoices } from '@avalon-initiative/pyn-common-ui'
+import { PynIcon, PynMenu, PynSearch, themeChoices } from '@avalon-initiative/pyn-common-ui'
 import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
 import type { MenuItem } from '../types/shell.types'
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -12,7 +13,6 @@ import {
 import { listTeams } from '../api/teams'
 import PynOrgDelete from '../components/PynOrgDelete.vue'
 import PynOrgRepoPolicy from '../components/PynOrgRepoPolicy.vue'
-import PynPageNotFound from '../components/PynPageNotFound.vue'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
 import { isOrgOwner } from '../state/org.state'

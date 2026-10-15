@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import PynLockBadge from './PynLockBadge.vue'
-import PynIcon from './PynIcon.vue'
+import { PynIcon, PynLockBadge } from '@avalon-initiative/pyn-common-ui'
 import styles from '../styles/PynLockedFiles.module.scss'
 import { repoPath } from '../state/repo.state'
 import type { LockInfo } from '../types/lock.types'

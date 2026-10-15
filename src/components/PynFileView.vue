@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PynBreadcrumb from './PynBreadcrumb.vue'
+import { PynBreadcrumb } from '@avalon-initiative/pyn-common-ui'
 import PynCodeView from './PynCodeView.vue'
 import PynFileBar from './PynFileBar.vue'
 import PynMarkdown from './PynMarkdown.vue'

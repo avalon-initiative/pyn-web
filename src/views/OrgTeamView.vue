@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
 import { listOrgMembers } from '../api/orgs'
 import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from '../api/teams'
-import PynPageNotFound from '../components/PynPageNotFound.vue'
 import PynTeamDelete from '../components/PynTeamDelete.vue'
 import PynTeamDetail from '../components/PynTeamDetail.vue'
 import PynTeamForm from '../components/PynTeamForm.vue'

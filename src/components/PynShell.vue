@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { PynIcon } from '@avalon-initiative/pyn-common-ui'
 import { ref } from 'vue'
-import PynIcon from './PynIcon.vue'
 import styles from '../styles/PynShell.module.scss'
 
 const open = ref(false)

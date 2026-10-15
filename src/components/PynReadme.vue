@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PynIcon from './PynIcon.vue'
+import { PynIcon } from '@avalon-initiative/pyn-common-ui'
 import PynMarkdown from './PynMarkdown.vue'
 import styles from '../styles/PynReadme.module.scss'
 import { blobPath, fileKind, parentOf } from '../state/blob.state'

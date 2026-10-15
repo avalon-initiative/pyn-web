@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import PynLockBadge from './PynLockBadge.vue'
-import PynModeChip from './PynModeChip.vue'
 import styles from '../styles/PynFileBar.module.scss'
 import { baseName, contentUrl, historyLink } from '../state/blob.state'
-import { formatDateTime } from '@avalon-initiative/pyn-common-ui'
+import { PynLockBadge, PynModeChip, formatDateTime } from '@avalon-initiative/pyn-common-ui'
 import { formatAgo } from '../state/tree.state'
 import type { TreeEntry } from '../types/tree.types'
 
