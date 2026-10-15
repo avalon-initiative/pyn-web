@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import {
+  PynRepoDelete,
+  PynRepoForm,
+  type RepoSettings,
+  repoPath,
+  repoSlug,
+} from '@avalon-initiative/pyn-common-ui'
 import { inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteRepo, updateRepo } from '../api/repos'
-import PynRepoDelete from '../components/PynRepoDelete.vue'
-import PynRepoForm from '../components/PynRepoForm.vue'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
-import { repoPath, repoSlug } from '../state/repo.state'
 import styles from '../styles/View.module.scss'
-import type { RepoSettings } from '../types/repo.types'
 
 const { repo, target, reload } = inject(repoKey)!
 const router = useRouter()

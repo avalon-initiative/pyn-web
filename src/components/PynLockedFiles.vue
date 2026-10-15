@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { PynIcon, PynLockBadge } from '@avalon-initiative/pyn-common-ui'
+import { PynIcon, PynLockBadge, repoPath } from '@avalon-initiative/pyn-common-ui'
 import styles from '../styles/PynLockedFiles.module.scss'
-import { repoPath } from '../state/repo.state'
 import type { LockInfo } from '../types/lock.types'
 
 defineProps<{ locks: LockInfo[]; owner: string; name: string; me?: string; now?: Date }>()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { PynRoles } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { listRoles, setRole } from '../api/repos'
-import PynRoles from '../components/PynRoles.vue'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
 import type { RoleGrant } from '../types/repo.types'

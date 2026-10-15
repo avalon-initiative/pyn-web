@@ -1,8 +1,6 @@
 import { ApiError, describeError } from '../api/client'
 import type { MyLock, ReleaseFailure } from '../types/lock.types'
 
-export const myLockKey = (l: MyLock) => `${l.owner}/${l.name}:${l.path}`
-
 /** Releases each lock in turn and returns the failures; a 401 aborts the whole run. */
 export async function releaseEach(
   locks: MyLock[],

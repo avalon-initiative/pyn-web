@@ -1,5 +1,6 @@
 import {
   PynOrgHeader,
+  PynRepoForm,
   PynRepoHeader,
   PynSideNav,
   PynTopBar,
@@ -14,7 +15,6 @@ import PynOrgForm from '../src/components/PynOrgForm.vue'
 import PynOrgList from '../src/components/PynOrgList.vue'
 import PynOrgRepoPolicy from '../src/components/PynOrgRepoPolicy.vue'
 import PynOrgMembers from '../src/components/PynOrgMembers.vue'
-import PynRepoForm from '../src/components/PynRepoForm.vue'
 import { makeRouter } from '../src/router'
 import { orgKey, sessionKey } from '../src/state/context.state'
 import { orgPath, orgTabs, ownerChoices, ruleSubjects } from '../src/state/org.state'

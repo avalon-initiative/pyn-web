@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { PynRepoList } from '@avalon-initiative/pyn-common-ui'
 import { inject, ref, watch } from 'vue'
 import { listRepos } from '../api/repos'
-import PynRepoList from '../components/PynRepoList.vue'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
 import { sortRepos } from '../state/repo.state'

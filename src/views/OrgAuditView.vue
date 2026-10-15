@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
+import { PynAudit, PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { listOrgAudit } from '../api/orgs'
-import PynAudit from '../components/PynAudit.vue'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
 import { isOrgOwner } from '../state/org.state'

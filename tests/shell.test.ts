@@ -6,11 +6,11 @@ import {
   PynShell,
   PynSideNav,
   PynTopBar,
+  repoTabs,
 } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import PynAccountSettings from '../src/components/PynAccountSettings.vue'
-import { repoTabs } from '../src/state/repo.state'
 import { accountNav, activeNav, mainNav, matchRepos } from '../src/state/shell.state'
 import { sampleRepos } from '../src/stories/shell-data'
 
