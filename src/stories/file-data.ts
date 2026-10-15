@@ -1,4 +1,4 @@
-import type { TreeEntry } from '../types/tree.types'
+import type { Schemas } from '../api/schema'
 import { lock, now } from './landing-data'
 
 export const readmeText = `# Castle Quest
@@ -41,7 +41,7 @@ export function useCount(start = 0) {
 
 const at = new Date(now.getTime() - 2 * 3_600_000).toISOString()
 
-export const fileEntry: TreeEntry = {
+export const fileEntry: Schemas['TreeEntry'] = {
   name: 'useCount.ts',
   path: 'Source/useCount.ts',
   kind: 'file',
@@ -60,7 +60,7 @@ export const fileEntry: TreeEntry = {
   },
 }
 
-export const lockedEntry: TreeEntry = {
+export const lockedEntry: Schemas['TreeEntry'] = {
   ...fileEntry,
   name: 'Level01.umap',
   path: 'Content/Level01.umap',

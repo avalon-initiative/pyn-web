@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { PynBranchBar, PynBreadcrumb } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynActivity,
+  PynBranchBar,
+  PynBreadcrumb,
+  PynReadme,
+  PynTree,
+  breadcrumbs,
+  treePath,
+  type ReadmeDoc,
+  type RepoSummary,
+  type TreeListing,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed } from 'vue'
-import PynActivity from './PynActivity.vue'
 import PynCheckoutCard from './PynCheckoutCard.vue'
 import PynLockedFiles from './PynLockedFiles.vue'
-import PynReadme from './PynReadme.vue'
 import PynRepoDetails from './PynRepoDetails.vue'
-import PynTree from './PynTree.vue'
 import styles from '../styles/PynRepoLanding.module.scss'
-import { breadcrumbs, treePath } from '../state/tree.state'
-import type { ReadmeDoc } from '../types/blob.types'
 import type { RepoInfo } from '../types/repo.types'
-import type { RepoSummary, TreeListing } from '../types/tree.types'
 
 const props = defineProps<{
   repo: RepoInfo

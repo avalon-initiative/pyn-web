@@ -1,16 +1,23 @@
-import { PynBranchBar, PynBreadcrumb, PynModeChip } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynActivity,
+  PynBranchBar,
+  PynBreadcrumb,
+  PynModeChip,
+  PynTree,
+  breadcrumbs,
+  folderParam,
+  formatAgo,
+  treePath,
+} from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { fetchSummary, fetchTree } from '../src/api/repos'
-import PynActivity from '../src/components/PynActivity.vue'
 import PynCheckoutCard from '../src/components/PynCheckoutCard.vue'
 import PynLockedFiles from '../src/components/PynLockedFiles.vue'
 import PynRepoDetails from '../src/components/PynRepoDetails.vue'
 import PynRepoLanding from '../src/components/PynRepoLanding.vue'
-import PynTree from '../src/components/PynTree.vue'
 import { makeRouter } from '../src/router'
-import { breadcrumbs, folderParam, formatAgo, treePath } from '../src/state/tree.state'
 import {
   folderListing,
   now,

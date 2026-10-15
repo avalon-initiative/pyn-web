@@ -1,6 +1,10 @@
 import type { LockInfo } from '../types/lock.types'
 import type { RepoInfo } from '../types/repo.types'
-import type { RepoSummary, TreeEntry, TreeListing } from '../types/tree.types'
+import type { Schemas } from '../api/schema'
+
+type TreeEntry = Schemas['TreeEntry']
+type TreeListing = Schemas['TreeListing']
+type RepoSummary = Schemas['RepoSummary']
 
 export const now = new Date('2026-10-08T12:00:00Z')
 

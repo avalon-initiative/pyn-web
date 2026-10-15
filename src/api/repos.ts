@@ -11,10 +11,13 @@ import type {
   RepoSettings,
   RoleGrant,
 } from '../types/repo.types'
-import type { RepoSummary, TreeListing } from '../types/tree.types'
-import { contentUrl } from '../state/blob.state'
+import {
+  contentUrl,
+  type FetchedContent,
+  type RepoSummary,
+  type TreeListing,
+} from '@avalon-initiative/pyn-common-ui'
 import type { Registered } from '../types/auth.types'
-import type { FetchedContent } from '../types/blob.types'
 import { api, call, failure } from './http'
 
 type Repo = { owner: string; name: string }
