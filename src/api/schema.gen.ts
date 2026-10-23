@@ -212,6 +212,86 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/webhooks': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_webhooks']
+    put?: never
+    post: operations['create_webhook']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/webhooks/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_webhook']
+    put?: never
+    post?: never
+    delete: operations['delete_webhook']
+    options?: never
+    head?: never
+    patch: operations['update_webhook']
+    trace?: never
+  }
+  '/v1/admin/webhooks/{id}/secrets': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['rotate_webhook_secret']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/webhooks/{id}/secrets/{secret_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['retire_webhook_secret']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/capabilities': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['capabilities']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/explore/repos': {
     parameters: {
       query?: never
@@ -863,6 +943,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/fetch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** The commits and trees a client lacks, oldest first, a page at a time. */
+    post: operations['fetch']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/files': {
     parameters: {
       query?: never
@@ -1108,6 +1205,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/objects/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['get_object']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/policy/preview': {
     parameters: {
       query?: never
@@ -1118,6 +1232,23 @@ export interface paths {
     get?: never
     put?: never
     post: operations['preview_policy']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/push': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Append client-built commits to a branch, all or none. */
+    post: operations['push']
     delete?: never
     options?: never
     head?: never
@@ -1311,7 +1442,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Needs `read`; the audit log is also checked for callers with `view_audit`. */
+    /** Needs `read`; the audit log is also checked for callers with `view_audit`. Without `path` the caller must be signed in. */
     get: operations['verify']
     put?: never
     post?: never
@@ -1409,6 +1540,30 @@ export interface components {
     Account: {
       /** @description Runs the server: may approve and disable accounts under `/v1/admin`. */
       admin?: boolean
+      user: string
+    }
+    /** @description `account.approved`. */
+    AccountApprovedData: {
+      /** @description The administrator or service credential that approved it. */
+      actor: string
+      user: string
+    }
+    /** @description `account.created`: a new account exists (sign-up, external sign-in or an administrator). */
+    AccountCreatedData: {
+      /** @description True when an administrator must approve the account before it can sign in. */
+      pending_approval: boolean
+      user: string
+    }
+    /** @description `account.disabled`. */
+    AccountDisabledData: {
+      actor: string
+      /** @description The reason given when it was disabled, if any. */
+      reason: string | null
+      user: string
+    }
+    /** @description `account.enabled`. */
+    AccountEnabledData: {
+      actor: string
       user: string
     }
     /** @description An account as an administrator sees it. */
@@ -1574,15 +1729,21 @@ export interface components {
      */
     Commit: {
       author: components['schemas']['Person']
+      /**
+       * Format: date-time
+       * @description The author time, in whole seconds; its timezone is `author.offset_minutes`. Absent from servers that predate it.
+       */
+      authored_at?: string | null
       /** @description Set when the commit was made as a changeset. */
       changeset?: string | null
       committer: components['schemas']['Person']
       /**
        * Format: date-time
-       * @description The author and committer time, in whole seconds.
+       * @description The committer time, in whole seconds.
        */
       created_at: string
       id: string
+      /** @description The message decoded lossily; a commit's exact bytes are never altered. */
       message: string
       /** @description Empty for the first commit of the repository, otherwise the commit it was made on top of. */
       parents: string[]
@@ -1639,7 +1800,7 @@ export interface components {
     CreateServiceCredentialRequest: {
       /** @description 1 to 64 lowercase letters, digits, `-` or `_`; unique, and never reused after revocation. */
       name: string
-      /** @description At least one of `manage_accounts`, `manage_organizations`, `manage_limits`. */
+      /** @description At least one of `manage_accounts`, `manage_organizations`, `manage_limits`, `manage_webhooks`. */
       scopes: string[]
     }
     CreateTeamRequest: {
@@ -1658,6 +1819,16 @@ export interface components {
       /** @description Repositories the token is valid for, as `owner/name`; at least one. */
       repos: string[]
     }
+    CreateWebhookRequest: {
+      /** @description Defaults to true. */
+      enabled?: boolean
+      /** @description Event types to deliver, such as `repository.created`; empty or left out means every type. */
+      event_types?: string[]
+      /** @description 1 to 256 bytes, no control characters. */
+      name: string
+      /** @description `https` only (`http` when the operator allows it), no user name or password, no fragment, at most 2048 bytes. */
+      url: string
+    }
     CreatedInvite: {
       /** @description Give this to the person being invited. Shown once and never stored. */
       code: string
@@ -1672,6 +1843,11 @@ export interface components {
       info: components['schemas']['TokenInfo']
       /** @description The token to present as a bearer credential. Shown once and never stored. */
       token: string
+    }
+    CreatedWebhook: {
+      /** @description The signing secret: `whsec_` and 64 hex characters. Shown once and never returned again. */
+      secret: string
+      webhook: components['schemas']['Webhook']
     }
     /**
      * @description Whether a creation rule permits or forbids.
@@ -1705,6 +1881,31 @@ export interface components {
       code: string
       message: string
     }
+    /**
+     * @description The body of one webhook delivery. `type` and `data` go together: see the payload schemas named
+     *     `*Data` for each known type. A receiver ignores types it does not know.
+     */
+    Event: {
+      /** Format: date-time */
+      created_at: string
+      /** @description The payload for `type`. */
+      data: Record<string, never>
+      /** @description Unique per event; a redelivery keeps it. */
+      id: string
+      /** @description The server's public base URL. */
+      server: string
+      /**
+       * @description The event type, a dotted name such as `repository.created`. An open set: new types are added without a
+       *     new `version`.
+       * @example repository.created
+       */
+      type: string
+      /**
+       * Format: int32
+       * @description The envelope version, `1` today.
+       */
+      version: number
+    }
     /** @description A provider identity linked to an account. */
     ExternalIdentityInfo: {
       /** Format: date-time */
@@ -1722,6 +1923,40 @@ export interface components {
       name: string
       /** @description Send the browser here (a full page navigation, with an optional `return_to` path) to start signing in. */
       sign_in_url: string
+    }
+    FetchCommit: {
+      /** @description Base64 of the commit's body, as in a push. */
+      data: string
+      id: string
+      /** @description The revisions the commit's pointer cache records: what it wrote and what a merge adopted, ordered by path. */
+      pointers: components['schemas']['Revision'][]
+      /** @description The trees the commit adds against its first parent, as in a push. */
+      trees: components['schemas']['PushObject'][]
+    }
+    FetchRef: {
+      branch: string
+      /** @description The branch's head when the fetch started; null for a branch with no commit. */
+      head?: string | null
+    }
+    FetchRequest: {
+      /** @description The branches to fetch; every branch if empty. Ignored when `cursor` is given. */
+      branches?: string[]
+      /** @description The `next` of the previous page. */
+      cursor?: string | null
+      /** @description Commits the client already has, normally its branch heads; ids the repository does not know are ignored. */
+      haves?: string[]
+      /**
+       * Format: int32
+       * @description Commits per page; the server's default and cap apply when omitted or larger.
+       */
+      limit?: number | null
+    }
+    FetchResponse: {
+      /** @description Parents before children. */
+      commits: components['schemas']['FetchCommit'][]
+      /** @description Opaque; send it as `cursor` for the next page. Absent on the last page. */
+      next?: string | null
+      refs: components['schemas']['FetchRef'][]
     }
     FileEntry: {
       /** @description The head revision's git file mode; `100644` when there is no revision. */
@@ -1751,9 +1986,9 @@ export interface components {
       reason: string
     }
     HistoryPage: {
-      /** @description Pass as `before` to fetch the next, older page; null on the last page and with `path`. */
+      /** @description Pass as `before` to fetch the next page (the next newer one with `path`, the next older one without); null on the last page. */
       next_cursor: string | null
-      /** @description With `path`: all of that path's revisions, oldest first. Without: newest first. */
+      /** @description With `path`: that path's revisions, oldest first. Without: newest first. */
       revisions: components['schemas']['Revision'][]
     }
     InviteInfo: {
@@ -1770,6 +2005,11 @@ export interface components {
       used_at?: string | null
       used_by?: string | null
     }
+    /**
+     * @description Which limit an owner ran into.
+     * @enum {string}
+     */
+    LimitKind: 'repositories' | 'members' | 'storage_bytes'
     /** @description Limits on one owner. Every limit is opt-in: a null field is unlimited. */
     Limits: {
       /**
@@ -1987,11 +2227,33 @@ export interface components {
      * @enum {string}
      */
     OrgRole: 'owner' | 'member'
+    /** @description `organization.created`. */
+    OrganizationCreatedData: {
+      actor: string
+      name: string
+      /** @description The organization's first owner. */
+      owner: string
+    }
+    /** @description `organization.deleted`. */
+    OrganizationDeletedData: {
+      actor: string
+      name: string
+    }
     /**
      * @description What an owner (a user or an organization) is.
      * @enum {string}
      */
     OwnerKind: 'user' | 'org'
+    /** @description `owner.limit_reached`: an operation was refused because the owner is at a limit. It names no actor. */
+    OwnerLimitReachedData: {
+      limit: components['schemas']['LimitKind']
+      owner: string
+      /**
+       * Format: int64
+       * @description The limit in force when the operation was refused.
+       */
+      value: number
+    }
     /** @description An owner's limits. Nothing is limited unless an operator sets a limit or a server default. */
     OwnerLimits: {
       /** @description The limits in force: the owner's own where set, else the server default, else null (unlimited). */
@@ -1999,6 +2261,13 @@ export interface components {
       kind: components['schemas']['OwnerKind']
       /** @description Limits set for this owner alone; a null field follows the server default. */
       own: components['schemas']['Limits']
+    }
+    /** @description `owner.limits_changed`: an owner's own limits were set; `limits` is the result, null meaning the server default. */
+    OwnerLimitsChangedData: {
+      actor: string
+      kind: components['schemas']['OwnerKind']
+      limits: components['schemas']['Limits']
+      owner: string
     }
     OwnerLimitsEntry: {
       limits: components['schemas']['OwnerLimits']
@@ -2036,6 +2305,31 @@ export interface components {
     PolicyPreviewRequest: {
       /** @description The proposed contents of `.pyn/pyn.toml`. */
       content: string
+    }
+    /** @description One git object of a push: its id and its body (the bytes after git's `<kind> <length>` header), base64. */
+    PushObject: {
+      data: string
+      /** @description The object id the body hashes to under the repository's algorithm (SHA-256). */
+      id: string
+    }
+    PushRequest: {
+      /** @description The branch to append to; the default branch if omitted. */
+      branch?: string | null
+      /** @description The commits, oldest first; the first is a child of the branch's head, each next one of the one before. */
+      commits: components['schemas']['PushObject'][]
+      /** @description The trees the commits need that the server may not have. Blobs are uploaded beforehand through the object routes. */
+      trees: components['schemas']['PushObject'][]
+    }
+    PushResponse: {
+      branch: string
+      /** @description The branch's head commit after the push. */
+      head: string
+      /** @description Live locks that a policy file in the push released because their paths became shared; omitted when there are none. */
+      released_locks?: components['schemas']['Lock'][]
+      /** @description The revisions the commits made, in commit order, each commit's by path. */
+      revisions: components['schemas']['Revision'][]
+      /** @description Shared versions on other branches that a policy file in the push stranded; omitted when there are none. */
+      stranded?: components['schemas']['StrandedVersion'][]
     }
     PutObjectResponse: {
       /** @description The object's git blob id; for a chunk upload, the SHA-256 hex of its bytes. */
@@ -2161,6 +2455,26 @@ export interface components {
       /** Format: int64 */
       stored_bytes: number
     }
+    /** @description `repository.created`. */
+    RepositoryCreatedData: {
+      actor: string
+      name: string
+      owner: string
+      visibility: components['schemas']['Visibility']
+    }
+    /** @description `repository.deleted`. */
+    RepositoryDeletedData: {
+      actor: string
+      name: string
+      owner: string
+    }
+    /** @description `repository.renamed`: the name changed; the owner never does. */
+    RepositoryRenamedData: {
+      actor: string
+      name: string
+      owner: string
+      previous_name: string
+    }
     ResendVerificationRequest: {
       email: string
     }
@@ -2240,6 +2554,19 @@ export interface components {
       permissions: string[]
       role: string
     }
+    RotatedWebhookSecret: {
+      /** Format: date-time */
+      created_at: string
+      /** @description The new signing secret. Shown once and never returned again. */
+      secret: string
+      /** Format: int64 */
+      secret_id: number
+    }
+    /** @description What this server supports beyond the base API; a client checks it before it relies on a newer route. */
+    ServerCapabilities: {
+      /** @description The server accepts pushed commits and serves fetches (`/push`, `/fetch`), so a client may keep commits locally. */
+      local_commits: boolean
+    }
     ServiceCredentialInfo: {
       /** Format: date-time */
       created_at: string
@@ -2300,7 +2627,7 @@ export interface components {
       public_url?: string | null
       registration: components['schemas']['RegistrationMode']
       server_name?: string | null
-      /** @description The one-time setup token from the server's log or its `PYN_SETUP_TOKEN` setting. */
+      /** @description The one-time setup token printed by the server on first run (stderr) or from its `PYN_SETUP_TOKEN` setting. */
       token: string
       /** @description The first administrator's user name. */
       username: string
@@ -2450,6 +2777,14 @@ export interface components {
       description?: string | null
       name?: string | null
     }
+    /** @description Fields left out stay as they are. */
+    UpdateWebhookRequest: {
+      enabled?: boolean | null
+      /** @description Replaces the list; an empty list means every type. */
+      event_types?: string[] | null
+      name?: string | null
+      url?: string | null
+    }
     Usage: {
       /**
        * Format: int64
@@ -2482,6 +2817,10 @@ export interface components {
       /** Format: int64 */
       revision?: number | null
     }
+    /**
+     * @description What one `verify` request checked. With `paged=true` a request does a bounded share of the work: add the counts and
+     *     problems of the steps together, and send `next_cursor` back as `cursor` until it is null.
+     */
     VerifyReport: {
       /**
        * Format: int64
@@ -2490,6 +2829,11 @@ export interface components {
       audit_events: number | null
       /** Format: int64 */
       commits: number
+      /**
+       * @description Opaque; send it as `cursor` for the next step. Null when everything has been checked. Absent from servers that
+       *     check in one request.
+       */
+      next_cursor?: string | null
       /** Format: int64 */
       paths: number
       problems: components['schemas']['VerifyProblem'][]
@@ -2501,6 +2845,32 @@ export interface components {
      * @enum {string}
      */
     Visibility: 'public' | 'private'
+    Webhook: {
+      /** Format: date-time */
+      created_at: string
+      /** @description The account that created it. */
+      created_by: string
+      enabled: boolean
+      /** @description Event types delivered; empty means every type. */
+      event_types: string[]
+      /** Format: int64 */
+      id: number
+      name: string
+      /** @description Active secrets, oldest first: one, or two while a rotation is in progress. */
+      secrets: components['schemas']['WebhookSecretInfo'][]
+      /** Format: date-time */
+      updated_at: string
+      url: string
+    }
+    /** @description An active signing secret. Its value is shown once, when it is created, and never again. */
+    WebhookSecretInfo: {
+      /** Format: date-time */
+      created_at: string
+      /** @description Whether the server stores it encrypted (`PYN_SECRET_KEY` is set). */
+      encrypted: boolean
+      /** Format: int64 */
+      id: number
+    }
   }
   responses: never
   parameters: never
@@ -3168,6 +3538,328 @@ export interface operations {
       }
     }
   }
+  list_webhooks: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description oldest first; secret values are never returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Webhook'][]
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  create_webhook: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateWebhookRequest']
+      }
+    }
+    responses: {
+      /** @description the signing secret is shown once */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CreatedWebhook']
+        }
+      }
+      /** @description invalid_request: bad name, url (https only, no user info or fragment) or event type */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_webhook: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the subscription's id */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Webhook']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_webhook: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the subscription's id */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description its secrets and deliveries are deleted with it */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  update_webhook: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the subscription's id */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateWebhookRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Webhook']
+        }
+      }
+      /** @description invalid_request: nothing to change, or a bad name, url or event type */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  rotate_webhook_secret: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the subscription's id */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description adds a second active secret, shown once; deliveries carry a signature for each active secret until the old one is retired */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RotatedWebhookSecret']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_secret_limit: two secrets are already active; retire one first */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  retire_webhook_secret: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the subscription's id */
+        id: number
+        /** @description an active secret of that subscription */
+        secret_id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the secret stops signing deliveries */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_not_found, or webhook_secret_not_found when it is not an active secret of that subscription */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_last_secret: rotate in a new secret first */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  capabilities: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ServerCapabilities']
+        }
+      }
+    }
+  }
   explore_repos: {
     parameters: {
       query?: {
@@ -3503,6 +4195,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
     }
   }
   change_password: {
@@ -3526,6 +4227,15 @@ export interface operations {
       }
       /** @description the current password is wrong */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts; Retry-After says how many seconds to wait */
+      429: {
         headers: {
           [name: string]: unknown
         }
@@ -3692,6 +4402,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
     }
   }
   create_org: {
@@ -3851,7 +4570,7 @@ export interface operations {
           'application/json': components['schemas']['AuditPage']
         }
       }
-      /** @description not_org_owner */
+      /** @description not_org_owner, or a token that is not full-scope */
       403: {
         headers: {
           [name: string]: unknown
@@ -3892,7 +4611,7 @@ export interface operations {
           'application/json': components['schemas']['OrgMember'][]
         }
       }
-      /** @description not_org_member */
+      /** @description not_org_member, or a token that is not full-scope */
       403: {
         headers: {
           [name: string]: unknown
@@ -4108,7 +4827,7 @@ export interface operations {
           'application/json': components['schemas']['RepoPolicyInfo']
         }
       }
-      /** @description not_org_owner */
+      /** @description not_org_owner, or a token that is not full-scope */
       403: {
         headers: {
           [name: string]: unknown
@@ -4313,7 +5032,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description ordered by slug; any member of the organization may list */
+      /** @description ordered by slug; any member of the organization may list; repositories the caller cannot open are left out */
       200: {
         headers: {
           [name: string]: unknown
@@ -4322,7 +5041,7 @@ export interface operations {
           'application/json': components['schemas']['TeamInfo'][]
         }
       }
-      /** @description not_org_member */
+      /** @description not_org_member, or a token that is not full-scope */
       403: {
         headers: {
           [name: string]: unknown
@@ -4418,6 +5137,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description repositories the caller cannot open are left out */
       200: {
         headers: {
           [name: string]: unknown
@@ -4426,7 +5146,7 @@ export interface operations {
           'application/json': components['schemas']['TeamInfo']
         }
       }
-      /** @description not_org_member */
+      /** @description not_org_member, or a token that is not full-scope */
       403: {
         headers: {
           [name: string]: unknown
@@ -4658,7 +5378,7 @@ export interface operations {
           'application/json': components['schemas']['OwnerLimits']
         }
       }
-      /** @description not_namespace_owner or not_org_owner: only the owner, an administrator or a service credential with manage_limits may look */
+      /** @description not_namespace_owner (also for a name that does not exist) or not_org_owner (a member who does not own it): only the owner, an administrator or a service credential with manage_limits may look */
       403: {
         headers: {
           [name: string]: unknown
@@ -4667,7 +5387,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description user_not_found */
+      /** @description user_not_found, for an administrator or a service credential only */
       404: {
         headers: {
           [name: string]: unknown
@@ -4699,7 +5419,7 @@ export interface operations {
           'application/json': components['schemas']['OwnerUsage']
         }
       }
-      /** @description not_namespace_owner or not_org_owner: only the owner, an administrator or a service credential with manage_limits may look */
+      /** @description not_namespace_owner (also for a name that does not exist) or not_org_owner (a member who does not own it): only the owner, an administrator or a service credential with manage_limits may look */
       403: {
         headers: {
           [name: string]: unknown
@@ -4708,7 +5428,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description user_not_found */
+      /** @description user_not_found, for an administrator or a service credential only */
       404: {
         headers: {
           [name: string]: unknown
@@ -5553,6 +6273,20 @@ export interface operations {
         before?: string
         /** @description page size, default 50, max 200 */
         limit?: number
+        /** @description keep commits whose author name or email contains this text, ignoring case */
+        author?: string
+        /** @description keep commits authored at or after this RFC 3339 instant */
+        since?: string
+        /** @description keep commits authored at or before this RFC 3339 instant */
+        until?: string
+        /** @description keep commits whose message contains this text, ignoring case */
+        grep?: string
+        /** @description keep commits that made a revision of this path or of a path under it */
+        path?: string
+        /** @description list the commits reachable from this commit (an id or unique abbreviation) instead of a branch; not with `branch` */
+        from?: string
+        /** @description leave out this commit and its ancestors (an id or unique abbreviation), like git's `to..from` */
+        to?: string
       }
       header?: never
       path: {
@@ -5571,6 +6305,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommitPage']
+        }
+      }
+      /** @description invalid_request: a bad timestamp, path or revision, or `from` with `branch` */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
       /** @description branch_not_found */
@@ -5684,6 +6427,52 @@ export interface operations {
       }
     }
   }
+  fetch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FetchRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FetchResponse']
+        }
+      }
+      /** @description invalid_request for a malformed id, a cursor this fetch did not give or too many haves */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found for a branch the repository does not have */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   list_files: {
     parameters: {
       query?: {
@@ -5776,11 +6565,11 @@ export interface operations {
       query?: {
         /** @description the branch to read; the default branch if omitted */
         branch?: string
-        /** @description one path's revisions, oldest first; excludes the other parameters */
+        /** @description one path's revisions, oldest first, paged; excludes filter */
         path?: string
         /** @description glob over paths for repository history; no slash matches at any depth */
         filter?: string
-        /** @description the previous page's next_cursor */
+        /** @description the previous page's next_cursor, for repository history and for path */
         before?: string
         /** @description page size, default 50, max 200 */
         limit?: number
@@ -5804,7 +6593,7 @@ export interface operations {
           'application/json': components['schemas']['HistoryPage']
         }
       }
-      /** @description invalid_request for a bad filter or cursor, or path combined with them */
+      /** @description invalid_request for a bad filter or cursor, or path combined with filter */
       400: {
         headers: {
           [name: string]: unknown
@@ -6203,6 +6992,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description uploads_busy: too many uploads by this user or on the server; Retry-After says how many seconds to wait */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
     }
   }
   assemble_object: {
@@ -6298,6 +7096,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description uploads_busy: too many uploads by this user or on the server; Retry-After says how many seconds to wait */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
     }
   }
   missing_objects: {
@@ -6318,7 +7125,7 @@ export interface operations {
       }
     }
     responses: {
-      /** @description the requested hashes the server does not store */
+      /** @description the requested hashes this repository cannot reference yet: not uploaded through it and not named by one of its revisions */
       200: {
         headers: {
           [name: string]: unknown
@@ -6335,6 +7142,66 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ErrorBody']
         }
+      }
+    }
+  }
+  get_object: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+        /** @description the blob's git id */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/octet-stream': string
+        }
+      }
+      /** @description the part named by a single-range `Range: bytes=` header */
+      206: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/octet-stream': string
+        }
+      }
+      /** @description invalid_request for a malformed id */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description object_not_found when no revision of the repository has the blob */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description the range lies outside the content; `Content-Range: bytes *\/<length>` */
+      416: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -6375,6 +7242,88 @@ export interface operations {
       }
       /** @description needs the edit_policy permission */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  push: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PushRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PushResponse']
+        }
+      }
+      /** @description push_invalid for an id that does not match its bytes, bytes that are not a git object, a missing tree, a merge of a commit the repository does not have, or a commit already stored; object_missing for a blob that was not uploaded; invalid_request for an empty push or bad base64; invalid_rules for a policy file on the default branch that does not validate */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description forbidden without the checkin permission, or without the policy permission for a commit that changes the policy file on the default branch */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found or commit_not_found for an unknown parent */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description not_fast_forward when the pushed history does not contain the branch's head, or its first commit is not on the branch (or a racing push won); merge_conflict when a merge commit leaves a diverged exclusive path unresolved; lock_required or lock_held for an exclusive path the pusher does not hold a live lock on; stale_base; storage_limit_reached */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description push_too_large: a commit changes more than 10000 files, or the commits of the push change more than 50000 in all; object_too_large for a body over 64 MiB */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description push_unsupported: a commit with more than two parents or the same parent twice, a submodule, an empty commit, or the removal of the policy file from the default branch */
+      422: {
         headers: {
           [name: string]: unknown
         }
@@ -6710,7 +7659,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description forbidden: needs manage_users and every permission the role grants */
+      /** @description forbidden: needs manage_users and every permission the role grants; not_org_member: the caller is neither a member of the organization nor a server administrator, whether or not the team exists */
       403: {
         headers: {
           [name: string]: unknown
@@ -6762,7 +7711,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description forbidden: needs manage_users and every permission of the role being removed */
+      /** @description forbidden: needs manage_users and every permission of the role being removed; not_org_member: the caller is neither a member of the organization nor a server administrator, whether or not the team exists */
       403: {
         headers: {
           [name: string]: unknown
@@ -6905,6 +7854,10 @@ export interface operations {
       query?: {
         /** @description check only this path; the audit log is then not checked */
         path?: string
+        /** @description the previous step's next_cursor; omit for the first step */
+        cursor?: string
+        /** @description true to accept a partial report with next_cursor; otherwise a repository that needs more than one step is invalid_request */
+        paged?: boolean
       }
       header?: never
       path: {
@@ -6923,6 +7876,24 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['VerifyReport']
+        }
+      }
+      /** @description invalid_request for a bad cursor, or when the check needs more than one step and paged is not set */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description unauthenticated for a whole-repository check without credentials */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
       /** @description path_not_found for a path without revisions */
@@ -6995,7 +7966,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description right password, but the account cannot sign in: email_not_verified, approval_pending or account_disabled */
+      /** @description right password, but the account cannot sign in: email_not_verified, approval_pending or account_disabled; or origin_not_allowed when the Origin (or Referer) is neither the public URL nor an allowed origin */
       403: {
         headers: {
           [name: string]: unknown
