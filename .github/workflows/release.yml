@@ -1,0 +1,74 @@
+name: Release
+
+# Pushing a v<X.Y.Z>[-title] tag (created by `make release`) builds the app and
+# publishes a GitHub Release with pyn-web-<tag>.tar.gz and SHA256SUMS.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Require the tagged commit to be on main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tag ${GITHUB_REF_NAME} points at a commit that is not on main; refusing to release."
+            exit 1
+          fi
+
+      - name: Verify tag matches package.json
+        run: bash scripts/verify-release-version.sh "${GITHUB_REF_NAME}"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+
+      # The pyn release with the same tag when it exists, else pyn main (as CI does).
+      - name: Select OpenAPI document
+        run: |
+          base=https://raw.githubusercontent.com/avalon-initiative/pyn
+          if curl -fsI "$base/${GITHUB_REF_NAME}/docs/generated/openapi.json" >/dev/null; then
+            ref="${GITHUB_REF_NAME}"
+          else
+            ref=main
+          fi
+          echo "Using the OpenAPI document from pyn@${ref}"
+          echo "PYN_OPENAPI=$base/$ref/docs/generated/openapi.json" >> "$GITHUB_ENV"
+
+      # format, lint, typecheck, test, build, api drift and the public boundary.
+      - name: Checks
+        run: bash scripts/release-checks.sh
+
+      - name: Package dist
+        run: |
+          mkdir release
+          tar -C dist -czf "release/pyn-web-${GITHUB_REF_NAME}.tar.gz" .
+          cd release
+          sha256sum "pyn-web-${GITHUB_REF_NAME}.tar.gz" > SHA256SUMS
+
+      - name: Create GitHub Release
+        run: gh release create "${GITHUB_REF_NAME}" release/* --title "${GITHUB_REF_NAME}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
