@@ -1,4 +1,5 @@
 import { formatWait } from '@avalon-initiative/pyn-common-ui'
+import { NAME_RULES } from '../types/name.types'
 
 export class ApiError extends Error {
   constructor(
@@ -22,7 +23,6 @@ const FRIENDLY: Record<string, string> = {
   server_admin_required: 'Only a server administrator can do that.',
   user_not_found: 'That account does not exist.',
   user_exists: 'That name is already taken by a user or an organization.',
-  reserved_name: 'That name is reserved. Choose another.',
   org_not_found: 'That organization does not exist.',
   not_org_owner: 'Only an owner of the organization can do that.',
   not_org_member: 'Only a member of the organization can do that.',
@@ -38,9 +38,16 @@ const FRIENDLY: Record<string, string> = {
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 
+/** The server words it `"admin" is reserved and ...`; falls back to a generic subject. */
+function reservedName(e: ApiError): string {
+  const name = /^"(.*)" is reserved/.exec(e.message)?.[1]
+  return `${name === undefined ? 'That name' : `"${name}"`} is reserved. ${NAME_RULES}`
+}
+
 export function describeError(e: unknown): string {
   if (e instanceof ApiError && e.code === 'too_many_attempts')
     return `Too many attempts. Try again in ${formatWait(e.retryAfter)}.`
+  if (e instanceof ApiError && e.code === 'reserved_name') return reservedName(e)
   if (e instanceof ApiError) return FRIENDLY[e.code] ?? e.message
   return `Could not reach pyn-server: ${e instanceof Error ? e.message : String(e)}`
 }
