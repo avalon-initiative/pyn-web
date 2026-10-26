@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { ApiError, describeError } from '../api/client'
 import type { FileEntry } from '../types/lock.types'
+import type { PolicyPreview } from '../types/policy.types'
 
 export const POLICY_PATH = '.pyn/pyn.toml'
 export const EDIT_POLICY = 'edit_policy'
@@ -28,6 +29,8 @@ export interface PolicyDeps {
   entry: () => Promise<FileEntry | null>
   /** The policy file's text at the given revision. */
   read: (revision: number) => Promise<string>
+  /** What the proposed policy text would change, without applying it. */
+  preview: (text: string) => Promise<PolicyPreview>
   upload: (text: string) => Promise<string>
   checkin: (body: {
     path: string
@@ -47,6 +50,10 @@ export function usePolicyEditor(deps: PolicyDeps, permissions: () => string[]) {
   const saving = ref(false)
   const loadError = ref('')
   const conflict = ref<PolicyConflict | null>(null)
+  const previewing = ref(false)
+  const previewLoading = ref(false)
+  const previewError = ref('')
+  const preview = ref<PolicyPreview | null>(null)
 
   const canEdit = computed(() => permissions().includes(EDIT_POLICY))
   const dirty = computed(() => text.value !== saved.value)
@@ -71,6 +78,39 @@ export function usePolicyEditor(deps: PolicyDeps, permissions: () => string[]) {
     }
   }
 
+  /** Fetches the preview of the edited text. Rejected rules surface as a conflict and leave the step closed. */
+  async function requestPreview() {
+    if (!canEdit.value) {
+      conflict.value = {
+        kind: 'forbidden',
+        message: 'Editing the policy needs the edit_policy permission.',
+      }
+      return
+    }
+    conflict.value = null
+    previewError.value = ''
+    preview.value = null
+    previewing.value = true
+    previewLoading.value = true
+    try {
+      preview.value = await deps.preview(text.value)
+    } catch (e) {
+      const c = policyConflict(e)
+      if (c.kind === 'invalid_rules' || c.kind === 'forbidden') {
+        conflict.value = c
+        previewing.value = false
+      } else previewError.value = c.message
+    } finally {
+      previewLoading.value = false
+    }
+  }
+
+  function closePreview() {
+    previewing.value = false
+    preview.value = null
+    previewError.value = ''
+  }
+
   async function save(message: string): Promise<boolean> {
     if (!canEdit.value) {
       conflict.value = {
@@ -86,9 +126,11 @@ export function usePolicyEditor(deps: PolicyDeps, permissions: () => string[]) {
       const base = revision.value === null ? {} : { base_revision: revision.value }
       await deps.checkin({ path: POLICY_PATH, content: id, message, ...base })
       await load()
+      closePreview()
       return true
     } catch (e) {
       conflict.value = policyConflict(e)
+      closePreview()
       return false
     } finally {
       saving.value = false
@@ -108,9 +150,15 @@ export function usePolicyEditor(deps: PolicyDeps, permissions: () => string[]) {
     saving,
     loadError,
     conflict,
+    previewing,
+    previewLoading,
+    previewError,
+    preview,
     canEdit,
     dirty,
     load,
+    requestPreview,
+    closePreview,
     save,
     discard,
   }
