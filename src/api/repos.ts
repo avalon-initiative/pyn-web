@@ -1,5 +1,7 @@
 import type { FileRow, LockInfo, MyLock } from '@avalon-initiative/pyn-common-ui'
-import type { FilePage, Me } from '../types/lock.types'
+import type { FileEntry, FilePage, Me } from '../types/lock.types'
+import type { CheckinBody, CheckinResult } from '../types/policy.types'
+import { csrfHeaders } from '../state/csrf.state'
 import type { InviteInfo, Member, RepoInfo, RoleGrant } from '@avalon-initiative/pyn-common-ui'
 import type { AuditPage, HistoryPage, HistoryQuery } from '../types/repo.types'
 import {
@@ -64,8 +66,13 @@ export const fetchSummary = (r: Repo, activity = 6) =>
   )
 
 /** Reads at most `limit` bytes of a file's head content, then stops the download. */
-export async function fetchContent(r: Repo, path: string, limit: number): Promise<FetchedContent> {
-  const res = await fetch(contentUrl(r, path))
+export async function fetchContent(
+  r: Repo,
+  path: string,
+  limit: number,
+  revision?: number,
+): Promise<FetchedContent> {
+  const res = await fetch(contentUrl(r, path, revision))
   if (!res.ok) throw await failure(res)
   const reader = res.body?.getReader()
   if (!reader) return { bytes: new Uint8Array(await res.arrayBuffer()), truncated: false }
@@ -88,6 +95,30 @@ export async function fetchContent(r: Repo, path: string, limit: number): Promis
   }
   return { bytes, truncated }
 }
+
+/** The head entry of one path, or null when the branch has none; `after` is the path with its last character dropped. */
+export async function fetchFileEntry(r: Repo, path: string): Promise<FileEntry | null> {
+  const page = await call<FilePage>(
+    api.GET('/v1/repos/{owner}/{name}/files', {
+      params: { path: r, query: { after: path.slice(0, -1), limit: 1 } },
+    }),
+  )
+  return page.entries.find((e) => e.path === path) ?? null
+}
+
+/** Uploads the text (as UTF-8) as an object and returns its blob id. */
+export async function putObject(r: Repo, text: string): Promise<string> {
+  const res = await fetch(`/v1/repos/${r.owner}/${r.name}/objects`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/octet-stream', ...csrfHeaders('PUT') },
+    body: text,
+  })
+  if (!res.ok) throw await failure(res)
+  return ((await res.json()) as { content: string }).content
+}
+
+export const checkin = (r: Repo, body: CheckinBody) =>
+  call<CheckinResult>(api.POST('/v1/repos/{owner}/{name}/checkin', { ...at(r), body }))
 
 export const listLocks = (r: Repo) =>
   call<LockInfo[]>(api.GET('/v1/repos/{owner}/{name}/locks', at(r)))
