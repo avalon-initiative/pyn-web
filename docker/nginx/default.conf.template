@@ -1,0 +1,71 @@
+# Rendered at start by the base image: ${PYN_API_URL} and ${NGINX_LOCAL_RESOLVERS} are substituted, nothing else.
+
+# Keep the scheme and host a TLS-terminating proxy in front of this container already set.
+map $http_x_forwarded_proto $pyn_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+map $http_x_forwarded_host $pyn_host {
+    default $http_x_forwarded_host;
+    ""      $http_host;
+}
+
+server {
+    listen 8080;
+    listen [::]:8080;
+    server_tokens off;
+    root /usr/share/nginx/html;
+
+    include snippets/security-headers.conf;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    location = /nginx-health {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # The address is a variable so it is resolved at request time and survives the API container being recreated.
+    location /v1/ {
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+        set $pyn_api ${PYN_API_URL};
+        proxy_pass $pyn_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $pyn_proto;
+        proxy_set_header X-Forwarded-Host $pyn_host;
+        client_max_body_size 0;
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    location = /healthz {
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+        set $pyn_api ${PYN_API_URL};
+        proxy_pass $pyn_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $pyn_proto;
+        proxy_set_header X-Forwarded-Host $pyn_host;
+    }
+
+    # Vite names these files by content hash.
+    location /assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        include snippets/security-headers.conf;
+    }
+
+    # Client routes fall back to the app shell, which must always be revalidated.
+    location / {
+        try_files $uri /index.html;
+        add_header Cache-Control "no-cache" always;
+        include snippets/security-headers.conf;
+    }
+}
