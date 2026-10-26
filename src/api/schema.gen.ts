@@ -244,6 +244,38 @@ export interface paths {
     patch: operations['update_webhook']
     trace?: never
   }
+  '/v1/admin/webhooks/{id}/deliveries': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_webhook_deliveries']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/webhooks/{id}/deliveries/{delivery_id}/redeliver': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['redeliver_webhook']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/webhooks/{id}/secrets': {
     parameters: {
       query?: never
@@ -2867,6 +2899,50 @@ export interface components {
       updated_at: string
       url: string
     }
+    /** @description One event's delivery to one subscription. The `id` is the `Pyn-Delivery` header and stays the same across retries and redeliveries. */
+    WebhookDelivery: {
+      /**
+       * Format: int32
+       * @description Attempts made since the last queueing or redelivery.
+       */
+      attempts: number
+      /** Format: date-time */
+      created_at: string
+      /** Format: date-time */
+      delivered_at?: string | null
+      /**
+       * Format: int64
+       * @description The queued event's id; the paging cursor.
+       */
+      event_id: number
+      /** Format: date-time */
+      failed_at?: string | null
+      id: string
+      /** @description Why the last attempt failed. */
+      last_error?: string | null
+      /**
+       * Format: int32
+       * @description The receiver's status code on the last attempt, if it answered.
+       */
+      last_status_code?: number | null
+      /**
+       * Format: date-time
+       * @description When the next attempt is due; meaningful while pending.
+       */
+      next_attempt_at: string
+      status: components['schemas']['WebhookDeliveryStatus']
+    }
+    WebhookDeliveryPage: {
+      /** @description Newest event first. */
+      deliveries: components['schemas']['WebhookDelivery'][]
+      /**
+       * Format: int64
+       * @description Pass as `before` to fetch the next, older page; null on the last page.
+       */
+      next_before: number | null
+    }
+    /** @enum {string} */
+    WebhookDeliveryStatus: 'pending' | 'delivered' | 'failed'
     /** @description An active signing secret. Its value is shown once, when it is created, and never again. */
     WebhookSecretInfo: {
       /** Format: date-time */
@@ -3736,6 +3812,106 @@ export interface operations {
         }
       }
       /** @description webhook_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_webhook_deliveries: {
+    parameters: {
+      query?: {
+        /** @description only deliveries in this status */
+        status?: components['schemas']['WebhookDeliveryStatus']
+        /** @description deliveries of events older than this event id */
+        before?: number
+        /** @description page size, default 50, max 200 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        /** @description the subscription's id */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description newest event first; deliveries are kept 30 days */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WebhookDeliveryPage']
+        }
+      }
+      /** @description invalid_request: unknown status */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  redeliver_webhook: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the subscription's id */
+        id: number
+        /** @description the delivery's id, as sent in `Pyn-Delivery` */
+        delivery_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description back to pending with no attempts and due now; the delivery id is unchanged so receivers can dedupe */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WebhookDelivery']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description webhook_not_found, or webhook_delivery_not_found when it is not a delivery of that subscription */
       404: {
         headers: {
           [name: string]: unknown
