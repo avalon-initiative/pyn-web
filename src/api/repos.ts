@@ -125,6 +125,14 @@ export const listLocks = (r: Repo) =>
 
 export const listMyLocks = () => call<MyLock[]>(api.GET('/v1/me/locks'))
 
+export const checkout = (r: Repo, path: string, baseRevision?: number | null) =>
+  call<LockInfo>(
+    api.POST('/v1/repos/{owner}/{name}/checkout', {
+      ...at(r),
+      body: { path, ...(baseRevision == null ? {} : { base_revision: baseRevision }) },
+    }),
+  )
+
 export const releaseLock = (r: Repo, path: string) =>
   call<void>(api.POST('/v1/repos/{owner}/{name}/release', { ...at(r), body: { path } }))
 
