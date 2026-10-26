@@ -88,6 +88,8 @@ setup; echo x >dirty; refuse "dirty tree" "not clean" VER=0.2.0 TITLE= YES=1
 setup; git switch -q -c other; refuse "not on main" "not on main" VER=0.2.0 TITLE= YES=1
 setup; git clone -q "$tmp/origin.git" "$tmp/other" 2>/dev/null; (cd "$tmp/other" && git config user.email t@e.invalid && git config user.name t && git commit -q --allow-empty -m up && git push -q origin main); rm -rf "$tmp/other"
 refuse "behind origin" "not up to date" VER=0.2.0 TITLE= YES=1
+setup; git tag v0.2.0-old; refuse "other local tag, same version" "already exists" VER=0.2.0 TITLE= YES=1
+setup; git tag v0.2.0-old && git push -q origin v0.2.0-old && git tag -d v0.2.0-old >/dev/null; refuse "other remote tag, same version" "already exists" VER=0.2.0 TITLE=new YES=1
 setup; git tag v0.2.0; refuse "existing local tag" "already exists" VER=0.2.0 TITLE= YES=1
 setup; git tag v0.2.0 && git push -q origin v0.2.0 && git tag -d v0.2.0 >/dev/null; refuse "existing remote tag" "already exists" VER=0.2.0 TITLE= YES=1
 setup; refuse "bad version" "invalid version" VER=0.2 TITLE= YES=1
@@ -133,7 +135,7 @@ done
 out="$(meta v1.2.3)"
 [[ "$(sed -n '/^image_tags<</,/^EOF$/p' <<<"$out" | grep -c '^img:')" == 1 ]] && grep -qx "img:v1.2.3" <<<"$out"; expect "meta plain tag pushes plain version only" $?
 out="$(meta v1.2.3-first-stable)"
-grep -qx "img:v1.2.3" <<<"$out" && grep -qx "img:v1.2.3-first-stable" <<<"$out"; expect "meta titled tag pushes plain and full tags" $?
+[[ "$(sed -n '/^image_tags<</,/^EOF$/p' <<<"$out" | grep -c '^img:')" == 1 ]] && grep -qx "img:v1.2.3" <<<"$out"; expect "meta titled tag pushes the plain version only" $?
 bash scripts/release-meta.sh nonsense >/dev/null 2>&1; expect "meta rejects a bad tag" $([[ $? -ne 0 ]] && echo 0 || echo 1)
 
 # verify-release-version

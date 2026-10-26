@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Prints the release facts derived from a tag as key=value lines: version, prerelease (true|false), image_tags.
 # The tag is v<X.Y.Z>[-title]; only a title starting alpha, beta, rc or pre (case-insensitive) is a pre-release.
+# The image is tagged with the plain version only; the title lives in the git tag and the GitHub Release.
 # Usage: scripts/release-meta.sh v1.0.0[-title] [image-repo]
 set -euo pipefail
 
@@ -19,7 +20,6 @@ shopt -s nocasematch
 if [[ "$suffix" =~ ^(alpha|beta|rc|pre)($|[.0-9-]) ]]; then pre=true; fi
 
 tags="$image:v$version"
-if [[ -n "$suffix" ]]; then tags+=$'\n'"$image:$tag"; fi
 
 echo "version=$version"
 echo "prerelease=$pre"

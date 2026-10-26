@@ -47,15 +47,16 @@ The workflow refuses a tag whose commit is not on `main`, or whose `X.Y.Z` diffe
 
 `scripts/release-meta.sh` derives both from the tag.
 
-| Tag                                       | GitHub Release | Image tags                          |
-| ----------------------------------------- | -------------- | ----------------------------------- |
-| `v1.0.0`                                  | release        | `v1.0.0`                            |
-| `v1.0.0-first-stable`                     | release        | `v1.0.0`, `v1.0.0-first-stable`     |
-| `v1.0.0-rc.1`, `-beta`, `-alpha2`, `-pre` | pre-release    | `v1.0.0`, `v1.0.0-rc.1` (and so on) |
+| Tag                                       | GitHub Release | Image tag |
+| ----------------------------------------- | -------------- | --------- |
+| `v1.0.0`                                  | release        | `v1.0.0`  |
+| `v1.0.0-first-stable`                     | release        | `v1.0.0`  |
+| `v1.0.0-rc.1`, `-beta`, `-alpha2`, `-pre` | pre-release    | `v1.0.0`  |
 
 A title is a pre-release only when it starts with `alpha`, `beta`, `rc` or `pre` (case-insensitive) followed by the end,
-`.`, `-` or a digit; `v1.0.0-prerequisites` is a normal release. The plain `:v<X.Y.Z>` image tag is always pushed, so a
-titled release moves it to the newest build of that version.
+`.`, `-` or a digit; `v1.0.0-prerequisites` is a normal release. The image carries only the plain `:v<X.Y.Z>`
+(no title, no `latest`); the title lives in the git tag and the GitHub Release. Because the image tag would be overwritten,
+`make release` refuses a version for which any `v<X.Y.Z>` or `v<X.Y.Z>-*` tag exists, locally or on origin.
 
 ## What the workflow does
 
@@ -64,7 +65,7 @@ titled release moves it to the newest build of that version.
    `pyn` `main` (as CI does).
 3. Runs `scripts/release-checks.sh`, which includes `npm run build`.
 4. Packs `dist/` as `pyn-web-<tag>.tar.gz` and writes `SHA256SUMS`; both, and `dist/` itself, are handed to the later jobs.
-5. Builds the image from that same `dist/` for linux/amd64 and linux/arm64 and pushes `ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>`, and `:<tag>` as well when the tag has a title.
+5. Builds the image from that same `dist/` for linux/amd64 and linux/arm64 and pushes `ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>`.
    The Dockerfile only copies files (no Node, no registry token in the build), so the multi-platform build needs no
    emulation.
 6. Creates the GitHub Release with the tarball, `SHA256SUMS` and generated notes, once the image is pushed. It is marked as a pre-release only for

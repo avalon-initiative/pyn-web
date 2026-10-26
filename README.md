@@ -32,7 +32,7 @@ app shows only the setup wizard, which needs the setup token from the server's l
 
 ## Releasing
 
-Tag-driven: `make release` opens a version-bump PR, `make release-publish` tags the merged commit, and the `v*` tag publishes the image `ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>` (plus `:<tag>` when the tag has a title) and a GitHub Release with the built app. See [docs/releasing.md](docs/releasing.md).
+Tag-driven: `make release` opens a version-bump PR, `make release-publish` tags the merged commit, and the `v*` tag publishes the image `ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>` and a GitHub Release with the built app. See [docs/releasing.md](docs/releasing.md).
 
 ## Deployment
 

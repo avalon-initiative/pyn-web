@@ -35,6 +35,12 @@ preconditions() {
   [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || die "main is not up to date with origin/main (pull first)"
 }
 
+# Any tag for the same X.Y.Z: the image tag is the plain version and must not be overwritten.
+version_tagged() {
+  git tag --list "v$1" "v$1-*" | grep -q . && return 0
+  [[ -n "$(git ls-remote --tags origin "refs/tags/v$1" "refs/tags/v$1-*")" ]]
+}
+
 tag_exists() {
   git rev-parse -q --verify "refs/tags/$1" >/dev/null && return 0
   [[ -n "$(git ls-remote --tags origin "refs/tags/$1")" ]]
@@ -70,7 +76,7 @@ release() {
   slug="$(printf '%s' "$title" | sed -E 's/[[:space:]]+/-/g; s/[^A-Za-z0-9._-]//g; s/^-+//; s/-+$//')"
   tag="v$ver"
   [[ -z "$slug" ]] || tag="$tag-$slug"
-  tag_exists "$tag" && die "tag $tag already exists (locally or on origin)"
+  version_tagged "$ver" && die "a tag for $ver already exists (locally or on origin); pick a new version"
   branch="release-v$ver"
   git rev-parse -q --verify "refs/heads/$branch" >/dev/null && die "branch $branch already exists"
 
