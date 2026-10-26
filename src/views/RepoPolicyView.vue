@@ -2,10 +2,20 @@
 import {
   PynPolicyConflictNotice,
   PynPolicyEditor,
+  PynPolicyPreview,
   PynViewSummary,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
-import { checkin, checkout, fetchContent, fetchFileEntry, listLocks, putObject } from '../api/repos'
+import { useRouter } from 'vue-router'
+import {
+  checkin,
+  checkout,
+  fetchContent,
+  fetchFileEntry,
+  listLocks,
+  previewPolicy,
+  putObject,
+} from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
 import { POLICY_PATH, usePolicyEditor } from '../state/policy.state'
@@ -16,6 +26,7 @@ const SAVE_MESSAGE = 'Update repository policy'
 const { target, permissions } = inject(repoKey)!
 const holder = ref('')
 const locking = useAction()
+const router = useRouter()
 
 const ed = usePolicyEditor(
   {
@@ -24,6 +35,7 @@ const ed = usePolicyEditor(
       const { bytes } = await fetchContent(target.value, POLICY_PATH, POLICY_LIMIT, revision)
       return new TextDecoder().decode(bytes)
     },
+    preview: (text) => previewPolicy(target.value, text),
     upload: (text) => putObject(target.value, text),
     checkin: (body) => checkin(target.value, body),
   },
@@ -48,6 +60,11 @@ async function save() {
   holder.value = lock?.owner ?? ''
 }
 
+function openPath(path: string) {
+  const { owner, name } = target.value
+  window.open(router.resolve({ name: 'blob', params: { owner, name, path } }).href, '_blank')
+}
+
 const takeLock = () =>
   locking.attempt(async () => {
     await checkout(target.value, POLICY_PATH, ed.revision.value)
@@ -66,6 +83,17 @@ onMounted(() => {
 
 <template>
   <PynViewSummary v-if="ed.loadError.value">{{ ed.loadError.value }}</PynViewSummary>
+  <PynPolicyPreview
+    v-else-if="ed.canEdit.value && ed.previewing.value"
+    :preview="ed.preview.value"
+    :loading="ed.previewLoading.value"
+    :error="ed.previewError.value"
+    :busy="ed.saving.value"
+    @select-path="openPath"
+    @confirm="save"
+    @back="ed.closePreview"
+    @retry="ed.requestPreview"
+  />
   <PynPolicyEditor
     v-else-if="ed.canEdit.value"
     v-model:text="ed.text.value"
@@ -73,7 +101,7 @@ onMounted(() => {
     :dirty="ed.dirty.value"
     :saving="ed.saving.value"
     :disabled="ed.loading.value"
-    @save="save"
+    @save="ed.requestPreview"
     @revert="ed.discard"
   >
     <template #notice>

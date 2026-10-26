@@ -1,6 +1,6 @@
 import type { FileRow, LockInfo, MyLock } from '@avalon-initiative/pyn-common-ui'
 import type { FileEntry, FilePage, Me } from '../types/lock.types'
-import type { CheckinBody, CheckinResult } from '../types/policy.types'
+import type { CheckinBody, CheckinResult, PolicyPreview } from '../types/policy.types'
 import { csrfHeaders } from '../state/csrf.state'
 import type { InviteInfo, Member, RepoInfo, RoleGrant } from '@avalon-initiative/pyn-common-ui'
 import type { AuditPage, HistoryPage, HistoryQuery } from '../types/repo.types'
@@ -119,6 +119,11 @@ export async function putObject(r: Repo, text: string): Promise<string> {
 
 export const checkin = (r: Repo, body: CheckinBody) =>
   call<CheckinResult>(api.POST('/v1/repos/{owner}/{name}/checkin', { ...at(r), body }))
+
+export const previewPolicy = (r: Repo, content: string) =>
+  call<PolicyPreview>(
+    api.POST('/v1/repos/{owner}/{name}/policy/preview', { ...at(r), body: { content } }),
+  )
 
 export const listLocks = (r: Repo) =>
   call<LockInfo[]>(api.GET('/v1/repos/{owner}/{name}/locks', at(r)))

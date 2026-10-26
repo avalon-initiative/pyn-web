@@ -20,6 +20,7 @@ function setup(over: Partial<PolicyDeps> = {}, perms = [EDIT_POLICY]) {
   const deps: PolicyDeps = {
     entry: vi.fn().mockResolvedValue(entry(3)),
     read: vi.fn().mockResolvedValue('[rules]\n'),
+    preview: vi.fn().mockResolvedValue({ to_shared: [], to_exclusive: [], released_locks: [] }),
     upload: vi.fn().mockResolvedValue('blob1'),
     checkin: vi.fn().mockResolvedValue({}),
     ...over,
@@ -160,5 +161,31 @@ describe('policy api calls', () => {
     expect(fn.mock.calls[0][1]).toMatchObject({ method: 'PUT', body: 'x' })
     const e = await checkin(r, { path: POLICY_PATH, content: 'b1', message: 'm' }).catch((x) => x)
     expect(policyConflict(e)).toEqual({ kind: 'stale_base', message: 'moved' })
+  })
+
+  it('previews the edited text and closes the step', async () => {
+    const { deps, ed } = setup()
+    await ed.load()
+    ed.text.value = 'x'
+    await ed.requestPreview()
+    expect(deps.preview).toHaveBeenCalledWith('x')
+    expect(ed.previewing.value).toBe(true)
+    expect(ed.preview.value).toEqual({ to_shared: [], to_exclusive: [], released_locks: [] })
+    ed.closePreview()
+    expect(ed.previewing.value).toBe(false)
+    expect(ed.preview.value).toBeNull()
+  })
+
+  it('turns invalid rules into a conflict and keeps other preview errors in the step', async () => {
+    const preview = vi.fn().mockRejectedValueOnce(new ApiError(400, 'invalid_rules', 'bad'))
+    const { ed } = setup({ preview })
+    await ed.load()
+    await ed.requestPreview()
+    expect(ed.previewing.value).toBe(false)
+    expect(ed.conflict.value).toEqual({ kind: 'invalid_rules', message: 'bad' })
+    preview.mockRejectedValueOnce(new Error('offline'))
+    await ed.requestPreview()
+    expect(ed.previewing.value).toBe(true)
+    expect(ed.previewError.value).not.toBe('')
   })
 })
