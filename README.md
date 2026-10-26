@@ -30,6 +30,10 @@ app shows only the setup wizard, which needs the setup token from the server's l
 | `npm run api:generate`                                                  | Regenerate the API client types from the server's OpenAPI document |
 | `npm run api:check`                                                     | Fail when the generated types are out of date                      |
 
+## Releasing
+
+Tag-driven: `make release`, then a `v*` tag on `main` publishes a GitHub Release with the built app. See [docs/releasing.md](docs/releasing.md).
+
 ## API client
 
 `src/api/schema.gen.ts` is generated from the server's OpenAPI document (`pyn/docs/generated/openapi.json`) and typed
