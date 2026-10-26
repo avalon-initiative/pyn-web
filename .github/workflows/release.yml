@@ -1,21 +1,24 @@
 name: Release
 
 # Pushing a v<X.Y.Z>[-title] tag (created by `make release`) builds the app and
-# publishes a GitHub Release with pyn-web-<tag>.tar.gz and SHA256SUMS.
+# publishes ghcr.io/avalon-initiative/pyn-web:<tag> and a GitHub Release with pyn-web-<tag>.tar.gz and SHA256SUMS.
 on:
   push:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
   packages: read
+
+env:
+  IMAGE: ghcr.io/avalon-initiative/pyn-web
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -68,7 +71,70 @@ jobs:
           cd release
           sha256sum "pyn-web-${GITHUB_REF_NAME}.tar.gz" > SHA256SUMS
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-dist
+          path: dist
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: release/*
+          if-no-files-found: error
+
+  # The image holds the same dist/ the tarball was packed from. COPY-only, so one multi-platform build needs no emulation.
+  image:
+    needs: [build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: app-dist
+          path: dist
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            REVISION=${{ github.sha }}
+          tags: ${{ env.IMAGE }}:${{ github.ref_name }}
+          push: true
+
+  release:
+    needs: [build, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: release
+
       - name: Create GitHub Release
-        run: gh release create "${GITHUB_REF_NAME}" release/* --title "${GITHUB_REF_NAME}" --generate-notes
+        run: |
+          pre=""
+          case "$GITHUB_REF_NAME" in *-*) pre="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes $pre
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

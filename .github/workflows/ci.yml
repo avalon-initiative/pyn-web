@@ -46,3 +46,49 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Manual only: builds the image from a fresh dist/ and smoke-tests it read-only against a stub API.
+  docker-build:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: npm run build
+
+      - name: Build image
+        run: docker build --tag pyn-web:ci .
+
+      - name: Smoke test
+        run: |
+          base=$(sed -n 's/^ARG NGINX_IMAGE=//p' Dockerfile)
+          docker network create smoke
+          docker run -d --name pyn-core --network smoke "$base"
+          docker run -d --name web --network smoke --read-only \
+            --tmpfs /tmp --tmpfs /etc/nginx/conf.d --cap-drop ALL \
+            -e PYN_API_URL=http://pyn-core:8080 -p 8080:8080 pyn-web:ci
+          for _ in $(seq 20); do
+            curl -fs http://127.0.0.1:8080/nginx-health >/dev/null && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8080/nginx-health
+          curl -fsS http://127.0.0.1:8080/some/client/route | grep -q '<div id="app">'
+          curl -fsSI http://127.0.0.1:8080/ | grep -i 'content-security-policy'
+          curl -fsSI http://127.0.0.1:8080/ | grep -i 'cache-control: no-cache'
+          # the stub answers 404 for /v1/, so 404 (not our 502) proves the proxy reached it by name
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/v1/)" = 404
+          docker inspect --format '{{.State.Health.Status}}' web
+          docker logs web

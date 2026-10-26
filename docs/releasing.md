@@ -1,7 +1,8 @@
 # Releasing
 
 A release is a `v<X.Y.Z>[-title]` tag on a commit on `main`. Pushing the tag runs `.github/workflows/release.yml`, which
-builds the app and publishes a GitHub Release. pyn-web is an application, so nothing is published to a package registry.
+builds the app, publishes the container image `ghcr.io/avalon-initiative/pyn-web:<tag>` and creates a GitHub Release with
+the tarball. pyn-web is an application, so nothing is published to a package registry. There is no `latest` tag.
 
 ## Cut a release
 
@@ -41,10 +42,44 @@ The workflow refuses a tag whose commit is not on `main`, or whose `X.Y.Z` diffe
 2. Picks the OpenAPI document: `docs/generated/openapi.json` of the `pyn` release with the same tag if it exists, else
    `pyn` `main` (as CI does).
 3. Runs `scripts/release-checks.sh`, which includes `npm run build`.
-4. Packs `dist/` as `pyn-web-<tag>.tar.gz`, writes `SHA256SUMS`, and creates the GitHub Release with both and
-   generated notes.
+4. Packs `dist/` as `pyn-web-<tag>.tar.gz` and writes `SHA256SUMS`; both, and `dist/` itself, are handed to the later jobs.
+5. Builds the image from that same `dist/` for linux/amd64 and linux/arm64 and pushes `ghcr.io/avalon-initiative/pyn-web:<tag>`.
+   The Dockerfile only copies files (no Node, no registry token in the build), so the multi-platform build needs no
+   emulation.
+6. Creates the GitHub Release with the tarball, `SHA256SUMS` and generated notes, once the image is pushed. A tag with a
+   label is marked as a pre-release.
+
+If a run fails after the image push, fix forward with a new patch version rather than re-tagging. After the first push the
+org owner must set the `pyn-web` package on ghcr.io to public (GitHub Packages settings); it starts private.
+
+`docker-build` in `ci.yml` (manual `workflow_dispatch` only, never on pull requests) builds the image from a fresh build and
+smoke-tests it read-only against a stub API; run it before a release that touches `Dockerfile` or `docker/`.
+
+## Running the image
+
+```bash
+docker run --detach --publish 127.0.0.1:8080:8080 \
+  --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d --cap-drop ALL \
+  --env PYN_API_URL=http://pyn-core:7878 \
+  ghcr.io/avalon-initiative/pyn-web:<tag>
+```
+
+The container is nginx (unprivileged, port 8080, non-root). It serves the app with the `index.html` fallback for client
+routes, caches the hashed files under `/assets/` for a year and never caches `index.html`, sets a content security policy
+and the usual hardening headers, and proxies `/v1` and `/healthz` to the API, so the browser sees one origin.
+
+| Variable      | Default                | Meaning                                                                                                                       |
+| ------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `PYN_API_URL` | `http://pyn-core:7878` | Address of `pyn-core` (`scheme://host:port`, no path). Resolved per request, so recreating the API container needs no restart |
+
+The proxy passes `Host` unchanged and sends `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Host` (values already
+set by a TLS-terminating proxy in front are kept). Set the server's `PYN_PUBLIC_URL` to the public `https://` address, and
+`PYN_TRUST_FORWARDED_FOR=true` so rate limits see client addresses. No `PYN_ALLOWED_ORIGINS` entry is needed: the app and
+the API share one origin. `/nginx-health` answers from the container itself and backs its `HEALTHCHECK`.
 
 ## Deploying the tarball
+
+The tarball and `SHA256SUMS` stay on every release for hosts that serve static files themselves.
 
 ```bash
 sha256sum -c SHA256SUMS
