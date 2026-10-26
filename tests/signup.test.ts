@@ -6,6 +6,7 @@ import { register, resendVerification, signIn, verifyEmail } from '../src/api/au
 import { ApiError, describeError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { blockedStatus } from '../src/state/account.state'
+import { nameProblem } from '../src/state/name.state'
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(body === null ? null : JSON.stringify(body), { status, headers })
@@ -147,5 +148,29 @@ describe('external sign-in', () => {
       props: { registration: 'closed', callbackError: 'external_sign_in_failed' },
     })
     expect(w.find('[role=alert]').text()).toContain('did not complete')
+  })
+})
+
+describe('name messages', () => {
+  const rules = '2 to 39 lowercase letters, digits, "-" or "_", and cannot be a reserved word'
+
+  it('names the rejected value and the rules for a reserved name', () => {
+    const e = new ApiError(400, 'reserved_name', '"admin" is reserved and cannot be used as a name')
+    expect(describeError(e)).toContain('"admin" is reserved.')
+    expect(describeError(e)).toContain(rules)
+  })
+
+  it('still words a reserved name when the server text has no name', () => {
+    expect(describeError(new ApiError(400, 'reserved_name', 'x'))).toContain(
+      'That name is reserved.',
+    )
+  })
+
+  it('checks the name format before submitting', () => {
+    expect(nameProblem('wendy_1')).toBe('')
+    for (const bad of ['', 'a', 'Wendy', 'we ndy', 'a'.repeat(40)])
+      expect(nameProblem(bad)).toContain(`"${bad}" is not a valid name.`)
+    expect(nameProblem('ab')).toBe('')
+    expect(nameProblem('a'.repeat(39))).toBe('')
   })
 })

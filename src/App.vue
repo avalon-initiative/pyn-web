@@ -18,6 +18,7 @@ import { blockedStatus } from './state/account.state'
 import { listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
+import { nameProblem } from './state/name.state'
 import { internalPath } from './state/links.state'
 import { sortRepos } from './state/repo.state'
 import { activeNav } from './state/shell.state'
@@ -116,11 +117,18 @@ async function attempt(action: () => Promise<void>) {
 }
 
 const pendingUser = ref('')
+
+/** Shows the format problem and returns true when the name cannot be valid. */
+function refuseName(name: string): boolean {
+  error.value = nameProblem(name)
+  return error.value !== ''
+}
 const setup = ref<SetupStatus | null>(null)
 const setupDone = ref<SetupForm | null>(null)
 
 const finishSetup = (form: SetupForm) =>
   attempt(async () => {
+    if (refuseName(form.username)) return
     await completeSetup(form)
     setupDone.value = form
   })
@@ -142,6 +150,7 @@ const submitSignIn = (form: SignInForm) =>
 
 const join = (form: RegisterForm) =>
   attempt(async () => {
+    if (refuseName(form.username)) return
     pendingUser.value = form.username
     const { status } = await register(form)
     if (status === 'active') await begin((await signIn(form)).user)
