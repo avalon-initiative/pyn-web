@@ -2009,7 +2009,7 @@ export interface components {
      * @description Which limit an owner ran into.
      * @enum {string}
      */
-    LimitKind: 'repositories' | 'members' | 'storage_bytes'
+    LimitKind: 'repositories' | 'members' | 'storage_bytes' | 'locks'
     /** @description Limits on one owner. Every limit is opt-in: a null field is unlimited. */
     Limits: {
       /**
