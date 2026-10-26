@@ -14,6 +14,8 @@ echo "release-checks: type-check"
 npm run typecheck
 echo "release-checks: tests"
 npm test
+echo "release-checks: release scripts"
+bash tests/release-scripts.test.sh >/dev/null
 echo "release-checks: build"
 npm run build
 echo "release-checks: api drift"
