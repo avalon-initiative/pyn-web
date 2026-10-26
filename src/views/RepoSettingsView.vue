@@ -7,16 +7,19 @@ import {
   repoSlug,
   PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
-import { inject } from 'vue'
+import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteRepo, updateRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
+import { EDIT_POLICY } from '../state/policy.state'
+import RepoPolicyView from './RepoPolicyView.vue'
 
-const { repo, target, reload } = inject(repoKey)!
+const { repo, target, reload, permissions } = inject(repoKey)!
 const router = useRouter()
 const saving = useAction()
 const removing = useAction()
+const canEditPolicy = computed(() => permissions.value.includes(EDIT_POLICY))
 
 const save = (s: RepoSettings) =>
   saving.attempt(async () => {
@@ -43,6 +46,7 @@ const remove = () =>
       :error="saving.error.value"
       @submit="save"
     />
+    <RepoPolicyView v-if="canEditPolicy" :key="repoSlug(repo)" />
     <PynRepoDelete
       :slug="repoSlug(repo)"
       :busy="removing.busy.value"
