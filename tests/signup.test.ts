@@ -6,7 +6,7 @@ import { register, resendVerification, signIn, verifyEmail } from '../src/api/au
 import { ApiError, describeError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { blockedStatus } from '../src/state/account.state'
-import { nameProblem } from '../src/state/name.state'
+import { nameProblem, useNameCheck } from '../src/state/name.state'
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(body === null ? null : JSON.stringify(body), { status, headers })
@@ -172,5 +172,33 @@ describe('name messages', () => {
       expect(nameProblem(bad)).toContain(`"${bad}" is not a valid name.`)
     expect(nameProblem('ab')).toBe('')
     expect(nameProblem('a'.repeat(39))).toBe('')
+  })
+
+  it('shows the problem while typing and clears it when valid or blank', () => {
+    const { nameMessage, checkName } = useNameCheck()
+    checkName('Wendy')
+    expect(nameMessage.value).toContain('"Wendy" is not a valid name.')
+    checkName('wendy')
+    expect(nameMessage.value).toBe('')
+    checkName('W')
+    checkName('')
+    expect(nameMessage.value).toBe('')
+  })
+
+  it('renders the message from the sign-up and setup forms as the name is typed', async () => {
+    const { nameMessage, checkName } = useNameCheck()
+    const w = mount(PynSignIn, {
+      props: { registration: 'open', nameMessage: nameMessage.value },
+      attrs: { onNameInput: checkName },
+    })
+    await w
+      .findAll('button')
+      .find((b) => /create|register|sign up/i.test(b.text()))
+      ?.trigger('click')
+    const input = w.find('input[autocomplete=username]')
+    await input.setValue('Bad Name')
+    expect(nameMessage.value).toContain('is not a valid name.')
+    await w.setProps({ nameMessage: nameMessage.value })
+    expect(w.text()).toContain('is not a valid name.')
   })
 })
