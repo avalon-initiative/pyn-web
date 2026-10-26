@@ -1247,7 +1247,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Append client-built commits to a branch, all or none. */
+    /** Append client-built commits to a branch, all or none. A branch the server lacks is created by the push. */
     post: operations['push']
     delete?: never
     options?: never
@@ -2313,7 +2313,10 @@ export interface components {
       id: string
     }
     PushRequest: {
-      /** @description The branch to append to; the default branch if omitted. */
+      /**
+       * @description The branch to append to; the default branch if omitted. A name the server does not have is created by the push,
+       *     from the first commit's parent (any commit the server has, or none on an empty repository).
+       */
       branch?: string | null
       /** @description The commits, oldest first; the first is a child of the branch's head, each next one of the one before. */
       commits: components['schemas']['PushObject'][]
@@ -2322,6 +2325,8 @@ export interface components {
     }
     PushResponse: {
       branch: string
+      /** @description The push created the branch; omitted when it already existed. */
+      created?: boolean
       /** @description The branch's head commit after the push. */
       head: string
       /** @description Live locks that a policy file in the push released because their paths became shared; omitted when there are none. */
@@ -7277,7 +7282,7 @@ export interface operations {
           'application/json': components['schemas']['PushResponse']
         }
       }
-      /** @description push_invalid for an id that does not match its bytes, bytes that are not a git object, a missing tree, a merge of a commit the repository does not have, or a commit already stored; object_missing for a blob that was not uploaded; invalid_request for an empty push or bad base64; invalid_rules for a policy file on the default branch that does not validate */
+      /** @description invalid_request for an invalid new branch name; push_invalid when the first commit of a new branch is not a child of a commit the repository has on a repository with history, for an id that does not match its bytes, bytes that are not a git object, a missing tree, a merge of a commit the repository does not have, or a commit already stored; object_missing for a blob that was not uploaded; invalid_request for an empty push or bad base64; invalid_rules for a policy file on the default branch that does not validate */
       400: {
         headers: {
           [name: string]: unknown
@@ -7295,7 +7300,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description branch_not_found or commit_not_found for an unknown parent */
+      /** @description commit_not_found for an unknown parent */
       404: {
         headers: {
           [name: string]: unknown
@@ -7304,7 +7309,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_fast_forward when the pushed history does not contain the branch's head, or its first commit is not on the branch (or a racing push won); merge_conflict when a merge commit leaves a diverged exclusive path unresolved; lock_required or lock_held for an exclusive path the pusher does not hold a live lock on; stale_base; storage_limit_reached */
+      /** @description branch_exists when a new branch name clashes with an existing branch; not_fast_forward when the pushed history does not contain the branch's head, or its first commit is not on the branch (or a racing push won); merge_conflict when a merge commit leaves a diverged exclusive path unresolved; lock_required or lock_held for an exclusive path the pusher does not hold a live lock on; stale_base; storage_limit_reached */
       409: {
         headers: {
           [name: string]: unknown
