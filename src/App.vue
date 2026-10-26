@@ -18,7 +18,7 @@ import { blockedStatus } from './state/account.state'
 import { listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
-import { nameProblem } from './state/name.state'
+import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
 import { sortRepos } from './state/repo.state'
 import { activeNav } from './state/shell.state'
@@ -52,6 +52,7 @@ const route = useRoute()
 const user = ref('')
 const admin = ref(false)
 const error = ref('')
+const { nameMessage, checkName } = useNameCheck()
 const busy = ref(false)
 const registration = ref<RegistrationInfo | null>(null)
 const signInOptions = ref<SignInOptions | null>(null)
@@ -208,6 +209,8 @@ onMounted(async () => {
         :done="!!setupDone"
         :busy="busy"
         :error="error"
+        :name-message="nameMessage"
+        @name-input="checkName"
         @finish="finishSetup"
         @sign-in="enterAfterSetup"
       />
@@ -226,6 +229,8 @@ onMounted(async () => {
         :resent="resent"
         :busy="busy"
         :error="error"
+        :name-message="nameMessage"
+        @name-input="checkName"
         @sign-in="submitSignIn"
         @register="join"
         @resend="resend"

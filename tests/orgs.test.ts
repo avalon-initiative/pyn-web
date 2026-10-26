@@ -25,6 +25,7 @@ import { orgKey, sessionKey } from '../src/state/context.state'
 import { orgMembers, orgs, repoPolicy, teams } from './fixtures/org-data'
 import { sampleRepos } from './fixtures/shell-data'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
+import NewOrgView from '../src/views/NewOrgView.vue'
 import OrgSettingsView from '../src/views/OrgSettingsView.vue'
 
 const resolve = (path: string) => makeRouter(createMemoryHistory()).resolve(path)
@@ -96,6 +97,17 @@ describe('PynOrgForm', () => {
     await w.find('form').trigger('submit')
     expect(w.emitted('submit')?.[0]).toEqual(['studio'])
     expect(w.find('[role=alert]').text()).toBe('taken')
+  })
+})
+
+describe('NewOrgView', () => {
+  it('shows the name problem while typing', async () => {
+    const router = makeRouter(createMemoryHistory())
+    const w = mount(NewOrgView, { global: { plugins: [router] } })
+    await w.find('input').setValue('Bad Name')
+    expect(w.text()).toContain('"Bad Name" is not a valid name.')
+    await w.find('input').setValue('studio')
+    expect(w.text()).not.toContain('is not a valid name.')
   })
 })
 

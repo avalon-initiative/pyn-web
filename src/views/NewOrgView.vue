@@ -3,9 +3,11 @@ import { PynOrgForm, orgPath, PynViewHeader } from '@avalon-initiative/pyn-commo
 import { useRouter } from 'vue-router'
 import { createOrg } from '../api/orgs'
 import { useAction } from '../state/action.state'
+import { useNameCheck } from '../state/name.state'
 
 const router = useRouter()
 const { busy, error, attempt } = useAction()
+const { nameMessage, checkName } = useNameCheck()
 
 const create = (name: string) =>
   attempt(async () => {
@@ -16,5 +18,11 @@ const create = (name: string) =>
 
 <template>
   <PynViewHeader title="New organization" />
-  <PynOrgForm :busy="busy" :error="error" @submit="create" />
+  <PynOrgForm
+    :busy="busy"
+    :error="error"
+    :name-message="nameMessage"
+    @name-input="checkName"
+    @submit="create"
+  />
 </template>
