@@ -7,19 +7,27 @@ import {
   repoSlug,
   PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
-import { computed, inject } from 'vue'
+import { computed, inject, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteRepo, updateRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
-import { repoKey } from '../state/context.state'
+import { repoKey, sessionKey } from '../state/context.state'
 import { EDIT_POLICY } from '../state/policy.state'
+import { canOpenSettings, isRepoOwner } from '../state/repo-access.state'
 import RepoPolicyView from './RepoPolicyView.vue'
 
-const { repo, target, reload, permissions } = inject(repoKey)!
+const { repo, target, reload, permissions, org } = inject(repoKey)!
+const user = inject(sessionKey)!.user
 const router = useRouter()
 const saving = useAction()
 const removing = useAction()
 const canEditPolicy = computed(() => permissions.value.includes(EDIT_POLICY))
+const isOwner = computed(() => isRepoOwner(target.value.owner, user.value, org.value))
+
+watchEffect(() => {
+  if (repo.value && !canOpenSettings(permissions.value, isOwner.value))
+    router.replace(repoPath(target.value))
+})
 
 const save = (s: RepoSettings) =>
   saving.attempt(async () => {
@@ -36,8 +44,9 @@ const remove = () =>
 </script>
 
 <template>
-  <PynViewStack v-if="repo">
+  <PynViewStack v-if="repo && canOpenSettings(permissions, isOwner)">
     <PynRepoForm
+      v-if="isOwner"
       :key="repoSlug(repo)"
       :owner="repo.owner"
       :repo="repo"
@@ -48,6 +57,7 @@ const remove = () =>
     />
     <RepoPolicyView v-if="canEditPolicy" :key="repoSlug(repo)" />
     <PynRepoDelete
+      v-if="isOwner"
       :slug="repoSlug(repo)"
       :busy="removing.busy.value"
       :error="removing.error.value"

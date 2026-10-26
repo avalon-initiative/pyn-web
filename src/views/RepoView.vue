@@ -3,7 +3,6 @@ import {
   PynRepoHeader,
   PynRepoNotFound,
   repoTabs,
-  isOrgOwner,
   PynViewError,
   PynViewSummary,
 } from '@avalon-initiative/pyn-common-ui'
@@ -14,6 +13,7 @@ import { getOrg } from '../api/orgs'
 import { getRepo, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { canOpenSettings, isRepoOwner } from '../state/repo-access.state'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
@@ -71,7 +71,10 @@ provide(repoKey, {
 })
 
 const tabs = computed(() =>
-  repoTabs(permissions.value, owner.value === user.value || isOrgOwner(org.value)),
+  repoTabs(
+    permissions.value,
+    canOpenSettings(permissions.value, isRepoOwner(owner.value, user.value, org.value)),
+  ),
 )
 </script>
 
