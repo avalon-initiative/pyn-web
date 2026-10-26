@@ -1,7 +1,7 @@
 name: Release
 
-# Pushing a v<X.Y.Z>[-title] tag (created by `make release`) builds the app and
-# publishes ghcr.io/avalon-initiative/pyn-web:<tag> and a GitHub Release with pyn-web-<tag>.tar.gz and SHA256SUMS.
+# Pushing a v<X.Y.Z>[-title] tag (created by `make release-publish`) builds the app and publishes
+# ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z> (the title stays in the git tag) and a GitHub Release with pyn-web-<tag>.tar.gz and SHA256SUMS.
 on:
   push:
     tags: ["v*"]
@@ -21,6 +21,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+      image_tags: ${{ steps.meta.outputs.image_tags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -37,6 +40,10 @@ jobs:
 
       - name: Verify tag matches package.json
         run: bash scripts/verify-release-version.sh "${GITHUB_REF_NAME}"
+
+      - name: Derive pre-release flag and image tags
+        id: meta
+        run: bash scripts/release-meta.sh "${GITHUB_REF_NAME}" "${IMAGE}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v7
         with:
@@ -116,7 +123,7 @@ jobs:
           build-args: |
             VERSION=${{ github.ref_name }}
             REVISION=${{ github.sha }}
-          tags: ${{ env.IMAGE }}:${{ github.ref_name }}
+          tags: ${{ needs.build.outputs.image_tags }}
           push: true
 
   release:
@@ -134,7 +141,8 @@ jobs:
       - name: Create GitHub Release
         run: |
           pre=""
-          case "$GITHUB_REF_NAME" in *-*) pre="--prerelease" ;; esac
+          if [ "$PRERELEASE" = "true" ]; then pre="--prerelease"; fi
           gh release create "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes $pre
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}

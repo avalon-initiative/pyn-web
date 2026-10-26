@@ -32,7 +32,7 @@ app shows only the setup wizard, which needs the setup token from the server's l
 
 ## Releasing
 
-Tag-driven: `make release`, then a `v*` tag on `main` publishes the image `ghcr.io/avalon-initiative/pyn-web:<tag>` and a GitHub Release with the built app. See [docs/releasing.md](docs/releasing.md).
+Tag-driven: `make release` opens a version-bump PR, `make release-publish` tags the merged commit, and the `v*` tag publishes the image `ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>` and a GitHub Release with the built app. See [docs/releasing.md](docs/releasing.md).
 
 ## Deployment
 
@@ -40,7 +40,7 @@ Run the image next to `pyn-core`; it serves the app and proxies `/v1` and `/heal
 
 ```bash
 docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d \
-  -e PYN_API_URL=http://pyn-core:7878 ghcr.io/avalon-initiative/pyn-web:<tag>
+  -e PYN_API_URL=http://pyn-core:7878 ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>
 ```
 
 The release also carries `pyn-web-<tag>.tar.gz` and `SHA256SUMS` for hosts that serve static files themselves. Details: [docs/releasing.md](docs/releasing.md).
