@@ -2075,6 +2075,47 @@ export interface components {
       owner: string
       path: string
     }
+    /** @description `lock.acquired`: a path was locked, including when a lapsed lease was taken over. A renewal raises nothing. */
+    LockAcquiredData: {
+      /** Format: date-time */
+      expires_at: string
+      holder: string
+      owner: string
+      path: string
+      repo: string
+    }
+    /** @description `lock.expired`: a lease had lapsed when the path was locked again; observed lazily, not at the expiry instant. */
+    LockExpiredData: {
+      /**
+       * Format: date-time
+       * @description When the lease ran out.
+       */
+      expires_at: string
+      /** @description Who held the lapsed lease. */
+      holder: string
+      owner: string
+      path: string
+      repo: string
+    }
+    /** @description `lock.forced`: a live lock was removed without its holder, by a forced unlock or a policy change. */
+    LockForcedData: {
+      actor: string
+      /** @description Whose lock was removed. */
+      holder: string
+      owner: string
+      path: string
+      reason: string | null
+      repo: string
+    }
+    /** @description `lock.released`: the holder released the lock, or a check-in consumed it. */
+    LockReleasedData: {
+      holder: string
+      owner: string
+      path: string
+      /** @description `checkin` when a revision of the path consumed the lock; null for an explicit release. */
+      reason: string | null
+      repo: string
+    }
     LoginRequest: {
       password: string
       username: string
