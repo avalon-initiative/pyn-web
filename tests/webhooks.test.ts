@@ -2,6 +2,7 @@ import {
   PynDrawer,
   PynPageNotFound,
   PynWebhookDetail,
+  PynWebhookForm,
   PynWebhooks,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -253,5 +254,101 @@ describe('AdminWebhooksView', () => {
     await open(w)
     expect(detail(w).props('deliveriesError')).toContain('gone')
     expect(detail(w).props('error')).toBe('')
+  })
+
+  describe('create', () => {
+    const form = (w: ReturnType<typeof view>) => w.findComponent(PynWebhookForm)
+    const body = { name: 'ci', url: 'https://example.com/ci', event_types: [], enabled: true }
+
+    it('opens the form from the create event and cancel closes it', async () => {
+      const w = view()
+      await flushPromises()
+      w.findComponent(PynWebhooks).vm.$emit('create')
+      await flushPromises()
+      expect(w.findComponent(PynDrawer).props('open')).toBe(true)
+      expect(form(w).exists()).toBe(true)
+      expect(detail(w).exists()).toBe(false)
+      form(w).vm.$emit('cancel')
+      await flushPromises()
+      expect(w.findComponent(PynDrawer).props('open')).toBe(false)
+      expect(form(w).exists()).toBe(false)
+    })
+
+    it('posts, selects the new row, shows the secret once and clears it on dismiss', async () => {
+      const w = view()
+      await flushPromises()
+      w.findComponent(PynWebhooks).vm.$emit('create')
+      await flushPromises()
+      handler = (s) => {
+        if (s.method === 'POST')
+          return json({ webhook: hook(3, { name: 'ci' }), secret: 'whsec_once' }, 201)
+        if (s.url.includes('/deliveries')) return json({ deliveries: [], next_before: null })
+        return json(hook(3, { name: 'ci' }))
+      }
+      form(w).vm.$emit('submit', body)
+      await flushPromises()
+      const post = sent.find((s) => s.method === 'POST')!
+      expect([post.url, JSON.parse(post.body)]).toEqual(['/v1/admin/webhooks', body])
+      expect(w.findComponent(PynWebhooks).props('webhooks')).toHaveLength(3)
+      expect(w.findComponent(PynWebhooks).props('selectedId')).toBe(3)
+      expect(form(w).props('secret')).toBe('whsec_once')
+      expect(form(w).props('busy')).toBe(false)
+
+      form(w).vm.$emit('dismiss')
+      await flushPromises()
+      expect(w.findComponent(PynDrawer).props('open')).toBe(false)
+      expect(document.body.textContent).not.toContain('whsec_once')
+      w.findComponent(PynWebhooks).vm.$emit('create')
+      await flushPromises()
+      expect(form(w).props('secret')).toBe('')
+    })
+
+    it('clears the secret when the drawer closes or another row is selected', async () => {
+      const w = view()
+      await flushPromises()
+      w.findComponent(PynWebhooks).vm.$emit('create')
+      await flushPromises()
+      handler = (s) =>
+        s.method === 'POST'
+          ? json({ webhook: hook(3), secret: 'whsec_once' }, 201)
+          : s.url.includes('/deliveries')
+            ? json({ deliveries: [], next_before: null })
+            : json(hook(3))
+      form(w).vm.$emit('submit', body)
+      await flushPromises()
+      await open(w, 2)
+      expect(form(w).exists()).toBe(false)
+      expect(detail(w).props('secret')).toBe('')
+      expect(document.body.textContent).not.toContain('whsec_once')
+    })
+
+    it('shows a server rejection in the form and keeps the drawer open', async () => {
+      const w = view()
+      await flushPromises()
+      w.findComponent(PynWebhooks).vm.$emit('create')
+      await flushPromises()
+      handler = () => json({ code: 'webhook_url_refused', message: 'url refused' }, 422)
+      form(w).vm.$emit('submit', body)
+      await flushPromises()
+      expect(form(w).props('error')).toContain('url refused')
+      expect(form(w).props('secret')).toBe('')
+      expect(w.findComponent(PynWebhooks).props('webhooks')).toHaveLength(2)
+      expect(form(w).props('busy')).toBe(false)
+    })
+
+    it('expires the session on 401 and shows a 403', async () => {
+      const w = view()
+      await flushPromises()
+      w.findComponent(PynWebhooks).vm.$emit('create')
+      await flushPromises()
+      handler = () => json({ code: 'unauthenticated', message: 'sign in' }, 401)
+      form(w).vm.$emit('submit', body)
+      await flushPromises()
+      expect(expired).toHaveBeenCalled()
+      handler = () => json({ code: 'server_admin_required', message: 'administrators only' }, 403)
+      form(w).vm.$emit('submit', body)
+      await flushPromises()
+      expect(form(w).props('error')).toContain('server administrator')
+    })
   })
 })

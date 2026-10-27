@@ -5,10 +5,12 @@ import {
   PynViewHeader,
   PynViewStack,
   PynWebhookDetail,
+  PynWebhookForm,
   PynWebhooks,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import {
+  createWebhook,
   deleteWebhook,
   getWebhook,
   listWebhookDeliveries,
@@ -21,8 +23,13 @@ import {
 import { useAction } from '../state/action.state'
 import { sessionKey } from '../state/context.state'
 import { asStatus, replaceById, replaceDelivery, toViewDelivery } from '../state/webhooks.state'
-import type { WebhookUpdate } from '@avalon-initiative/pyn-common-ui'
-import type { Webhook, WebhookDelivery, WebhookDeliveryStatus } from '../types/webhook.types'
+import type { WebhookCreate, WebhookUpdate } from '@avalon-initiative/pyn-common-ui'
+import type {
+  CreatedWebhook,
+  Webhook,
+  WebhookDelivery,
+  WebhookDeliveryStatus,
+} from '../types/webhook.types'
 
 const { admin } = inject(sessionKey)!
 const webhooks = ref<Webhook[]>([])
@@ -32,6 +39,9 @@ const deliveries = ref<WebhookDelivery[]>([])
 const status = ref<WebhookDeliveryStatus | ''>('')
 const nextBefore = ref<number | null>(null)
 const redelivering = ref('')
+const creating = ref(false)
+const created = ref('')
+const create = useAction()
 const list = useAction()
 const detail = useAction()
 const feed = useAction()
@@ -61,7 +71,14 @@ const refresh = async (id: number) => {
   webhooks.value = replaceById(webhooks.value, fresh)
 }
 
+const endCreate = () => {
+  creating.value = false
+  created.value = ''
+  create.error.value = ''
+}
+
 const select = async (id: number) => {
+  endCreate()
   selectedId.value = id
   secret.value = ''
   status.value = ''
@@ -72,9 +89,28 @@ const select = async (id: number) => {
 }
 
 const close = () => {
+  endCreate()
   selectedId.value = null
   secret.value = ''
   deliveries.value = []
+}
+
+const startCreate = () => {
+  close()
+  creating.value = true
+}
+
+const submit = async (body: WebhookCreate) => {
+  let made: CreatedWebhook | undefined
+  await create.attempt(async () => {
+    made = await createWebhook(body)
+  })
+  if (!made) return
+  const { webhook, secret: once } = made
+  webhooks.value = [...webhooks.value, webhook]
+  await select(webhook.id)
+  creating.value = true
+  created.value = once
 }
 
 const update = (id: number, body: WebhookUpdate) =>
@@ -131,10 +167,24 @@ onMounted(() => {
       :loading="list.busy.value"
       :error="list.error.value"
       @select="select"
+      @create="startCreate"
     />
-    <PynDrawer :open="selected !== null" :title="selected?.name ?? 'Webhook'" @close="close">
+    <PynDrawer
+      :open="creating || selected !== null"
+      :title="creating ? 'New webhook' : (selected?.name ?? 'Webhook')"
+      @close="close"
+    >
+      <PynWebhookForm
+        v-if="creating"
+        :secret="created"
+        :busy="create.busy.value"
+        :error="create.error.value"
+        @submit="submit"
+        @cancel="close"
+        @dismiss="close"
+      />
       <PynWebhookDetail
-        v-if="selected"
+        v-else-if="selected"
         :webhook="selected"
         :secret="secret"
         :busy="detail.busy.value"
