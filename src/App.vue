@@ -21,7 +21,7 @@ import { sessionKey } from './state/context.state'
 import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
 import { sortRepos } from './state/repo.state'
-import { activeNav } from './state/shell.state'
+import { activeNav, sideNavItems } from './state/shell.state'
 import {
   PynShell,
   PynSignIn,
@@ -33,7 +33,6 @@ import {
   saveTheme,
   sortOrgs,
   PynSetup,
-  navItems,
 } from '@avalon-initiative/pyn-common-ui'
 import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
@@ -253,7 +252,7 @@ onMounted(async () => {
         <template #side>
           <PynSideNav
             :account="user"
-            :items="navItems(admin)"
+            :items="sideNavItems(admin)"
             :current="activeNav(route.path)"
             :repos="repos"
             :current-repo="currentRepo"
