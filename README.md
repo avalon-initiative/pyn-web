@@ -51,6 +51,10 @@ The release also carries `pyn-web-<tag>.tar.gz` and `SHA256SUMS` for hosts that 
 calls go through `openapi-fetch` in `src/api/http.ts`. Set `PYN_OPENAPI` to a path or URL if the pyn checkout is not a
 sibling directory.
 
+## Trust boundary
+
+See [docs/trust-boundary.md](docs/trust-boundary.md) for what the client sends and what it can change.
+
 ## Routes
 
 | Route                                                                | Page                                                                                                |
