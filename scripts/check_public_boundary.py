@@ -10,6 +10,13 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 SELF = pathlib.Path(__file__).resolve().relative_to(ROOT).as_posix()
 
 PRIVATE_NAME = re.compile(r"pyn-cloud", re.I)
+# Hosted-service concepts stay out of the public tree; webhook "subscriptions" are a server feature and fine.
+HOSTED_TERMS = re.compile(
+    r"\b(plans?|billing|entitlements?|payments?|invoices?|stripe|(paid|premium|plan|billing)[ _-]subscriptions?"
+    r"|subscriptions?[ _-](plan|tier|billing))\b",
+    re.I,
+)
+HOSTED_EXEMPT = {SELF, "src/api/schema.gen.ts", "package-lock.json", "tests/trust-boundary.test.ts"}
 SECRET_NAME = re.compile(r"(^|/)(\.env(\..*)?|\.netrc|id_(rsa|dsa|ecdsa|ed25519)|.*\.(pem|p12|pfx|key))$")
 SECRET_ALLOWED = {".env.example"}
 SECRET_CONTENT = [
@@ -68,6 +75,10 @@ for name in files:
                 problems.append(f"{name}: registry {m.group(1)} is not public")
     if name != SELF and not name.endswith(".md") and PRIVATE_NAME.search(text):
         problems.append(f"{name}: references private code")
+    if name not in HOSTED_EXEMPT and not name.endswith(".md"):
+        for m in HOSTED_TERMS.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            problems.append(f"{name}:{line}: hosted-service term {m.group(0)!r} (plans, billing and entitlements stay out)")
     for pat in SECRET_CONTENT:
         if name != SELF and pat.search(text):
             problems.append(f"{name}: secret-like content ({pat.pattern})")
