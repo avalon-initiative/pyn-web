@@ -66,6 +66,7 @@ See [docs/trust-boundary.md](docs/trust-boundary.md) for what the client sends a
 | `/_/locks`                                                           | locks you hold, across repositories                                                                 |
 | `/_/settings/{keys,tokens,identities}`                               | account settings (`/_/keys` and `/_/tokens` also work)                                              |
 | `/_/admin/accounts`                                                  | server administration of accounts                                                                   |
+| `/_/admin/webhooks`                                                  | webhook subscriptions, secrets and deliveries in a drawer (administrators)                          |
 | `/:owner`                                                            | an owner's repositories; `/:owner/-/{members,teams,teams/:team,audit,settings}` for an organization |
 | `/:owner/:name`                                                      | files and lock state; `tree/<path>` for a folder, `blob/<path>` for a file                          |
 | `/:owner/:name/{locks,history,audit,members,roles,invites,settings}` | repository pages; tabs follow the caller's permissions from `GET /v1/repos/{owner}/{name}/me`       |

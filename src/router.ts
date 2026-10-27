@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
 import AdminAccountsView from './views/AdminAccountsView.vue'
+import AdminWebhooksView from './views/AdminWebhooksView.vue'
 import AccountView from './views/AccountView.vue'
 import KeysView from './views/KeysView.vue'
 import IdentitiesView from './views/IdentitiesView.vue'
@@ -37,6 +38,7 @@ export const routes = [
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
   { path: '/_/admin/accounts', name: 'admin-accounts', component: AdminAccountsView },
+  { path: '/_/admin/webhooks', name: 'admin-webhooks', component: AdminWebhooksView },
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
   { path: '/_/new-org', name: 'new-org', component: NewOrgView },
   { path: '/_/orgs', name: 'orgs', component: OrgsView },
