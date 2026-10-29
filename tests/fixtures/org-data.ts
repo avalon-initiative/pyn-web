@@ -7,8 +7,13 @@ import type {
 } from '@avalon-initiative/pyn-common-ui'
 
 export const orgs: OrgInfo[] = [
-  { name: 'studio', created_at: '2026-09-02T08:00:00Z', role: 'owner' },
-  { name: 'modding-club', created_at: '2026-09-20T12:30:00Z', role: 'member' },
+  { id: 'org-studio', name: 'studio', created_at: '2026-09-02T08:00:00Z', role: 'owner' },
+  {
+    id: 'org-modding-club',
+    name: 'modding-club',
+    created_at: '2026-09-20T12:30:00Z',
+    role: 'member',
+  },
 ]
 
 export const orgMembers: OrgMember[] = [

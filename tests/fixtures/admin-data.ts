@@ -2,6 +2,7 @@ import type { AccountInfo } from '@avalon-initiative/pyn-common-ui'
 
 export const accounts: AccountInfo[] = [
   {
+    id: 'acc-root',
     user: 'root',
     email: 'root@example.com',
     email_verified: true,
@@ -10,6 +11,7 @@ export const accounts: AccountInfo[] = [
     created_at: '2026-09-01T08:00:00Z',
   },
   {
+    id: 'acc-bob',
     user: 'bob',
     email: 'bob@example.com',
     email_verified: true,
@@ -18,6 +20,7 @@ export const accounts: AccountInfo[] = [
     created_at: '2026-10-07T09:30:00Z',
   },
   {
+    id: 'acc-carol',
     user: 'carol',
     email: 'carol@example.com',
     email_verified: false,
@@ -26,6 +29,7 @@ export const accounts: AccountInfo[] = [
     created_at: '2026-10-08T10:15:00Z',
   },
   {
+    id: 'acc-dave',
     user: 'dave',
     email: null,
     email_verified: false,
