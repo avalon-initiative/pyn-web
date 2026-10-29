@@ -27,6 +27,7 @@ import OrgTeamsView from './views/OrgTeamsView.vue'
 import OrgTeamView from './views/OrgTeamView.vue'
 import OrgsView from './views/OrgsView.vue'
 import OrgView from './views/OrgView.vue'
+import OwnerUsageView from './views/OwnerUsageView.vue'
 import OwnerView from './views/OwnerView.vue'
 import RepoView from './views/RepoView.vue'
 import ReposView from './views/ReposView.vue'
@@ -58,6 +59,7 @@ export const routes = [
     component: OrgView,
     children: [
       { path: '', name: 'owner', component: OwnerView },
+      { path: '-/usage', name: 'owner-usage', component: OwnerUsageView },
       { path: '-/members', name: 'org-members', component: OrgMembersView },
       { path: '-/teams', name: 'org-teams', component: OrgTeamsView },
       { path: '-/teams/:team', name: 'org-team', component: OrgTeamView },

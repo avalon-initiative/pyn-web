@@ -13,8 +13,9 @@ import { deleteRepo, updateRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { EDIT_POLICY } from '../state/policy.state'
-import { canOpenSettings, isRepoOwner } from '../state/repo-access.state'
+import { canOpenSettings, canSeeStorage, isRepoOwner } from '../state/repo-access.state'
 import RepoPolicyView from './RepoPolicyView.vue'
+import RepoStorageView from './RepoStorageView.vue'
 
 const { repo, target, reload, permissions, org, frozen } = inject(repoKey)!
 const user = inject(sessionKey)!.user
@@ -57,6 +58,11 @@ const remove = () =>
       @submit="save"
     />
     <RepoPolicyView v-if="canEditPolicy" :key="repo.id" />
+    <RepoStorageView
+      v-if="canSeeStorage(permissions, isOwner)"
+      :key="`storage-${repo.id}`"
+      :owner="isOwner"
+    />
     <PynRepoDelete
       v-if="isOwner"
       :slug="repoSlug(repo)"

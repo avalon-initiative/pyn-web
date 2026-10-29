@@ -20,6 +20,7 @@ const section = computed(() => String(route.path.split('/')[3] ?? ''))
 const org = ref<OrgInfo | null>(null)
 const { freeze, frozen } = useOwnerFreeze(name, getOwnerFreeze)
 const loaded = ref(false)
+const userPage = computed(() => route.name === 'owner' || route.name === 'owner-usage')
 const { error, attempt } = useAction()
 
 // A name that is not an organization is a user: only the profile page applies.
@@ -51,7 +52,7 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
   <template v-else-if="loaded">
-    <PynOwnerFrozenNotice v-if="freeze && (org || route.name === 'owner')" :freeze="freeze" />
+    <PynOwnerFrozenNotice v-if="freeze && (org || userPage)" :freeze="freeze" />
     <template v-if="org">
       <PynOrgHeader
         :name="org.name"
@@ -61,7 +62,7 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
       />
       <RouterView />
     </template>
-    <RouterView v-else-if="route.name === 'owner'" />
+    <RouterView v-else-if="userPage" />
     <PynPageNotFound v-else />
   </template>
 </template>
