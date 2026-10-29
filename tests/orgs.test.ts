@@ -68,7 +68,7 @@ describe('org state', () => {
 
   it('offers yourself and every organization you belong to', () => {
     expect(ownerChoices('alice', orgs)).toEqual(['alice', 'modding-club', 'studio'])
-    expect(ownerChoices('alice', [{ name: 'x', created_at: '' }])).toEqual(['alice'])
+    expect(ownerChoices('alice', [{ id: 'org-x', name: 'x', created_at: '' }])).toEqual(['alice'])
   })
 
   it('limits rule subjects and never offers denying owners', () => {

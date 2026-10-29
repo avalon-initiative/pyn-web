@@ -47,7 +47,7 @@ const remove = () =>
   <PynViewStack v-if="repo && canOpenSettings(permissions, isOwner)">
     <PynRepoForm
       v-if="isOwner"
-      :key="repoSlug(repo)"
+      :key="repo.id"
       :owner="repo.owner"
       :repo="repo"
       :effective-max-locks="repo.max_locks_per_user"
@@ -55,7 +55,7 @@ const remove = () =>
       :error="saving.error.value"
       @submit="save"
     />
-    <RepoPolicyView v-if="canEditPolicy" :key="repoSlug(repo)" />
+    <RepoPolicyView v-if="canEditPolicy" :key="repo.id" />
     <PynRepoDelete
       v-if="isOwner"
       :slug="repoSlug(repo)"

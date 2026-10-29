@@ -8,6 +8,8 @@ type RepoSummary = Schemas['RepoSummary']
 export const now = new Date('2026-10-08T12:00:00Z')
 
 export const repo: RepoInfo = {
+  id: 'repo-castle-quest',
+  owner_id: 'owner-acme',
   owner: 'acme',
   name: 'castle-quest',
   visibility: 'private',

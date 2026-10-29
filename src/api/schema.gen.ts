@@ -84,6 +84,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/owners/{owner}/freeze': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['freeze_owner']
+    post?: never
+    delete: operations['unfreeze_owner']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/owners/{owner}/limits': {
     parameters: {
       query?: never
@@ -688,6 +704,22 @@ export interface paths {
     put: operations['add_team_member']
     post?: never
     delete: operations['remove_team_member']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/owners/{owner}/freeze': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['owner_freeze']
+    put?: never
+    post?: never
+    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -1369,6 +1401,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/storage-cap': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['set_repo_storage_cap']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/summary': {
     parameters: {
       query?: never
@@ -1443,6 +1491,22 @@ export interface paths {
       cookie?: never
     }
     get: operations['repo_usage']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/usage/breakdown': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['repo_usage_breakdown']
     put?: never
     post?: never
     delete?: never
@@ -1572,6 +1636,8 @@ export interface components {
     Account: {
       /** @description Runs the server: may approve and disable accounts under `/v1/admin`. */
       admin?: boolean
+      /** @description Stable, never reused: the name can be recycled after a delete, the id cannot. */
+      id: string
       user: string
     }
     /** @description `account.approved`. */
@@ -1579,12 +1645,15 @@ export interface components {
       /** @description The administrator or service credential that approved it. */
       actor: string
       user: string
+      user_id: string
     }
     /** @description `account.created`: a new account exists (sign-up, external sign-in or an administrator). */
     AccountCreatedData: {
       /** @description True when an administrator must approve the account before it can sign in. */
       pending_approval: boolean
       user: string
+      /** @description The account's stable id. */
+      user_id: string
     }
     /** @description `account.disabled`. */
     AccountDisabledData: {
@@ -1592,11 +1661,13 @@ export interface components {
       /** @description The reason given when it was disabled, if any. */
       reason: string | null
       user: string
+      user_id: string
     }
     /** @description `account.enabled`. */
     AccountEnabledData: {
       actor: string
       user: string
+      user_id: string
     }
     /** @description An account as an administrator sees it. */
     AccountInfo: {
@@ -1608,6 +1679,8 @@ export interface components {
       disabled_reason?: string | null
       email?: string | null
       email_verified: boolean
+      /** @description Stable, never reused. */
+      id: string
       status: components['schemas']['AccountStatus']
       user: string
     }
@@ -1832,7 +1905,7 @@ export interface components {
     CreateServiceCredentialRequest: {
       /** @description 1 to 64 lowercase letters, digits, `-` or `_`; unique, and never reused after revocation. */
       name: string
-      /** @description At least one of `manage_accounts`, `manage_organizations`, `manage_limits`, `manage_webhooks`. */
+      /** @description At least one of `manage_accounts`, `manage_organizations`, `manage_limits`, `manage_webhooks`, `manage_freeze`. */
       scopes: string[]
     }
     CreateTeamRequest: {
@@ -2012,9 +2085,26 @@ export interface components {
       /** @description Pass as `after` to fetch the next page; null on the last page. */
       next_after: string | null
     }
+    /** @description Distinct stored bytes of one top-level folder. */
+    FolderUsage: {
+      /**
+       * Format: int64
+       * @description Paths with a revision under the folder.
+       */
+      files: number
+      /** @description The top-level folder; empty for the files at the root. */
+      folder: string
+      /** Format: int64 */
+      stored_bytes: number
+    }
     ForceUnlockRequest: {
       path: string
       /** @description Why the lock is being removed; required and recorded in the audit log. */
+      reason: string
+    }
+    /** @description Freezes an owner, or replaces the reason and time of a freeze already in force. */
+    FreezeRequest: {
+      /** @description Shown to the owner's members: 1 to 512 bytes. */
       reason: string
     }
     HistoryPage: {
@@ -2081,8 +2171,10 @@ export interface components {
       expires_at: string
       holder: string
       owner: string
+      owner_id: string
       path: string
       repo: string
+      repo_id: string
     }
     /** @description `lock.expired`: a lease had lapsed when the path was locked again; observed lazily, not at the expiry instant. */
     LockExpiredData: {
@@ -2094,8 +2186,10 @@ export interface components {
       /** @description Who held the lapsed lease. */
       holder: string
       owner: string
+      owner_id: string
       path: string
       repo: string
+      repo_id: string
     }
     /** @description `lock.forced`: a live lock was removed without its holder, by a forced unlock or a policy change. */
     LockForcedData: {
@@ -2103,18 +2197,22 @@ export interface components {
       /** @description Whose lock was removed. */
       holder: string
       owner: string
+      owner_id: string
       path: string
       reason: string | null
       repo: string
+      repo_id: string
     }
     /** @description `lock.released`: the holder released the lock, or a check-in consumed it. */
     LockReleasedData: {
       holder: string
       owner: string
+      owner_id: string
       path: string
       /** @description `checkin` when a revision of the path consumed the lock; null for an explicit release. */
       reason: string | null
       repo: string
+      repo_id: string
     }
     LoginRequest: {
       password: string
@@ -2124,6 +2222,8 @@ export interface components {
     Me: {
       permissions: string[]
       user: string
+      /** @description The id of `user`. */
+      user_id: string
     }
     Member: {
       /** @description The effective role: the highest of the direct grant, team grants and organization ownership. */
@@ -2287,6 +2387,8 @@ export interface components {
     OrgInfo: {
       /** Format: date-time */
       created_at: string
+      /** @description Stable and never reused: an organization recreated under a deleted name gets a new id. */
+      id: string
       name: string
       role?: components['schemas']['OrgRole'] | null
     }
@@ -2304,13 +2406,41 @@ export interface components {
     OrganizationCreatedData: {
       actor: string
       name: string
+      /** @description The organization's stable id. */
+      org_id: string
       /** @description The organization's first owner. */
       owner: string
+      owner_id: string
     }
     /** @description `organization.deleted`. */
     OrganizationDeletedData: {
       actor: string
       name: string
+      /** @description The deleted organization's id, never issued again. */
+      org_id: string
+    }
+    /** @description Whether an owner is frozen: every write under it is refused with `owner_frozen` while reads continue. */
+    OwnerFreeze: {
+      frozen: boolean
+      /**
+       * Format: date-time
+       * @description When it was frozen; null while it is not.
+       */
+      frozen_at: string | null
+      kind: components['schemas']['OwnerKind']
+      owner: string
+      /** @description The stable id of the user or organization. */
+      owner_id: string
+      /** @description Why it was frozen; null while it is not. */
+      reason: string | null
+    }
+    /** @description `owner.frozen`: every write under the owner is refused until it is unfrozen. Refreezing an owner raises it again. */
+    OwnerFrozenData: {
+      actor: string
+      kind: components['schemas']['OwnerKind']
+      owner: string
+      owner_id: string
+      reason: string
     }
     /**
      * @description What an owner (a user or an organization) is.
@@ -2321,6 +2451,7 @@ export interface components {
     OwnerLimitReachedData: {
       limit: components['schemas']['LimitKind']
       owner: string
+      owner_id: string
       /**
        * Format: int64
        * @description The limit in force when the operation was refused.
@@ -2334,6 +2465,8 @@ export interface components {
       kind: components['schemas']['OwnerKind']
       /** @description Limits set for this owner alone; a null field follows the server default. */
       own: components['schemas']['Limits']
+      /** @description The id of the user or organization these limits belong to. */
+      owner_id: string
     }
     /** @description `owner.limits_changed`: an owner's own limits were set; `limits` is the result, null meaning the server default. */
     OwnerLimitsChangedData: {
@@ -2341,18 +2474,36 @@ export interface components {
       kind: components['schemas']['OwnerKind']
       limits: components['schemas']['Limits']
       owner: string
+      owner_id: string
     }
     OwnerLimitsEntry: {
       limits: components['schemas']['OwnerLimits']
       owner: string
     }
+    /** @description `owner.unfrozen`: writes under the owner work again. */
+    OwnerUnfrozenData: {
+      actor: string
+      kind: components['schemas']['OwnerKind']
+      owner: string
+      owner_id: string
+    }
     /** @description What an owner uses against its limits. */
     OwnerUsage: {
       limits: components['schemas']['OwnerLimits']
       owner: string
+      /** @description The id of `owner`. */
+      owner_id: string
       /** @description Ordered by name. */
       repositories: components['schemas']['RepoUsage'][]
       usage: components['schemas']['Usage']
+    }
+    /** @description Distinct stored bytes of one path across its revisions. */
+    PathUsage: {
+      path: string
+      /** Format: int64 */
+      revisions: number
+      /** Format: int64 */
+      stored_bytes: number
     }
     /** @description A commit's author or committer, apart from the time (the commit's `created_at`). */
     Person: {
@@ -2453,6 +2604,8 @@ export interface components {
     RepoInfo: {
       /** Format: date-time */
       created_at: string
+      /** @description Stable, never reused and unchanged by a rename; a deleted repository's id is never issued again. */
+      id: string
       /**
        * Format: int32
        * @description How long a lock lasts before it expires unless renewed.
@@ -2473,6 +2626,8 @@ export interface components {
       max_locks_set_by_policy: boolean
       name: string
       owner: string
+      /** @description The id of `owner`, a user or an organization. */
+      owner_id: string
       /** @description The caller's role in the repository; absent when they have none. */
       role?: string | null
       visibility: components['schemas']['Visibility']
@@ -2489,6 +2644,14 @@ export interface components {
       member_creation: components['schemas']['MemberCreation']
       /** @description Ordered by kind, subject, then effect. */
       rules: components['schemas']['CreationRuleInfo'][]
+    }
+    /** @description A repository's own storage cap. */
+    RepoStorageCap: {
+      repo_id: string
+      /** @description `owner/name`. */
+      repository: string
+      /** Format: int64 */
+      storage_bytes: number | null
     }
     RepoSummary: {
       /** @description Newest first. */
@@ -2526,11 +2689,38 @@ export interface components {
        * @description Paths with a head revision.
        */
       files: number
+      /** @description The repository's id. */
+      repo_id: string
       /** @description `owner/name`. */
       repository: string
       /** Format: int64 */
       revisions: number
+      /**
+       * Format: int64
+       * @description The repository's own storage cap in bytes; null when it has none.
+       */
+      storage_cap: number | null
       /** Format: int64 */
+      stored_bytes: number
+    }
+    /**
+     * @description Where a repository's stored bytes sit. Content shared by several folders or paths counts in each, so their sums
+     *     can pass `stored_bytes`.
+     */
+    RepoUsageBreakdown: {
+      /** @description Largest first. */
+      folders: components['schemas']['FolderUsage'][]
+      /** @description The 20 largest, largest first. */
+      largest_paths: components['schemas']['PathUsage'][]
+      repo_id: string
+      /** @description `owner/name`. */
+      repository: string
+      /** Format: int64 */
+      storage_cap: number | null
+      /**
+       * Format: int64
+       * @description Distinct bytes in the whole repository, each content once.
+       */
       stored_bytes: number
     }
     /** @description `repository.created`. */
@@ -2538,6 +2728,9 @@ export interface components {
       actor: string
       name: string
       owner: string
+      owner_id: string
+      /** @description The repository's stable id. */
+      repo_id: string
       visibility: components['schemas']['Visibility']
     }
     /** @description `repository.deleted`. */
@@ -2545,13 +2738,32 @@ export interface components {
       actor: string
       name: string
       owner: string
+      owner_id: string
+      /** @description The deleted repository's id, never issued again. */
+      repo_id: string
     }
     /** @description `repository.renamed`: the name changed; the owner never does. */
     RepositoryRenamedData: {
       actor: string
       name: string
       owner: string
+      owner_id: string
       previous_name: string
+      /** @description Unchanged by the rename: re-key on it. */
+      repo_id: string
+    }
+    /** @description `repository.storage_cap_changed`: a repository's own storage cap was set or removed; `storage_cap` is the result. */
+    RepositoryStorageCapChangedData: {
+      actor: string
+      name: string
+      owner: string
+      owner_id: string
+      repo_id: string
+      /**
+       * Format: int64
+       * @description Bytes the repository may store; null when it has no cap of its own.
+       */
+      storage_cap: number | null
     }
     ResendVerificationRequest: {
       email: string
@@ -2687,6 +2899,11 @@ export interface components {
     }
     SetRepoPolicyRequest: {
       member_creation: components['schemas']['MemberCreation']
+    }
+    /** @description The new storage cap of a repository; `null` removes it. */
+    SetRepoStorageCapRequest: {
+      /** Format: int64 */
+      storage_bytes: number | null
     }
     SetRoleRequest: {
       permissions: string[]
@@ -2883,7 +3100,7 @@ export interface components {
     }
     /**
      * @description One break found by verification: `hash_mismatch` (a record's fields do not give its hash), `version_mismatch` (a revision's `hash_version` disagrees with its stored fields), `broken_link` (it does
-     *     not follow the record before it) or `base_mismatch` (a revision's base is not an older revision of its path). Revision breaks carry `path` and `revision`; audit breaks carry `event`.
+     *     not follow the record before it) `base_mismatch` (a revision's base is not an older revision of its path) or `pointer_mismatch` (a commit's pointer cache differs from the revisions it made and adopted). Revision breaks carry `path` and `revision`; audit breaks carry `event`.
      */
     VerifyProblem: {
       /** @description The commit id, for a problem in a commit record. */
@@ -3183,6 +3400,101 @@ export interface operations {
       }
       /** @description org_not_empty or org_deleting */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  freeze_owner: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a user or organization name */
+        owner: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FreezeRequest']
+      }
+    }
+    responses: {
+      /** @description every write under the owner is now refused with owner_frozen; freezing a frozen owner replaces the reason and time */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OwnerFreeze']
+        }
+      }
+      /** @description invalid_request: the reason is empty or over 512 bytes */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_freeze */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  unfreeze_owner: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a user or organization name */
+        owner: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description writes work again; unfreezing an owner that is not frozen changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OwnerFreeze']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_freeze */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5579,6 +5891,47 @@ export interface operations {
       }
     }
   }
+  owner_freeze: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a user or organization name */
+        owner: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description frozen is false, with a null time and reason, while the owner is not frozen */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OwnerFreeze']
+        }
+      }
+      /** @description not_namespace_owner (also for a name that does not exist): only the user themself, a member of the organization, an administrator or a service credential with manage_freeze may look; service_scope_required for a service credential without it */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found, for an administrator or a service credential only */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   owner_limits: {
     parameters: {
       query?: never
@@ -6031,7 +6384,7 @@ export interface operations {
         path?: string
         /** @description only events by this user */
         actor?: string
-        /** @description checkout, release, checkin, delete, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_deleted, invite_created, invite_revoked, policy_changed, mode_converted or version_stranded */
+        /** @description checkout, release, checkin, delete, restore, force_unlock, member_added, role_changed, role_permissions_changed, team_access_set, team_access_removed, token_created, token_revoked, repo_created, repo_updated, repo_storage_cap_changed, repo_deleted, invite_created, invite_revoked, policy_changed, mode_converted or version_stranded */
         action?: string
         /** @description events older than this id */
         before?: number
@@ -7775,6 +8128,62 @@ export interface operations {
       }
     }
   }
+  set_repo_storage_cap: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetRepoStorageCapRequest']
+      }
+    }
+    responses: {
+      /** @description a cap below current use deletes nothing; writes that add stored bytes are refused with repo_storage_limit_reached until use falls under it */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoStorageCap']
+        }
+      }
+      /** @description invalid_request: a value out of range */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description not_namespace_owner or not_org_owner: only the owner, a server administrator or a service credential with manage_limits; service_scope_required for a service credential without manage_limits; owner_frozen for the owner's own request while it is frozen */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   summary: {
     parameters: {
       query?: {
@@ -8021,6 +8430,49 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['RepoUsage']
+        }
+      }
+    }
+  }
+  repo_usage_breakdown: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description distinct stored bytes by top-level folder and the largest paths */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoUsageBreakdown']
+        }
+      }
+      /** @description forbidden: needs the manage_roles permission (repository admin) */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }

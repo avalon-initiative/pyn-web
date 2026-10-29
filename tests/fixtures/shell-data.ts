@@ -5,6 +5,8 @@ export const sampleRepos: RepoInfo[] = [
   ['alice', 'core-engine', 'private'],
   ['alice', 'shared-assets', 'public'],
 ].map(([owner, name, visibility]) => ({
+  id: `repo-${owner}-${name}`,
+  owner_id: `owner-${owner}`,
   owner,
   name,
   visibility: visibility as RepoInfo['visibility'],

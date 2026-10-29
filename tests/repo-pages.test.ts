@@ -32,6 +32,8 @@ import { makeRouter } from '../src/router'
 
 const now = new Date('2026-10-08T12:00:00Z')
 const repo = (owner: string, name: string, role?: string) => ({
+  id: `repo-${owner}-${name}`,
+  owner_id: `owner-${owner}`,
   owner,
   name,
   visibility: 'private' as const,
