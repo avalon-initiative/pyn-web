@@ -37,6 +37,8 @@ const FRIENDLY: Record<string, string> = {
   creation_rule_not_found: 'That rule does not exist.',
   owner_frozen:
     'This account is frozen: it can be viewed but not changed. Contact a server administrator.',
+  repo_storage_limit_reached:
+    'This repository reached its storage cap. Free up space, or ask an administrator to raise the cap.',
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 

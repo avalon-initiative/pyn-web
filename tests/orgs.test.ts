@@ -63,7 +63,7 @@ describe('org state', () => {
     const sections = (r: Parameters<typeof orgTabs>[0]) => orgTabs(r).map((t) => t.section)
     expect(sections(null)).toEqual([''])
     expect(sections('member')).toEqual(['', 'members', 'teams'])
-    expect(sections('owner')).toEqual(['', 'members', 'teams', 'audit', 'settings'])
+    expect(sections('owner')).toEqual(['', 'members', 'teams', 'usage', 'audit', 'settings'])
   })
 
   it('offers yourself and every organization you belong to', () => {

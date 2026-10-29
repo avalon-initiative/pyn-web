@@ -3,23 +3,26 @@ import {
   PynOrgHeader,
   PynOwnerFrozenNotice,
   PynPageNotFound,
+  PynUserHeader,
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
-import { computed, provide, ref, watch } from 'vue'
+import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOrg, getOwnerFreeze } from '../api/orgs'
 import { ApiError } from '../api/client'
 import { useAction } from '../state/action.state'
-import { orgKey } from '../state/context.state'
+import { orgKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
 const name = computed(() => String(route.params.owner))
+const user = inject(sessionKey)!.user
 const section = computed(() => String(route.path.split('/')[3] ?? ''))
 const org = ref<OrgInfo | null>(null)
 const { freeze, frozen } = useOwnerFreeze(name, getOwnerFreeze)
 const loaded = ref(false)
+const userPage = computed(() => route.name === 'owner' || route.name === 'owner-usage')
 const { error, attempt } = useAction()
 
 // A name that is not an organization is a user: only the profile page applies.
@@ -51,7 +54,7 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
   <template v-else-if="loaded">
-    <PynOwnerFrozenNotice v-if="freeze && (org || route.name === 'owner')" :freeze="freeze" />
+    <PynOwnerFrozenNotice v-if="freeze && (org || userPage)" :freeze="freeze" />
     <template v-if="org">
       <PynOrgHeader
         :name="org.name"
@@ -61,7 +64,14 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
       />
       <RouterView />
     </template>
-    <RouterView v-else-if="route.name === 'owner'" />
+    <template v-else-if="userPage">
+      <PynUserHeader
+        :name="name"
+        :self="name === user"
+        :current="section === 'usage' ? 'usage' : ''"
+      />
+      <RouterView />
+    </template>
     <PynPageNotFound v-else />
   </template>
 </template>

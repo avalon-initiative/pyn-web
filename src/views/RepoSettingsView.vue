@@ -13,11 +13,12 @@ import { deleteRepo, updateRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { EDIT_POLICY } from '../state/policy.state'
-import { canOpenSettings, isRepoOwner } from '../state/repo-access.state'
+import { canOpenSettings, canSeeStorage, isRepoOwner } from '../state/repo-access.state'
 import RepoPolicyView from './RepoPolicyView.vue'
+import RepoStorageView from './RepoStorageView.vue'
 
 const { repo, target, reload, permissions, org, frozen } = inject(repoKey)!
-const user = inject(sessionKey)!.user
+const { user, admin } = inject(sessionKey)!
 const router = useRouter()
 const saving = useAction()
 const removing = useAction()
@@ -25,7 +26,7 @@ const canEditPolicy = computed(() => permissions.value.includes(EDIT_POLICY))
 const isOwner = computed(() => isRepoOwner(target.value.owner, user.value, org.value))
 
 watchEffect(() => {
-  if (repo.value && !canOpenSettings(permissions.value, isOwner.value))
+  if (repo.value && !canOpenSettings(permissions.value, isOwner.value, admin.value))
     router.replace(repoPath(target.value))
 })
 
@@ -44,7 +45,7 @@ const remove = () =>
 </script>
 
 <template>
-  <PynViewStack v-if="repo && canOpenSettings(permissions, isOwner)">
+  <PynViewStack v-if="repo && canOpenSettings(permissions, isOwner, admin)">
     <PynRepoForm
       v-if="isOwner"
       :key="repo.id"
@@ -57,6 +58,11 @@ const remove = () =>
       @submit="save"
     />
     <RepoPolicyView v-if="canEditPolicy" :key="repo.id" />
+    <RepoStorageView
+      v-if="canSeeStorage(permissions, isOwner, admin)"
+      :key="`storage-${repo.id}`"
+      :owner="isOwner"
+    />
     <PynRepoDelete
       v-if="isOwner"
       :slug="repoSlug(repo)"
