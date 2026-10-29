@@ -58,10 +58,5 @@ export const setCreationRule = (org: string, r: RuleRef, scope: RuleScope) =>
 export const removeCreationRule = (org: string, r: RuleRef) =>
   call<void>(api.DELETE('/v1/orgs/{org}/repo-policy/rules/{effect}/{kind}/{subject}', rule(org, r)))
 
-/** The wire kind is `org`; the library's OwnerKind spells it `organization`. */
-export const getOwnerFreeze = async (owner: string): Promise<OwnerFreeze> => {
-  const f = await call<{ kind: 'user' | 'org' } & Omit<OwnerFreeze, 'kind'>>(
-    api.GET('/v1/owners/{owner}/freeze', { params: { path: { owner } } }),
-  )
-  return { ...f, kind: f.kind === 'org' ? 'organization' : 'user' }
-}
+export const getOwnerFreeze = (owner: string) =>
+  call<OwnerFreeze>(api.GET('/v1/owners/{owner}/freeze', { params: { path: { owner } } }))

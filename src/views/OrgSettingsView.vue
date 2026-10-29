@@ -23,7 +23,7 @@ import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
 import type { MemberCreation, RepoPolicy, RuleScope } from '@avalon-initiative/pyn-common-ui'
 
-const { name, org } = inject(orgKey)!
+const { name, org, frozen } = inject(orgKey)!
 const router = useRouter()
 const removing = useAction()
 const policing = useAction()
@@ -79,6 +79,7 @@ onMounted(() => {
       :policy="policy"
       :teams="teams"
       :members="members"
+      :readonly="frozen"
       :busy="policing.busy.value"
       :error="policing.error.value"
       @set-base="base"
@@ -90,6 +91,7 @@ onMounted(() => {
     </PynViewError>
     <PynOrgDelete
       :name="name"
+      :readonly="frozen"
       :busy="removing.busy.value"
       :error="removing.error.value"
       @remove="remove"

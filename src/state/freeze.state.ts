@@ -20,7 +20,3 @@ export function useOwnerFreeze(owner: Ref<string>, read: (owner: string) => Prom
 
 /** A write permission is usable only while the owner is not frozen. */
 export const canWrite = (allowed: boolean, frozen: boolean) => allowed && !frozen
-
-/** The permissions with every write dropped while frozen; `read` stays. */
-export const whileFrozen = (permissions: string[], frozen: boolean) =>
-  frozen ? permissions.filter((p) => p === 'read') : permissions

@@ -28,7 +28,7 @@ function content(text: string) {
   return { bytes: new TextEncoder().encode(text), truncated: false }
 }
 
-function mountView(permissions: string[] = [EDIT_POLICY]) {
+function mountView(permissions: string[] = [EDIT_POLICY], frozen = false) {
   return mount(RepoPolicyView, {
     global: {
       provide: {
@@ -39,7 +39,7 @@ function mountView(permissions: string[] = [EDIT_POLICY]) {
           repo: ref(null),
           permissions: ref(permissions),
           org: ref(null),
-          frozen: ref(false),
+          frozen: ref(frozen),
           reload: vi.fn(),
         },
       },
@@ -99,6 +99,15 @@ describe('RepoPolicyView', () => {
     await flushPromises()
     expect(editor(w).exists()).toBe(false)
     expect(repos.fetchFileEntry).not.toHaveBeenCalled()
+  })
+
+  it('keeps the editor visible and read-only while frozen', async () => {
+    const frozen = mountView([EDIT_POLICY], true)
+    await flushPromises()
+    expect(editor(frozen).props('readonly')).toBe(true)
+    const open = mountView()
+    await flushPromises()
+    expect(editor(open).props('readonly')).toBeFalsy()
   })
 
   it('saves against the loaded revision and reloads', async () => {

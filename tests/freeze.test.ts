@@ -1,16 +1,33 @@
-import { PynLocks, PynOrgMembers, PynOwnerFrozenNotice } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynAddPerson,
+  PynInvites,
+  PynLocks,
+  PynMembers,
+  PynOrgDelete,
+  PynOrgMembers,
+  PynOrgRepoPolicy,
+  PynOwnerFrozenNotice,
+  PynRepoDelete,
+  PynRepoForm,
+  PynTeamGrant,
+} from '@avalon-initiative/pyn-common-ui'
 import type { OwnerFreeze } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { routerKey } from 'vue-router'
 import { computed, defineComponent, h, nextTick, ref } from 'vue'
 import { ApiError, describeError } from '../src/api/client'
 import { getOwnerFreeze } from '../src/api/orgs'
 import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
-import { canWrite, useOwnerFreeze, whileFrozen } from '../src/state/freeze.state'
+import { canWrite, useOwnerFreeze } from '../src/state/freeze.state'
 import { policyConflict } from '../src/state/policy.state'
 import RepoLocksView from '../src/views/RepoLocksView.vue'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
-import { orgs } from './fixtures/org-data'
+import OrgSettingsView from '../src/views/OrgSettingsView.vue'
+import RepoInvitesView from '../src/views/RepoInvitesView.vue'
+import RepoMembersView from '../src/views/RepoMembersView.vue'
+import RepoSettingsView from '../src/views/RepoSettingsView.vue'
+import { orgs, repoPolicy } from './fixtures/org-data'
 
 const freeze = (frozen: boolean, owner = 'acme'): OwnerFreeze => ({
   owner,
@@ -83,14 +100,14 @@ describe('useOwnerFreeze', () => {
 describe('freeze api', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('reads the owner path and maps the wire kind', async () => {
+  it('reads the owner path and keeps the wire kind', async () => {
     const fn = vi.fn(
       async () => new Response(JSON.stringify({ ...freeze(true, 'studio'), kind: 'org' })),
     )
     vi.stubGlobal('fetch', fn)
     const f = await getOwnerFreeze('studio')
     expect((fn.mock.calls[0] as unknown[])[0]).toBe('/v1/owners/studio/freeze')
-    expect(f.kind).toBe('organization')
+    expect(f.kind).toBe('org')
     expect(f.frozen).toBe(true)
   })
 })
@@ -114,8 +131,6 @@ describe('gating', () => {
     expect(canWrite(true, false)).toBe(true)
     expect(canWrite(true, true)).toBe(false)
     expect(canWrite(false, false)).toBe(false)
-    expect(whileFrozen(['read', 'edit_policy'], true)).toEqual(['read'])
-    expect(whileFrozen(['read', 'edit_policy'], false)).toEqual(['read', 'edit_policy'])
   })
 
   const session = { user: ref('acme'), admin: ref(false), expire: vi.fn() }
@@ -171,6 +186,97 @@ describe('gating', () => {
     expect(await mountMembers(false)).toBe(true)
     expect(await mountMembers(true)).toBe(false)
     vi.unstubAllGlobals()
+  })
+
+  describe('read-only components', () => {
+    const json = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body)))
+    const route = (url: string) => {
+      if (url.endsWith('/members')) return json([{ user: 'bob', role: 'reader', source: 'direct' }])
+      if (url.endsWith('/roles')) return json([{ role: 'reader', permissions: [] }])
+      if (url.endsWith('/repo-policy')) return json(repoPolicy)
+      return json([])
+    }
+    const stubFetch = () =>
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((url: string) => route(url)),
+      )
+    const repoCtx = (frozen: boolean, org: unknown = null) => ({
+      target: computed(() => ({ owner: 'studio', name: 'game' })),
+      repo: ref({
+        owner: 'studio',
+        name: 'game',
+        visibility: 'private',
+        lease_hours: 8,
+        max_locks_per_user: 10,
+        max_locks_set_by_policy: false,
+        created_at: '2026-10-01T09:00:00Z',
+      }),
+      permissions: ref(['read', 'manage_users', 'edit_policy']),
+      org: ref(org),
+      frozen: ref(frozen),
+      reload: vi.fn(),
+    })
+    const orgCtx = (frozen: boolean) => ({
+      name: computed(() => 'studio'),
+      org: ref({ ...orgs[0], role: 'owner' }),
+      frozen: ref(frozen),
+      reload: async () => {},
+    })
+    const provide = (key: symbol, ctx: unknown) => ({
+      [sessionKey as symbol]: { user: ref('studio'), admin: ref(false), expire: vi.fn() },
+      [key]: ctx,
+    })
+    afterEach(() => vi.unstubAllGlobals())
+
+    it.each([true, false])('RepoMembersView sets readonly to %s', async (frozen) => {
+      stubFetch()
+      const w = mount(RepoMembersView, {
+        global: { provide: provide(repoKey as symbol, repoCtx(frozen, orgs[0])), stubs: {} },
+      })
+      await flushPromises()
+      const lists = w.findAllComponents(PynMembers)
+      expect(lists).toHaveLength(2)
+      for (const c of [...lists, w.findComponent(PynAddPerson), w.findComponent(PynTeamGrant)]) {
+        expect(c.exists()).toBe(true)
+        expect(Boolean((c.props() as { readonly?: boolean }).readonly)).toBe(frozen)
+      }
+    })
+
+    it.each([true, false])('RepoInvitesView sets readonly to %s', async (frozen) => {
+      stubFetch()
+      const w = mount(RepoInvitesView, {
+        global: { provide: provide(repoKey as symbol, repoCtx(frozen)) },
+      })
+      await flushPromises()
+      expect(Boolean(w.findComponent(PynInvites).props('readonly'))).toBe(frozen)
+    })
+
+    it.each([true, false])('RepoSettingsView sets readonly to %s', async (frozen) => {
+      stubFetch()
+      const w = mount(RepoSettingsView, {
+        global: {
+          provide: {
+            ...provide(repoKey as symbol, repoCtx(frozen)),
+            [routerKey as symbol]: { replace: vi.fn(), push: vi.fn() },
+          },
+          stubs: { RepoPolicyView: true },
+        },
+      })
+      await flushPromises()
+      expect(Boolean(w.findComponent(PynRepoForm).props('readonly'))).toBe(frozen)
+      expect(Boolean(w.findComponent(PynRepoDelete).props('readonly'))).toBe(frozen)
+    })
+
+    it.each([true, false])('OrgSettingsView sets readonly to %s', async (frozen) => {
+      stubFetch()
+      const w = mount(OrgSettingsView, {
+        global: { provide: provide(orgKey as symbol, orgCtx(frozen)) },
+      })
+      await flushPromises()
+      expect(Boolean(w.findComponent(PynOrgRepoPolicy).props('readonly'))).toBe(frozen)
+      expect(Boolean(w.findComponent(PynOrgDelete).props('readonly'))).toBe(frozen)
+    })
   })
 
   it('renders the notice only for a frozen owner', async () => {

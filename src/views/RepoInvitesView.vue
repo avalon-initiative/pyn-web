@@ -6,7 +6,7 @@ import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
 import type { InviteInfo } from '@avalon-initiative/pyn-common-ui'
 
-const { target } = inject(repoKey)!
+const { target, frozen } = inject(repoKey)!
 const invites = ref<InviteInfo[]>([])
 const roles = ref<string[]>([])
 const code = ref('')
@@ -42,6 +42,7 @@ onMounted(async () => {
     :invites="invites"
     :roles="roles"
     :code="code"
+    :readonly="frozen"
     :busy="busy"
     :error="error"
     @create="create"

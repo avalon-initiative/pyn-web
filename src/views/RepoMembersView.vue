@@ -16,7 +16,7 @@ import { repoKey } from '../state/context.state'
 import type { Member } from '@avalon-initiative/pyn-common-ui'
 import type { RepoTeam, TeamInfo } from '@avalon-initiative/pyn-common-ui'
 
-const { target, permissions, org } = inject(repoKey)!
+const { target, permissions, org, frozen } = inject(repoKey)!
 const members = ref<Member[]>([])
 const roles = ref<string[]>([])
 const granted = ref<RepoTeam[]>([])
@@ -80,12 +80,14 @@ onMounted(async () => {
     <PynMembers
       :grantees="personGrantees(members)"
       :roles="roles"
+      :readonly="frozen"
       :busy="people.busy.value"
       :error="people.error.value"
       @set-role="change"
     >
       <PynAddPerson
         :roles="roles"
+        :readonly="frozen"
         :busy="adding.busy.value"
         :error="adding.error.value"
         @add-user="add"
@@ -98,6 +100,7 @@ onMounted(async () => {
       revocable
       :grantees="teamGrantees(target.owner, granted)"
       :roles="roles"
+      :readonly="frozen"
       :busy="teams.busy.value"
       :error="teams.error.value"
       @set-role="grant"
@@ -106,6 +109,7 @@ onMounted(async () => {
       <PynTeamGrant
         :teams="ungrantedTeams(orgTeams, granted)"
         :roles="roles"
+        :readonly="frozen"
         :busy="granting.busy.value"
         :error="granting.error.value"
         @grant="(c) => grant(c, granting)"

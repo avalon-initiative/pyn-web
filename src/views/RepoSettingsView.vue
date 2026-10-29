@@ -16,7 +16,7 @@ import { EDIT_POLICY } from '../state/policy.state'
 import { canOpenSettings, isRepoOwner } from '../state/repo-access.state'
 import RepoPolicyView from './RepoPolicyView.vue'
 
-const { repo, target, reload, permissions, org } = inject(repoKey)!
+const { repo, target, reload, permissions, org, frozen } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const router = useRouter()
 const saving = useAction()
@@ -51,6 +51,7 @@ const remove = () =>
       :owner="repo.owner"
       :repo="repo"
       :effective-max-locks="repo.max_locks_per_user"
+      :readonly="frozen"
       :busy="saving.busy.value"
       :error="saving.error.value"
       @submit="save"
@@ -59,6 +60,7 @@ const remove = () =>
     <PynRepoDelete
       v-if="isOwner"
       :slug="repoSlug(repo)"
+      :readonly="frozen"
       :busy="removing.busy.value"
       :error="removing.error.value"
       @remove="remove"
