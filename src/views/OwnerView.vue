@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PynRepoList, PynViewError, PynViewHeader } from '@avalon-initiative/pyn-common-ui'
+import { PynRepoList, PynViewError } from '@avalon-initiative/pyn-common-ui'
 import { inject, ref, watch } from 'vue'
 import { listRepos } from '../api/repos'
 import { useAction } from '../state/action.state'
@@ -7,7 +7,7 @@ import { orgKey } from '../state/context.state'
 import { sortRepos } from '../state/repo.state'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
-const { name, org } = inject(orgKey)!
+const { name } = inject(orgKey)!
 const repos = ref<RepoInfo[]>([])
 const loaded = ref(false)
 const { error, attempt } = useAction()
@@ -26,7 +26,6 @@ watch(
 </script>
 
 <template>
-  <PynViewHeader v-if="!org" :title="name" />
   <PynViewError v-if="error">{{ error }}</PynViewError>
   <PynRepoList
     v-else-if="loaded"

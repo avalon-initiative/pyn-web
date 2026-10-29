@@ -1,18 +1,23 @@
 import {
   PynOwnerUsage,
+  PynOrgHeader,
+  PynRepoDelete,
+  PynRepoForm,
   PynStorageCapForm,
   PynUsageBreakdown,
+  PynUserHeader,
 } from '@avalon-initiative/pyn-common-ui'
 import type { OwnerUsage, RepoUsage, RepoUsageBreakdown } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
-import { routerKey } from 'vue-router'
+import { createMemoryHistory, createRouter, routerKey, RouterView } from 'vue-router'
 import { ApiError, describeError } from '../src/api/client'
 import { getOwnerUsage, getRepoBreakdown, getRepoUsage, setRepoStorageCap } from '../src/api/usage'
 import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
-import { canSeeStorage } from '../src/state/repo-access.state'
+import { canOpenSettings, canSeeStorage, canSetCap } from '../src/state/repo-access.state'
 import { routes } from '../src/router'
+import OrgView from '../src/views/OrgView.vue'
 import OwnerUsageView from '../src/views/OwnerUsageView.vue'
 import RepoSettingsView from '../src/views/RepoSettingsView.vue'
 
@@ -140,7 +145,7 @@ describe('OwnerUsageView', () => {
 })
 
 describe('repository Storage section', () => {
-  const mountSettings = (user: string, permissions: string[], frozen = false) => {
+  const mountSettings = (user: string, permissions: string[], frozen = false, admin = false) => {
     const calls: string[] = []
     const bodies: unknown[] = []
     stubServer(calls, bodies)
@@ -149,7 +154,7 @@ describe('repository Storage section', () => {
         stubs: { RepoPolicyView: true },
         provide: {
           [routerKey as symbol]: { replace: vi.fn(), push: vi.fn() },
-          [sessionKey as symbol]: { user: ref(user), admin: ref(false), expire: vi.fn() },
+          [sessionKey as symbol]: { user: ref(user), admin: ref(admin), expire: vi.fn() },
           [repoKey as symbol]: {
             target: computed(() => ({ owner: 'acme', name: 'big' })),
             repo: ref({
@@ -220,5 +225,81 @@ describe('repository Storage section', () => {
     await flushPromises()
     expect(calls).toEqual([])
     expect(w.findComponent(PynUsageBreakdown).exists()).toBe(false)
+  })
+
+  it('opens Storage with breakdown and cap form for a server administrator', async () => {
+    const { w, calls } = mountSettings('ops', ['read'], false, true)
+    await flushPromises()
+    expect(calls).toContain('GET /v1/repos/acme/big/usage/breakdown')
+    expect(w.findComponent(PynUsageBreakdown).exists()).toBe(true)
+    expect(w.findComponent(PynStorageCapForm).exists()).toBe(true)
+    expect(w.findComponent(PynRepoForm).exists()).toBe(false)
+    expect(w.findComponent(PynRepoDelete).exists()).toBe(false)
+  })
+
+  it('keeps the helpers closed to non-admin non-owners', () => {
+    expect(canOpenSettings(['read'], false, true)).toBe(true)
+    expect(canOpenSettings(['read'], false, false)).toBe(false)
+    expect(canSeeStorage(['read'], false, true)).toBe(true)
+    expect(canSetCap(false, false)).toBe(false)
+    expect(canSetCap(false, true)).toBe(true)
+  })
+})
+
+describe('owner navigation', () => {
+  const mountOrgView = async (path: string, user: string, orgRole: string | null) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === '/v1/orgs/acme' && orgRole)
+          return Response.json({ name: 'acme', created_at: '2026-09-02T08:00:00Z', role: orgRole })
+        if (url.startsWith('/v1/orgs/'))
+          return Response.json({ code: 'org_not_found', message: 'x' }, { status: 404 })
+        return Response.json({ frozen: false })
+      }),
+    )
+    const stub = { template: '<i />' }
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: '/:owner',
+          component: OrgView,
+          children: [
+            { path: '', name: 'owner', component: stub },
+            { path: '-/usage', name: 'owner-usage', component: stub },
+          ],
+        },
+      ],
+    })
+    await router.push(path)
+    const w = mount(RouterView, {
+      global: {
+        plugins: [router],
+        provide: {
+          [sessionKey as symbol]: { user: ref(user), admin: ref(false), expire: vi.fn() },
+        },
+      },
+    })
+    await flushPromises()
+    return w
+  }
+  const hrefs = (w: ReturnType<typeof mount>) => w.findAll('nav a').map((a) => a.attributes('href'))
+
+  it('links the organization Usage tab for owners only', async () => {
+    const owner = await mountOrgView('/acme/-/usage', 'alice', 'owner')
+    expect(hrefs(owner)).toContain('/acme/-/usage')
+    expect(owner.findComponent(PynOrgHeader).props('current')).toBe('usage')
+    const member = await mountOrgView('/acme', 'alice', 'member')
+    expect(hrefs(member)).not.toContain('/acme/-/usage')
+  })
+
+  it('links the user Usage tab on the own profile only', async () => {
+    const own = await mountOrgView('/alice/-/usage', 'alice', null)
+    expect(hrefs(own)).toEqual(['/alice', '/alice/-/usage'])
+    expect(own.findComponent(PynUserHeader).props('current')).toBe('usage')
+    const other = await mountOrgView('/alice', 'bob', null)
+    expect(hrefs(other)).toEqual(['/alice'])
+    expect(other.findComponent(PynUserHeader).props('self')).toBe(false)
   })
 })

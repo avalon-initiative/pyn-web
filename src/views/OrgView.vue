@@ -3,19 +3,21 @@ import {
   PynOrgHeader,
   PynOwnerFrozenNotice,
   PynPageNotFound,
+  PynUserHeader,
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
-import { computed, provide, ref, watch } from 'vue'
+import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOrg, getOwnerFreeze } from '../api/orgs'
 import { ApiError } from '../api/client'
 import { useAction } from '../state/action.state'
-import { orgKey } from '../state/context.state'
+import { orgKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
 const name = computed(() => String(route.params.owner))
+const user = inject(sessionKey)!.user
 const section = computed(() => String(route.path.split('/')[3] ?? ''))
 const org = ref<OrgInfo | null>(null)
 const { freeze, frozen } = useOwnerFreeze(name, getOwnerFreeze)
@@ -62,7 +64,14 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
       />
       <RouterView />
     </template>
-    <RouterView v-else-if="userPage" />
+    <template v-else-if="userPage">
+      <PynUserHeader
+        :name="name"
+        :self="name === user"
+        :current="section === 'usage' ? 'usage' : ''"
+      />
+      <RouterView />
+    </template>
     <PynPageNotFound v-else />
   </template>
 </template>
