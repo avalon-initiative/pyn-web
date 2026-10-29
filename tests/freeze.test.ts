@@ -18,7 +18,7 @@ const freeze = (frozen: boolean, owner = 'acme'): OwnerFreeze => ({
   kind: 'user',
   frozen,
   frozen_at: frozen ? '2026-01-02T03:04:05Z' : null,
-  reason: frozen ? 'billing' : null,
+  reason: frozen ? 'abuse' : null,
 })
 
 function harness(owner: ReturnType<typeof ref<string>>, read: (o: string) => Promise<OwnerFreeze>) {
@@ -39,7 +39,7 @@ describe('useOwnerFreeze', () => {
     const s = harness(ref('acme'), async (o) => freeze(true, o))
     await flushPromises()
     expect(s.frozen.value).toBe(true)
-    expect(s.freeze.value?.reason).toBe('billing')
+    expect(s.freeze.value?.reason).toBe('abuse')
   })
 
   it('reloads when the owner changes', async () => {
@@ -175,7 +175,7 @@ describe('gating', () => {
 
   it('renders the notice only for a frozen owner', async () => {
     const show = (f: OwnerFreeze) => mount(PynOwnerFrozenNotice, { props: { freeze: f } })
-    expect(show(freeze(true)).text()).toContain('billing')
+    expect(show(freeze(true)).text()).toContain('abuse')
     expect(show(freeze(false)).text()).toBe('')
     await nextTick()
   })
