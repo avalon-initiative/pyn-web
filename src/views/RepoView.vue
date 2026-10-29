@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   PynRepoHeader,
+  PynOwnerFrozenNotice,
   PynRepoNotFound,
   repoTabs,
   PynViewError,
@@ -9,10 +10,11 @@ import {
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
-import { getOrg } from '../api/orgs'
+import { getOrg, getOwnerFreeze } from '../api/orgs'
 import { getRepo, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { useOwnerFreeze } from '../state/freeze.state'
 import { canOpenSettings, isRepoOwner } from '../state/repo-access.state'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
@@ -26,6 +28,7 @@ const section = computed(() => {
   return s === 'tree' ? '' : s
 })
 
+const { freeze, frozen } = useOwnerFreeze(owner, getOwnerFreeze)
 const target = computed(() => ({ owner: owner.value, name: name.value }))
 const repo = ref<RepoInfo | null>(null)
 const permissions = ref<string[]>([])
@@ -67,6 +70,7 @@ provide(repoKey, {
   repo,
   permissions,
   org,
+  frozen,
   reload: async () => void (await load()),
 })
 
@@ -82,6 +86,7 @@ const tabs = computed(() =>
   <PynRepoNotFound v-if="notFound" :slug="`${owner}/${name}`" />
   <PynViewError v-else-if="error">{{ error }}</PynViewError>
   <template v-else-if="repo">
+    <PynOwnerFrozenNotice v-if="freeze" :freeze="freeze" />
     <PynRepoHeader
       :owner="repo.owner"
       :name="repo.name"

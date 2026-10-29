@@ -20,7 +20,8 @@ const CONFLICTS = new Set(['lock_required', 'lock_held', 'stale_base', 'invalid_
 export function policyConflict(e: unknown): PolicyConflict {
   if (e instanceof ApiError && CONFLICTS.has(e.code))
     return { kind: e.code as 'lock_required', message: e.message }
-  if (e instanceof ApiError && e.status === 403) return { kind: 'forbidden', message: e.message }
+  if (e instanceof ApiError && e.status === 403)
+    return { kind: 'forbidden', message: describeError(e) }
   return { kind: 'error', message: describeError(e) }
 }
 

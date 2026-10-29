@@ -23,7 +23,7 @@ import { POLICY_PATH, usePolicyEditor } from '../state/policy.state'
 const POLICY_LIMIT = 1024 * 1024
 const SAVE_MESSAGE = 'Update repository policy'
 
-const { target, permissions } = inject(repoKey)!
+const { target, permissions, frozen } = inject(repoKey)!
 const holder = ref('')
 const locking = useAction()
 const router = useRouter()
@@ -101,6 +101,7 @@ onMounted(() => {
     :dirty="ed.dirty.value"
     :saving="ed.saving.value"
     :disabled="ed.loading.value"
+    :readonly="frozen"
     @save="ed.requestPreview"
     @revert="ed.discard"
   >

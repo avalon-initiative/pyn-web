@@ -4,13 +4,14 @@ import { computed, inject, onMounted, ref } from 'vue'
 import { listRoles, setRole } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
+import { canWrite } from '../state/freeze.state'
 import type { RoleGrant } from '@avalon-initiative/pyn-common-ui'
 
-const { target, permissions } = inject(repoKey)!
+const { target, permissions, frozen } = inject(repoKey)!
 const grants = ref<RoleGrant[]>([])
 const loaded = ref(false)
 const { busy, error, attempt } = useAction()
-const canEdit = computed(() => permissions.value.includes('manage_roles'))
+const canEdit = computed(() => canWrite(permissions.value.includes('manage_roles'), frozen.value))
 
 const load = async () => {
   grants.value = await listRoles(target.value)

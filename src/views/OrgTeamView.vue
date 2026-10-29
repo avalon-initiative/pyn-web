@@ -17,9 +17,10 @@ import { listOrgMembers } from '../api/orgs'
 import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
+import { canWrite } from '../state/freeze.state'
 import type { TeamInfo } from '@avalon-initiative/pyn-common-ui'
 
-const { name, org } = inject(orgKey)!
+const { name, org, frozen } = inject(orgKey)!
 const route = useRoute()
 const router = useRouter()
 const slug = computed(() => String(route.params.team))
@@ -27,7 +28,7 @@ const team = ref<TeamInfo | null>(null)
 const orgMembers = ref<string[]>([])
 const loaded = ref(false)
 const notFound = ref(false)
-const owner = computed(() => isOrgOwner(org.value))
+const owner = computed(() => canWrite(isOrgOwner(org.value), frozen.value))
 const page = useAction()
 const members = useAction()
 const edit = useAction()

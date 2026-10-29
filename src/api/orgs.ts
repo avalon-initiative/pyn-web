@@ -1,4 +1,4 @@
-import type { NewOrgMember, RuleRef } from '@avalon-initiative/pyn-common-ui'
+import type { NewOrgMember, OwnerFreeze, RuleRef } from '@avalon-initiative/pyn-common-ui'
 import type { AuditPage } from '../types/repo.types'
 import type {
   CreationRule,
@@ -57,3 +57,6 @@ export const setCreationRule = (org: string, r: RuleRef, scope: RuleScope) =>
 
 export const removeCreationRule = (org: string, r: RuleRef) =>
   call<void>(api.DELETE('/v1/orgs/{org}/repo-policy/rules/{effect}/{kind}/{subject}', rule(org, r)))
+
+export const getOwnerFreeze = (owner: string) =>
+  call<OwnerFreeze>(api.GET('/v1/owners/{owner}/freeze', { params: { path: { owner } } }))

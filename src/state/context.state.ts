@@ -16,6 +16,8 @@ export interface RepoContext {
   permissions: Ref<string[]>
   /** The owning organization; null for a user-owned repository. */
   org: Ref<OrgInfo | null>
+  /** Whether the owner is frozen: writes are refused. */
+  frozen: Ref<boolean>
   reload: () => Promise<void>
 }
 
@@ -26,6 +28,7 @@ export interface OrgContext {
   name: ComputedRef<string>
   /** Null while loading, and when the name is not an organization. */
   org: Ref<OrgInfo | null>
+  frozen: Ref<boolean>
   reload: () => Promise<void>
 }
 
