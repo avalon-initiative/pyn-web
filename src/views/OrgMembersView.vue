@@ -10,9 +10,10 @@ import { useRouter } from 'vue-router'
 import { addOrgMember, listOrgMembers, removeOrgMember, setOrgRole } from '../api/orgs'
 import { useAction } from '../state/action.state'
 import { orgKey, sessionKey } from '../state/context.state'
+import { canWrite } from '../state/freeze.state'
 import type { OrgMember, OrgRole } from '@avalon-initiative/pyn-common-ui'
 
-const { name, org, reload } = inject(orgKey)!
+const { name, org, frozen, reload } = inject(orgKey)!
 const user = inject(sessionKey)!.user
 const router = useRouter()
 const members = ref<OrgMember[]>([])
@@ -56,7 +57,7 @@ onMounted(async () => {
     v-if="loaded"
     :members="members"
     :self="user"
-    :owner="isOrgOwner(org)"
+    :owner="canWrite(isOrgOwner(org), frozen)"
     :busy="busy"
     :error="error"
     @add="add"

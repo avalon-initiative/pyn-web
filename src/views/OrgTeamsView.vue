@@ -12,9 +12,10 @@ import { useRouter } from 'vue-router'
 import { createTeam, listTeams } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
+import { canWrite } from '../state/freeze.state'
 import type { TeamInfo } from '@avalon-initiative/pyn-common-ui'
 
-const { name, org } = inject(orgKey)!
+const { name, org, frozen } = inject(orgKey)!
 const router = useRouter()
 const teams = ref<TeamInfo[]>([])
 const loaded = ref(false)
@@ -45,7 +46,7 @@ onMounted(async () => {
   <PynTeamList v-if="loaded" :org="name" :teams="teams" />
   <PynViewError v-else-if="list.error.value">{{ list.error.value }}</PynViewError>
   <PynTeamForm
-    v-if="loaded && isOrgOwner(org)"
+    v-if="loaded && canWrite(isOrgOwner(org), frozen)"
     :busy="create.busy.value"
     :error="create.error.value"
     @submit="submit"

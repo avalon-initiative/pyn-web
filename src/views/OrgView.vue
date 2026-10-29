@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { PynOrgHeader, PynPageNotFound, PynViewError } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynOrgHeader,
+  PynOwnerFrozenNotice,
+  PynPageNotFound,
+  PynViewError,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { getOrg } from '../api/orgs'
+import { getOrg, getOwnerFreeze } from '../api/orgs'
 import { ApiError } from '../api/client'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
+import { useOwnerFreeze } from '../state/freeze.state'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
 const name = computed(() => String(route.params.owner))
 const section = computed(() => String(route.path.split('/')[3] ?? ''))
 const org = ref<OrgInfo | null>(null)
+const { freeze, frozen } = useOwnerFreeze(name, getOwnerFreeze)
 const loaded = ref(false)
 const { error, attempt } = useAction()
 
@@ -38,12 +45,13 @@ watch(
   { immediate: true },
 )
 
-provide(orgKey, { name, org, reload: async () => void (await load()) })
+provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
 </script>
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
   <template v-else-if="loaded">
+    <PynOwnerFrozenNotice v-if="freeze && (org || route.name === 'owner')" :freeze="freeze" />
     <template v-if="org">
       <PynOrgHeader
         :name="org.name"

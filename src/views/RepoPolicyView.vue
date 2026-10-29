@@ -18,12 +18,13 @@ import {
 } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
+import { whileFrozen } from '../state/freeze.state'
 import { POLICY_PATH, usePolicyEditor } from '../state/policy.state'
 
 const POLICY_LIMIT = 1024 * 1024
 const SAVE_MESSAGE = 'Update repository policy'
 
-const { target, permissions } = inject(repoKey)!
+const { target, permissions, frozen } = inject(repoKey)!
 const holder = ref('')
 const locking = useAction()
 const router = useRouter()
@@ -39,7 +40,7 @@ const ed = usePolicyEditor(
     upload: (text) => putObject(target.value, text),
     checkin: (body) => checkin(target.value, body),
   },
-  () => permissions.value,
+  () => whileFrozen(permissions.value, frozen.value),
 )
 
 const kind = computed(() => {

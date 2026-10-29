@@ -32,6 +32,7 @@ function mountSettings(user: string, permissions: string[]) {
           repo: ref(repo),
           permissions: ref(permissions),
           org: ref(null),
+          frozen: ref(false),
           reload: vi.fn(),
         },
       },

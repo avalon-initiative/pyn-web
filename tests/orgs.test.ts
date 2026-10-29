@@ -247,6 +247,7 @@ describe('OrgMembersView', () => {
           [orgKey as symbol]: {
             name: computed(() => 'studio'),
             org: ref(orgs[0]),
+            frozen: ref(false),
             reload: async () => {},
           },
         },
@@ -335,6 +336,7 @@ describe('OrgSettingsView', () => {
           [orgKey as symbol]: {
             name: computed(() => 'studio'),
             org: ref(orgs[0]),
+            frozen: ref(false),
             reload: async () => {},
           },
         },

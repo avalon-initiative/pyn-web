@@ -151,6 +151,7 @@ describe('team views', () => {
   const orgCtx = (role: 'owner' | 'member') => ({
     name: computed(() => 'studio'),
     org: ref({ ...orgs[0], role }),
+    frozen: ref(false),
     reload: async () => {},
   })
   const json = (body: unknown, status = 200) =>
@@ -269,6 +270,7 @@ describe('team views', () => {
       repo: ref(null),
       permissions: ref(['read', 'manage_users']),
       org: ref(orgOwned ? orgs[0] : null),
+      frozen: ref(false),
       reload: async () => {},
     })
     const routes = (k: string) => {

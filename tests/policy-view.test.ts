@@ -39,6 +39,7 @@ function mountView(permissions: string[] = [EDIT_POLICY]) {
           repo: ref(null),
           permissions: ref(permissions),
           org: ref(null),
+          frozen: ref(false),
           reload: vi.fn(),
         },
       },
