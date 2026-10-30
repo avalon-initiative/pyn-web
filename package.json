@@ -20,7 +20,7 @@
     "api:check": "node scripts/gen-api.mjs --check"
   },
   "dependencies": {
-    "@avalon-initiative/pyn-common-ui": "^0.1.15",
+    "@avalon-initiative/pyn-common-ui": "^0.1.16",
     "openapi-fetch": "0.17.0",
     "vue": "^3.5.44",
     "vue-router": "^5.4.0"

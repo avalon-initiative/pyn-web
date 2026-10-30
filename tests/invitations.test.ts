@@ -1,4 +1,8 @@
-import { PynOrgInvitations, PynOrgPendingInvitations } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynOrgInvitations,
+  PynOrgMembers,
+  PynOrgPendingInvitations,
+} from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
@@ -7,6 +11,7 @@ import { addOrgMember } from '../src/api/orgs'
 import { ApiError, describeError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { orgKey, sessionKey } from '../src/state/context.state'
+import { pendingInvitations } from '../src/state/invitations.state'
 import { activeNav, sideNavItems } from '../src/state/shell.state'
 import { invitations, orgMembers, orgs } from './fixtures/org-data'
 import InvitationsView from '../src/views/InvitationsView.vue'
@@ -45,6 +50,11 @@ describe('routing and navigation', () => {
     expect(makeRouter(createMemoryHistory()).resolve('/_/invitations').name).toBe('invitations')
     expect(sideNavItems(false).find((i) => i.id === 'invitations')?.href).toBe('/_/invitations')
     expect(activeNav('/_/invitations')).toBe('invitations')
+  })
+
+  it('badges the invitations entry with the pending count', () => {
+    expect(sideNavItems(false, [], 3).find((i) => i.id === 'invitations')?.badge).toBe(3)
+    expect(sideNavItems(false).find((i) => i.id === 'invitations')?.badge).toBe(0)
   })
 })
 
@@ -102,7 +112,8 @@ describe('OrgMembersView invitations', () => {
     await form.find('input').setValue('dave')
     await form.trigger('submit')
     await flushPromises()
-    expect(w.find('[role=status]').text()).toContain('Invited dave')
+    expect(w.findComponent(PynOrgMembers).props('notice')).toContain('Invited dave')
+    expect(w.text()).toContain('Invited dave')
   })
 
   it('says added after a direct add that answers 201', async () => {
@@ -112,7 +123,7 @@ describe('OrgMembersView invitations', () => {
     await form.find('input').setValue('dave')
     await form.trigger('submit')
     await flushPromises()
-    expect(w.find('[role=status]').text()).toBe('Added dave.')
+    expect(w.findComponent(PynOrgMembers).props('notice')).toBe('Added dave.')
   })
 
   it('words already_invited on add', async () => {
@@ -133,11 +144,18 @@ describe('OrgMembersView invitations', () => {
     expect(w.text()).toContain('no longer pending')
   })
 
-  it('hides the invitations and does not fetch them for a frozen organization', async () => {
+  it('shows the invitations read-only for a frozen organization', async () => {
     stub(route)
     const w = await mountView(true)
-    expect(w.findComponent(PynOrgPendingInvitations).exists()).toBe(false)
-    expect(calls.some((c) => c.endsWith('/invitations'))).toBe(false)
+    const list = w.findComponent(PynOrgPendingInvitations)
+    expect(list.props('invitations')).toEqual([invitations[0]])
+    expect(list.props('readonly')).toBe(true)
+  })
+
+  it('is not read-only for an active organization', async () => {
+    stub(route)
+    const w = await mountView()
+    expect(w.findComponent(PynOrgPendingInvitations).props('readonly')).toBe(false)
   })
 
   it('does not fetch invitations for a plain member', async () => {
@@ -175,6 +193,19 @@ describe('InvitationsView', () => {
     await flushPromises()
     expect(calls).toContain('POST /v1/me/invitations/studio/accept')
     expect(router.currentRoute.value.fullPath).toBe('/studio')
+  })
+
+  it('updates the badge count from the list, after load and decline', async () => {
+    let declined = false
+    stub((m, u) => {
+      if (m === 'POST') return ((declined = true), new Response(null, { status: 204 }))
+      return declined ? json([invitations[1]]) : list(m, u)
+    })
+    const { w } = await mountView()
+    expect(pendingInvitations.value).toBe(invitations.length)
+    w.findComponent(PynOrgInvitations).vm.$emit('decline', 'studio')
+    await flushPromises()
+    expect(pendingInvitations.value).toBe(1)
   })
 
   it('declines and refreshes the list', async () => {

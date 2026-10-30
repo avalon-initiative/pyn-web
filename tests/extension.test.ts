@@ -88,7 +88,9 @@ describe('createPynApp', () => {
       routes: [{ path: `${EXTENSION_PREFIX}/reports/:id`, component: Sample }],
       navItems: [{ id: 'reports', label: 'Reports', href: `${EXTENSION_PREFIX}/reports` }],
     })
-    const current = [...el.querySelectorAll('aside [aria-current]')].map((a) => a.textContent)
+    const current = [...el.querySelectorAll('aside [aria-current]')].map((a) =>
+      a.textContent?.trim(),
+    )
     expect(current).toEqual(['Reports'])
   })
 })

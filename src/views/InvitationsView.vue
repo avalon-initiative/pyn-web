@@ -9,6 +9,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { acceptInvitation, declineInvitation, listMyInvitations } from '../api/orgs'
 import { useAction } from '../state/action.state'
+import { pendingInvitations } from '../state/invitations.state'
 import type { OrgInvitation } from '@avalon-initiative/pyn-common-ui'
 
 const router = useRouter()
@@ -19,6 +20,7 @@ const { error, attempt } = useAction()
 
 const load = async () => {
   invitations.value = await listMyInvitations()
+  pendingInvitations.value = invitations.value.length
 }
 
 // A failed answer (limit reached, gone, frozen) leaves the list as the server now has it.

@@ -30,11 +30,12 @@ const notice = ref('')
 const loaded = ref(false)
 const { busy, error, attempt } = useAction()
 
-const canManage = computed(() => canWrite(isOrgOwner(org.value), frozen.value))
+const owner = computed(() => isOrgOwner(org.value))
+const canManage = computed(() => canWrite(owner.value, frozen.value))
 
 const load = async () => {
   members.value = await listOrgMembers(name.value)
-  if (canManage.value) invitations.value = await listOrgInvitations(name.value)
+  if (owner.value) invitations.value = await listOrgInvitations(name.value)
 }
 
 const add = (m: NewOrgMember) =>
@@ -84,14 +85,15 @@ onMounted(async () => {
     :owner="canManage"
     :busy="busy"
     :error="error"
+    :notice="notice"
     @add="add"
     @set-role="change"
     @remove="remove"
   />
-  <p v-if="loaded && notice" role="status">{{ notice }}</p>
   <PynOrgPendingInvitations
-    v-if="loaded && canManage"
+    v-if="loaded && owner"
     :invitations="invitations"
+    :readonly="!canManage"
     :busy="busy"
     @cancel="cancel"
   />
