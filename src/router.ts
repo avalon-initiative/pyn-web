@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouterHistory } from 'vue-router'
+import type { RouteRecordRaw, RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AdminWebhooksView from './views/AdminWebhooksView.vue'
@@ -85,10 +85,13 @@ export const routes = [
   },
 ]
 
-export const makeRouter = (history: RouterHistory = createWebHistory()) =>
+export const makeRouter = (
+  history: RouterHistory = createWebHistory(),
+  extraRoutes: RouteRecordRaw[] = [],
+) =>
   createRouter({
     history,
-    routes,
+    routes: [...routes, ...extraRoutes],
     scrollBehavior(to) {
       if (to.hash) scrollToHash(to.hash)
     },

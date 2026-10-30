@@ -73,6 +73,10 @@ See [docs/trust-boundary.md](docs/trust-boundary.md) for what the client sends a
 
 An account with no role in a repository, or any outsider to a private one, sees "Repository not found".
 
+## Extending
+
+A separately built application can add routes, side-nav and account-menu entries at build time through `createPynApp`. See [docs/extending.md](docs/extending.md).
+
 ## License
 
 Apache-2.0.
