@@ -22,6 +22,8 @@ import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
 import { sortRepos } from './state/repo.state'
 import { activeNav, sideNavItems } from './state/shell.state'
+import { selectAccountItem } from './state/extension.state'
+import type { AccountMenuItem } from './types/extension.types'
 import {
   PynShell,
   PynSignIn,
@@ -34,7 +36,7 @@ import {
   sortOrgs,
   PynSetup,
 } from '@avalon-initiative/pyn-common-ui'
-import type { ThemeChoice } from '@avalon-initiative/pyn-common-ui'
+import type { NavItem, ThemeChoice } from '@avalon-initiative/pyn-common-ui'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 import type {
@@ -46,6 +48,10 @@ import type {
 } from '@avalon-initiative/pyn-common-ui'
 import type { RegistrationInfo, SignInOptions } from './types/auth.types'
 
+withDefaults(defineProps<{ navItems?: NavItem[]; accountMenuItems?: AccountMenuItem[] }>(), {
+  navItems: () => [],
+  accountMenuItems: () => [],
+})
 const router = useRouter()
 const route = useRoute()
 const user = ref('')
@@ -244,6 +250,8 @@ onMounted(async () => {
             :repos="slugs"
             :theme="theme"
             :admin="admin"
+            :extra-account="accountMenuItems"
+            @account="(id) => selectAccountItem(accountMenuItems, id)"
             @open="(slug) => router.push(`/${slug}`)"
             @theme="setTheme"
             @sign-out="leave"
@@ -252,8 +260,8 @@ onMounted(async () => {
         <template #side>
           <PynSideNav
             :account="user"
-            :items="sideNavItems(admin)"
-            :current="activeNav(route.path)"
+            :items="sideNavItems(admin, navItems)"
+            :current="activeNav(route.path, navItems)"
             :repos="repos"
             :current-repo="currentRepo"
             :orgs="orgs"
