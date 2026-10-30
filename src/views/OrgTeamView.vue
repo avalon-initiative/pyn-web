@@ -8,6 +8,7 @@ import {
   teamCandidates,
   teamPath,
   type TeamFormValue,
+  type TeamInfo,
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
@@ -18,13 +19,12 @@ import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
-import type { Schemas } from '../api/schema'
 
 const { name, org, frozen } = inject(orgKey)!
 const route = useRoute()
 const router = useRouter()
 const slug = computed(() => String(route.params.team))
-const team = ref<Schemas['TeamInfo'] | null>(null)
+const team = ref<TeamInfo | null>(null)
 const orgMembers = ref<string[]>([])
 const loaded = ref(false)
 const notFound = ref(false)
