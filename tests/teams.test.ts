@@ -246,6 +246,35 @@ describe('team views', () => {
     expect(router.currentRoute.value.path).toBe('/studio/-/teams')
   })
 
+  it('does not carry form state over to a team recreated under the same slug', async () => {
+    let current = teams[0]
+    stub((k) => {
+      if (k === 'GET /v1/orgs/studio/teams/artists') return json(current)
+      if (k === 'GET /v1/orgs/studio/members') return json([{ user: 'alice', role: 'owner' }])
+      if (k.startsWith('PUT')) return Promise.resolve(new Response(null, { status: 204 }))
+      return undefined
+    })
+    const router = makeRouter(createMemoryHistory())
+    await router.push('/studio/-/teams/artists')
+    const w = mount(OrgTeamView, {
+      global: {
+        plugins: [router],
+        provide: { [sessionKey as symbol]: session, [orgKey as symbol]: orgCtx('owner') },
+      },
+    })
+    await flushPromises()
+    const form = () => w.findComponent(PynTeamForm)
+    await form().find('input').setValue('Draft name')
+    expect((form().find('input').element as HTMLInputElement).value).toBe('Draft name')
+
+    current = { ...teams[0], id: 'team-artists-2', name: 'Artists again' }
+    const detail = w.findComponent(PynTeamDetail)
+    await detail.find('select').setValue('alice')
+    await detail.find('form').trigger('submit')
+    await flushPromises()
+    expect((form().find('input').element as HTMLInputElement).value).toBe('Artists again')
+  })
+
   it('shows not found for an unknown team', async () => {
     stub((k) =>
       k.startsWith('GET /v1/orgs/studio/teams/')

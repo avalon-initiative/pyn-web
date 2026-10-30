@@ -1,5 +1,8 @@
-import type { RepoTeam, TeamInfo } from '@avalon-initiative/pyn-common-ui'
 import { api, call } from './http'
+import type { Schemas } from './schema'
+
+type TeamInfo = Schemas['TeamInfo']
+type RepoTeam = Schemas['RepoTeam']
 
 type Repo = { owner: string; name: string }
 

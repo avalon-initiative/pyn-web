@@ -18,13 +18,13 @@ import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
-import type { TeamInfo } from '@avalon-initiative/pyn-common-ui'
+import type { Schemas } from '../api/schema'
 
 const { name, org, frozen } = inject(orgKey)!
 const route = useRoute()
 const router = useRouter()
 const slug = computed(() => String(route.params.team))
-const team = ref<TeamInfo | null>(null)
+const team = ref<Schemas['TeamInfo'] | null>(null)
 const orgMembers = ref<string[]>([])
 const loaded = ref(false)
 const notFound = ref(false)
@@ -91,6 +91,7 @@ watch(
   <PynPageNotFound v-else-if="loaded && notFound" />
   <template v-else-if="loaded && team">
     <PynTeamDetail
+      :key="team.id"
       :team="team"
       :candidates="candidates"
       :owner="owner"
@@ -101,13 +102,14 @@ watch(
     />
     <template v-if="owner">
       <PynTeamForm
-        :key="team.slug"
+        :key="team.id"
         :team="team"
         :busy="edit.busy.value"
         :error="edit.error.value"
         @submit="save"
       />
       <PynTeamDelete
+        :key="team.id"
         :slug="team.slug"
         :busy="del.busy.value"
         :error="del.error.value"

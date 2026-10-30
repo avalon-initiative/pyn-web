@@ -1,10 +1,5 @@
-import type {
-  OrgInfo,
-  OrgMember,
-  RepoPolicy,
-  RepoTeam,
-  TeamInfo,
-} from '@avalon-initiative/pyn-common-ui'
+import type { OrgInfo, OrgMember, RepoPolicy } from '@avalon-initiative/pyn-common-ui'
+import type { Schemas } from '../../src/api/schema'
 
 export const orgs: OrgInfo[] = [
   { id: 'org-studio', name: 'studio', created_at: '2026-09-02T08:00:00Z', role: 'owner' },
@@ -22,8 +17,9 @@ export const orgMembers: OrgMember[] = [
   { user: 'carol', role: 'member' },
 ]
 
-export const teams: TeamInfo[] = [
+export const teams: Schemas['TeamInfo'][] = [
   {
+    id: 'team-artists',
     slug: 'artists',
     name: 'Artists',
     description: 'Texture and model work.',
@@ -35,6 +31,7 @@ export const teams: TeamInfo[] = [
     ],
   },
   {
+    id: 'team-qa',
     slug: 'qa',
     name: 'qa',
     description: '',
@@ -44,8 +41,14 @@ export const teams: TeamInfo[] = [
   },
 ]
 
-export const repoTeams: RepoTeam[] = [
-  { slug: 'artists', name: 'Artists', description: 'Texture and model work.', role: 'writer' },
+export const repoTeams: Schemas['RepoTeam'][] = [
+  {
+    team_id: 'team-artists',
+    slug: 'artists',
+    name: 'Artists',
+    description: 'Texture and model work.',
+    role: 'writer',
+  },
 ]
 
 export const repoPolicy: RepoPolicy = {

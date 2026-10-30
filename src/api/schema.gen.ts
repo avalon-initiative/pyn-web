@@ -2682,6 +2682,8 @@ export interface components {
       name: string
       role: string
       slug: string
+      /** @description Stable id of the team; never reused after a delete. */
+      team_id: string
     }
     RepoUsage: {
       /**
@@ -3006,6 +3008,8 @@ export interface components {
       /** Format: date-time */
       created_at: string
       description: string
+      /** @description Stable id: never changes and is never issued again after a delete, so key data on it, not the slug. */
+      id: string
       /** @description User names, ordered. */
       members: string[]
       name: string
