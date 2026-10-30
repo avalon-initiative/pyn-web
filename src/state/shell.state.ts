@@ -13,10 +13,10 @@ export function activeNav(path: string, extra: NavItem[] = []): string {
   return activeExtraNav(path, extra)
 }
 
-/** The library's sidebar items, Invitations, the Webhooks page for administrators, then the build-time extras. */
-export const sideNavItems = (admin: boolean, extra: NavItem[] = []): NavItem[] => [
+/** The library's sidebar items, Invitations (badged with the pending count), the Webhooks page for administrators, then the build-time extras. */
+export const sideNavItems = (admin: boolean, extra: NavItem[] = [], badge = 0): NavItem[] => [
   ...navItems(admin),
-  { id: 'invitations', label: 'Invitations', href: '/_/invitations', icon: 'user' },
+  { id: 'invitations', label: 'Invitations', href: '/_/invitations', icon: 'user', badge },
   ...(admin
     ? [{ id: 'webhooks', label: 'Webhooks', href: '/_/admin/webhooks', icon: 'settings' }]
     : []),

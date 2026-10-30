@@ -15,9 +15,10 @@ import {
 import { fetchMe } from './api/admin'
 import { describeError } from './api/client'
 import { blockedStatus } from './state/account.state'
-import { listMyOrgs } from './api/orgs'
+import { listMyInvitations, listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
+import { pendingInvitations } from './state/invitations.state'
 import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
 import { sortRepos } from './state/repo.state'
@@ -90,7 +91,10 @@ function setTheme(choice: ThemeChoice) {
 watch(
   () => [user.value, route.name],
   async () => {
-    if (!user.value) return ((repos.value = []), (orgs.value = []))
+    if (!user.value) return ((repos.value = []), (orgs.value = []), (pendingInvitations.value = 0))
+    listMyInvitations()
+      .then((list) => (pendingInvitations.value = list.length))
+      .catch(() => (pendingInvitations.value = 0))
     repos.value = sortRepos(await listRepos().catch(() => repos.value))
     orgs.value = sortOrgs(await listMyOrgs().catch(() => orgs.value))
   },
@@ -260,7 +264,7 @@ onMounted(async () => {
         <template #side>
           <PynSideNav
             :account="user"
-            :items="sideNavItems(admin, navItems)"
+            :items="sideNavItems(admin, navItems, pendingInvitations)"
             :current="activeNav(route.path, navItems)"
             :repos="repos"
             :current-repo="currentRepo"
