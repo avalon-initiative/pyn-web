@@ -453,6 +453,54 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/invitations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['my_invitations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/invitations/{org}/accept': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['accept_invitation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/invitations/{org}/decline': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['decline_invitation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/locks': {
     parameters: {
       query?: never
@@ -592,6 +640,38 @@ export interface paths {
     put?: never
     post?: never
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/orgs/{org}/invitations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_invitations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/orgs/{org}/invitations/{user}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['cancel_invitation']
     options?: never
     head?: never
     patch?: never
@@ -2391,6 +2471,21 @@ export interface components {
       id: string
       name: string
       role?: components['schemas']['OrgRole'] | null
+    }
+    /** @description A pending offer of organization membership. It becomes a membership with `role` when `user` accepts. */
+    OrgInvitation: {
+      /** Format: date-time */
+      created_at: string
+      /**
+       * Format: date-time
+       * @description After this the invitation is gone and cannot be accepted.
+       */
+      expires_at: string
+      invited_by: string
+      org: string
+      role: components['schemas']['OrgRole']
+      /** @description The invited user. */
+      user: string
     }
     /** @description A person in an organization. */
     OrgMember: {
@@ -4679,6 +4774,132 @@ export interface operations {
       }
     }
   }
+  my_invitations: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the caller's pending organization invitations, ordered by organization name */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgInvitation'][]
+        }
+      }
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  accept_invitation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the inviting organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the caller is now a member, with the offered role */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgInfo']
+        }
+      }
+      /** @description a token without manage_roles or limited to repositories */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found, or org_invitation_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description member_limit_reached: the organization is full; the invitation stays */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  decline_invitation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the inviting organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the invitation is gone */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description a token without manage_roles or limited to repositories */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found, or org_invitation_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   my_locks: {
     parameters: {
       query?: never
@@ -5128,6 +5349,88 @@ export interface operations {
       }
     }
   }
+  list_invitations: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description pending invitations ordered by user name; expired ones are gone */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgInvitation'][]
+        }
+      }
+      /** @description not_org_owner, or a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  cancel_invitation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+        /** @description the invited user's name */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the invitation is withdrawn */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found, or org_invitation_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   org_list_members: {
     parameters: {
       query?: never
@@ -5185,12 +5488,22 @@ export interface operations {
       }
     }
     responses: {
+      /** @description added without an invitation: only a server administrator, and only when the server's org member add setting is `direct` */
       201: {
         headers: {
           [name: string]: unknown
         }
         content: {
           'application/json': components['schemas']['OrgMember']
+        }
+      }
+      /** @description invited: the user becomes a member when they accept */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgInvitation']
         }
       }
       /** @description invalid_request: bad role, or the name is an organization */
@@ -5220,7 +5533,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description already_org_member */
+      /** @description already_org_member, or already_invited */
       409: {
         headers: {
           [name: string]: unknown
