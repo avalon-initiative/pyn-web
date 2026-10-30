@@ -237,7 +237,8 @@ describe('OrgMembersView', () => {
           return Promise.resolve(
             new Response(JSON.stringify({ code: 'last_org_owner', message: 'm' }), { status: 409 }),
           )
-        return Promise.resolve(new Response(JSON.stringify(orgMembers)))
+        const body = url.endsWith('/invitations') ? [] : orgMembers
+        return Promise.resolve(new Response(JSON.stringify(body)))
       }),
     )
     const w = mount(OrgMembersView, {

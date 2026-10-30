@@ -4,6 +4,7 @@ import { scrollToHash } from './state/hash.state'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AdminWebhooksView from './views/AdminWebhooksView.vue'
 import AccountView from './views/AccountView.vue'
+import InvitationsView from './views/InvitationsView.vue'
 import KeysView from './views/KeysView.vue'
 import IdentitiesView from './views/IdentitiesView.vue'
 import TokensView from './views/TokensView.vue'
@@ -43,6 +44,7 @@ export const routes = [
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
   { path: '/_/new-org', name: 'new-org', component: NewOrgView },
   { path: '/_/orgs', name: 'orgs', component: OrgsView },
+  { path: '/_/invitations', name: 'invitations', component: InvitationsView },
   {
     path: '/_/settings',
     component: AccountView,
