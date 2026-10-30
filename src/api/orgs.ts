@@ -1,4 +1,9 @@
-import type { NewOrgMember, OwnerFreeze, RuleRef } from '@avalon-initiative/pyn-common-ui'
+import type {
+  NewOrgMember,
+  OrgInvitation,
+  OwnerFreeze,
+  RuleRef,
+} from '@avalon-initiative/pyn-common-ui'
 import type { AuditPage } from '../types/repo.types'
 import type {
   CreationRule,
@@ -28,8 +33,29 @@ export const listOrgAudit = (org: string, before?: number) =>
 export const listOrgMembers = (org: string) =>
   call<OrgMember[]>(api.GET('/v1/orgs/{org}/members', org_(org)))
 
-export const addOrgMember = (org: string, m: NewOrgMember) =>
-  call<OrgMember>(api.POST('/v1/orgs/{org}/members', { ...org_(org), body: m }))
+export type AddOutcome = { invited: OrgInvitation } | { added: OrgMember }
+
+/** 202 is an invitation; 201 is a direct add by a server administrator. */
+export async function addOrgMember(org: string, m: NewOrgMember): Promise<AddOutcome> {
+  const data = await call<OrgInvitation | OrgMember>(
+    api.POST('/v1/orgs/{org}/members', { ...org_(org), body: m }),
+  )
+  return 'invited_by' in data ? { invited: data } : { added: data }
+}
+
+export const listOrgInvitations = (org: string) =>
+  call<OrgInvitation[]>(api.GET('/v1/orgs/{org}/invitations', org_(org)))
+
+export const cancelOrgInvitation = (org: string, user: string) =>
+  call<void>(api.DELETE('/v1/orgs/{org}/invitations/{user}', { params: { path: { org, user } } }))
+
+export const listMyInvitations = () => call<OrgInvitation[]>(api.GET('/v1/me/invitations'))
+
+export const acceptInvitation = (org: string) =>
+  call<OrgInfo>(api.POST('/v1/me/invitations/{org}/accept', org_(org)))
+
+export const declineInvitation = (org: string) =>
+  call<void>(api.POST('/v1/me/invitations/{org}/decline', org_(org)))
 
 export const setOrgRole = (org: string, user: string, role: OrgRole) =>
   call<OrgMember>(

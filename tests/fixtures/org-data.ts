@@ -1,5 +1,6 @@
 import type {
   OrgInfo,
+  OrgInvitation,
   OrgMember,
   RepoPolicy,
   RepoTeam,
@@ -64,3 +65,22 @@ export const repoPolicy: RepoPolicy = {
     { effect: 'allow', kind: 'role', subject: 'member', scope: 'private' },
   ],
 }
+
+export const invitations: OrgInvitation[] = [
+  {
+    org: 'studio',
+    user: 'dave',
+    role: 'member',
+    invited_by: 'alice',
+    created_at: '2026-10-01T09:00:00Z',
+    expires_at: '2026-10-31T09:00:00Z',
+  },
+  {
+    org: 'modding-club',
+    user: 'dave',
+    role: 'owner',
+    invited_by: 'bob',
+    created_at: '2026-10-02T09:00:00Z',
+    expires_at: '2026-11-01T09:00:00Z',
+  },
+]

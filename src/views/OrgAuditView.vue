@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { PynAudit, PynPageNotFound, isOrgOwner } from '@avalon-initiative/pyn-common-ui'
-import { inject, onMounted, ref } from 'vue'
+import {
+  PynAudit,
+  PynPageNotFound,
+  isOrgOwner,
+  orgAuditLabel,
+} from '@avalon-initiative/pyn-common-ui'
+import { computed, inject, onMounted, ref } from 'vue'
 import { listOrgAudit } from '../api/orgs'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
@@ -8,6 +13,9 @@ import type { AuditEntry } from '@avalon-initiative/pyn-common-ui'
 
 const { name, org } = inject(orgKey)!
 const entries = ref<AuditEntry[]>([])
+const labelled = computed(() =>
+  entries.value.map((e) => ({ ...e, action: orgAuditLabel(e.action) })),
+)
 const next = ref<number | null>(null)
 const { busy, error, attempt } = useAction()
 
@@ -27,7 +35,7 @@ onMounted(() => {
   <PynAudit
     v-if="isOrgOwner(org)"
     plain
-    :entries="entries"
+    :entries="labelled"
     :has-more="next !== null"
     :busy="busy"
     :error="error"

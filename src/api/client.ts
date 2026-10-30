@@ -39,6 +39,11 @@ const FRIENDLY: Record<string, string> = {
     'This account is frozen: it can be viewed but not changed. Contact a server administrator.',
   repo_storage_limit_reached:
     'This repository reached its storage cap. Free up space, or ask an administrator to raise the cap.',
+  already_invited: 'That account already has a pending invitation to the organization.',
+  org_invitation_not_found:
+    'That invitation is no longer pending. It may have been cancelled or expired.',
+  member_limit_reached:
+    'The organization has reached its member limit. The invitation stays; try again once there is room.',
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 
