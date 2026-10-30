@@ -2493,7 +2493,7 @@ export interface components {
       owner: string
       /** @description The id of `owner`. */
       owner_id: string
-      /** @description Ordered by name. */
+      /** @description Largest first, then by address. */
       repositories: components['schemas']['RepoUsage'][]
       usage: components['schemas']['Usage']
     }

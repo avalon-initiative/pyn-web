@@ -422,6 +422,18 @@ describe('history view', () => {
     expect(w.text()).not.toContain('Load more')
   })
 
+  it('shows only the subject of a multi-paragraph message until the body is expanded', async () => {
+    const body = page([1], null)
+    body.revisions[0].message = 'Fix the loader\n\nLonger explanation of the fix.'
+    const { w } = await mountView(vi.fn().mockResolvedValue(reply(body)))
+    expect(w.find('li').text()).toContain('Fix the loader')
+    const details = w.find('details')
+    expect(details.find('summary').text()).toBe('Description')
+    expect(details.attributes('open')).toBeUndefined()
+    expect(details.text()).toContain('Longer explanation of the fix.')
+    expect(w.find('li').text().split('Description')[0]).not.toContain('Longer explanation')
+  })
+
   it('sends the glob filter, and the path for a per-file entry point', async () => {
     vi.useFakeTimers()
     const fn = vi.fn().mockResolvedValue(reply(page([1], null)))
