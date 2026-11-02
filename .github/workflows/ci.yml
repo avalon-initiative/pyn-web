@@ -79,7 +79,7 @@ jobs:
           docker network create smoke
           docker run -d --name pyn-core --network smoke "$base"
           docker run -d --name web --network smoke --read-only \
-            --tmpfs /tmp --tmpfs /etc/nginx/conf.d --cap-drop ALL \
+            --tmpfs /tmp --tmpfs /etc/nginx/conf.d:uid=101,gid=101 --cap-drop ALL \
             -e PYN_API_URL=http://pyn-core:8080 -p 8080:8080 pyn-web:ci
           ready=
           for _ in $(seq 20); do
