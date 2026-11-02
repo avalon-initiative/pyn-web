@@ -81,7 +81,7 @@ smoke-tests it read-only against a stub API; run it before a release that touche
 
 ```bash
 docker run --detach --publish 127.0.0.1:8080:8080 \
-  --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d --cap-drop ALL \
+  --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d:uid=101,gid=101 --cap-drop ALL \
   --env PYN_API_URL=http://pyn-core:7878 \
   ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>
 ```

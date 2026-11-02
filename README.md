@@ -39,7 +39,7 @@ Tag-driven: `make release` opens a version-bump PR, `make release-publish` tags 
 Run the image next to `pyn-core`; it serves the app and proxies `/v1` and `/healthz` to the API at `PYN_API_URL` (default `http://pyn-core:7878`):
 
 ```bash
-docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d \
+docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d:uid=101,gid=101 \
   -e PYN_API_URL=http://pyn-core:7878 ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>
 ```
 
