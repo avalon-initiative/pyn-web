@@ -2786,6 +2786,11 @@ export interface components {
        * @description Paths with a head revision.
        */
       files: number
+      /**
+       * Format: int64
+       * @description Bytes of LFS objects. The storage cap applies to `stored_bytes` plus this.
+       */
+      lfs_bytes: number
       /** @description The repository's id. */
       repo_id: string
       /** @description `owner/name`. */
@@ -2797,7 +2802,10 @@ export interface components {
        * @description The repository's own storage cap in bytes; null when it has none.
        */
       storage_cap: number | null
-      /** Format: int64 */
+      /**
+       * Format: int64
+       * @description Bytes of distinct revision content.
+       */
       stored_bytes: number
     }
     /**
@@ -2809,6 +2817,11 @@ export interface components {
       folders: components['schemas']['FolderUsage'][]
       /** @description The 20 largest, largest first. */
       largest_paths: components['schemas']['PathUsage'][]
+      /**
+       * Format: int64
+       * @description Bytes of the repository's LFS objects, not part of the folders and paths.
+       */
+      lfs_bytes: number
       repo_id: string
       /** @description `owner/name`. */
       repository: string
@@ -3182,6 +3195,11 @@ export interface components {
     Usage: {
       /**
        * Format: int64
+       * @description Bytes of LFS objects. The storage limit applies to `stored_bytes` plus this.
+       */
+      lfs_bytes: number
+      /**
+       * Format: int64
        * @description Organization members; null for a user.
        */
       members: number | null
@@ -3189,7 +3207,7 @@ export interface components {
       repositories: number
       /**
        * Format: int64
-       * @description Bytes of distinct content, counted once per repository.
+       * @description Bytes of distinct revision content, counted once per repository.
        */
       stored_bytes: number
     }

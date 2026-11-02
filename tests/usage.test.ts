@@ -21,10 +21,11 @@ import OrgView from '../src/views/OrgView.vue'
 import OwnerUsageView from '../src/views/OwnerUsageView.vue'
 import RepoSettingsView from '../src/views/RepoSettingsView.vue'
 
-const row = (name: string, bytes: number, cap: number | null = null): RepoUsage => ({
+const row = (name: string, bytes: number, cap: number | null = null, lfs = 0): RepoUsage => ({
   repository: `acme/${name}`,
   repo_id: `id-${name}`,
   stored_bytes: bytes,
+  lfs_bytes: lfs,
   files: 3,
   revisions: 4,
   storage_cap: cap,
@@ -39,14 +40,15 @@ const ownerUsage: OwnerUsage = {
     effective: { repositories: null, members: null, storage_bytes: 1000 },
     own: { repositories: null, members: null, storage_bytes: null },
   },
-  usage: { repositories: 2, members: null, stored_bytes: 600 },
-  repositories: [row('big', 500, 800), row('small', 100)],
+  usage: { repositories: 2, members: null, stored_bytes: 600, lfs_bytes: 0 },
+  repositories: [row('big', 500, 800), row('small', 100, null, 50)],
 }
 
 const breakdown: RepoUsageBreakdown = {
   repository: 'acme/big',
   repo_id: 'id-big',
   stored_bytes: 500,
+  lfs_bytes: 0,
   storage_cap: 800,
   folders: [{ folder: 'art', stored_bytes: 400, files: 2 }],
   largest_paths: [{ path: 'art/hero.psd', stored_bytes: 300, revisions: 2 }],
@@ -130,6 +132,14 @@ describe('OwnerUsageView', () => {
     ])
     meter.vm.$emit('open', ownerUsage.repositories[0])
     expect(push).toHaveBeenCalledWith('/acme/big')
+  })
+
+  it('shows the LFS part of each repository next to its content', async () => {
+    stubServer([])
+    const w = mountView()
+    await flushPromises()
+    expect(w.text()).toContain('LFS')
+    expect(w.findComponent(PynOwnerUsage).props('usage').repositories[1].lfs_bytes).toBe(50)
   })
 
   it('shows the server refusal plainly', async () => {
