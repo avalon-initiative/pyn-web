@@ -74,20 +74,23 @@ jobs:
 
       - name: Smoke test
         run: |
+          trap 'test $? -eq 0 || { docker ps -a; docker logs web; }' EXIT
           base=$(sed -n 's/^ARG NGINX_IMAGE=//p' Dockerfile)
           docker network create smoke
           docker run -d --name pyn-core --network smoke "$base"
           docker run -d --name web --network smoke --read-only \
             --tmpfs /tmp --tmpfs /etc/nginx/conf.d --cap-drop ALL \
             -e PYN_API_URL=http://pyn-core:8080 -p 8080:8080 pyn-web:ci
+          ready=
           for _ in $(seq 20); do
-            curl -fs http://127.0.0.1:8080/nginx-health >/dev/null && break
+            curl -fs http://127.0.0.1:8080/nginx-health >/dev/null && ready=1 && break
             sleep 1
           done
-          curl -fsS http://127.0.0.1:8080/nginx-health
+          test -n "$ready"
           curl -fsS http://127.0.0.1:8080/some/client/route | grep -q '<div id="app">'
-          curl -fsSI http://127.0.0.1:8080/ | grep -i 'content-security-policy'
-          curl -fsSI http://127.0.0.1:8080/ | grep -i 'cache-control: no-cache'
+          headers=$(curl -fsS -D - -o /dev/null http://127.0.0.1:8080/)
+          grep -qi 'content-security-policy' <<<"$headers"
+          grep -qi 'cache-control: no-cache' <<<"$headers"
           # the stub answers 404 for /v1/, so 404 (not our 502) proves the proxy reached it by name
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/v1/)" = 404
           docker inspect --format '{{.State.Health.Status}}' web
