@@ -189,6 +189,22 @@ describe('RepoPolicyView', () => {
     expect(editor(w).exists()).toBe(true)
   })
 
+  it('passes the lockable disagreements of the preview to the library component', async () => {
+    const withDisagreements = {
+      ...summary,
+      disagreements: [
+        { path: 'a.bin', kind: 'lockable_shared' as const },
+        { path: 'b.bin', kind: 'exclusive_not_lockable' as const },
+      ],
+    }
+    vi.mocked(repos.previewPolicy).mockResolvedValue(withDisagreements)
+    const w = await edited()
+    editor(w).vm.$emit('save')
+    await flushPromises()
+    expect(preview(w).props('preview')).toEqual(withDisagreements)
+    expect(repos.checkin).not.toHaveBeenCalled()
+  })
+
   it('goes back to editing with the text intact', async () => {
     const w = await edited('keep')
     editor(w).vm.$emit('save')

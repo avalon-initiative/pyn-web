@@ -2294,6 +2294,13 @@ export interface components {
       repo: string
       repo_id: string
     }
+    /** @description A path whose `lockable` attribute and policy mode disagree. */
+    LockableDisagreement: {
+      kind: components['schemas']['LockableDisagreementKind']
+      path: string
+    }
+    /** @enum {string} */
+    LockableDisagreementKind: 'lockable_shared' | 'exclusive_not_lockable'
     LoginRequest: {
       password: string
       username: string
@@ -2612,6 +2619,8 @@ export interface components {
     }
     /** @description What a proposed policy would change in the repository, without applying it. */
     PolicyPreview: {
+      /** @description Paths where `lockable` in `.gitattributes` (at the default branch tip) and the proposed policy's mode disagree. Advisory: the policy stays the authority. */
+      disagreements?: components['schemas']['LockableDisagreement'][]
       /** @description Live locks that would be released because their path becomes shared. */
       released_locks: components['schemas']['Lock'][]
       /** @description Diverged shared versions on other branches of the paths that would become exclusive; each would be stranded. */
