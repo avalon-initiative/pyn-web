@@ -2,6 +2,7 @@
 # Exercises scripts/release.sh, release-meta.sh and verify-release-version.sh in a throwaway repo
 # with a bare origin and a stub gh. No network, nothing real is pushed.
 set -uo pipefail
+unset YES VER TITLE SKIP_CHECKS
 
 src="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
