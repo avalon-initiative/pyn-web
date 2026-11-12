@@ -92,7 +92,7 @@ release-checks:
 	bash scripts/release-checks.sh
 
 # Branch, bump, open the release PR; after the squash merge, release-publish tags the merged commit (docs/releasing.md).
-# Usage: make release [VER=x.y.z] [TITLE="Some title"] [SKIP_CHECKS=1] [YES=1]
+# Usage: make release [VER=x.y.z] [TITLE="Some title"] [SKIP_CHECKS=1] [FORCE_CHECKS=1] [YES=1]
 release:
 	@bash scripts/release.sh release
 

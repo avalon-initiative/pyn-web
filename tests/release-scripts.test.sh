@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Exercises scripts/release.sh, release-meta.sh and verify-release-version.sh in a throwaway repo
+# Exercises scripts/release.sh, ci-green-for-tree.sh, release-meta.sh and verify-release-version.sh in a throwaway repo
 # with a bare origin and a stub gh. No network, nothing real is pushed.
 set -uo pipefail
-unset YES VER TITLE SKIP_CHECKS
+unset YES VER TITLE SKIP_CHECKS FORCE_CHECKS GH_API_FAIL GH_REPO GITHUB_REPOSITORY
 
 src="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
@@ -18,16 +18,29 @@ expect() { # expect <name> <condition-exit-code>
 mkdir "$tmp/bin"
 cat >"$tmp/bin/gh" <<'STUB'
 #!/usr/bin/env bash
+if [[ "$1" == "api" ]]; then # answers from the JSON files in $GH_FIX through the real --jq filter
+  ep="$2"; shift 2; q=.
+  while [[ $# -gt 0 ]]; do [[ "$1" == "--jq" ]] && q="$2"; shift; done
+  [[ -z "${GH_API_FAIL:-}" ]] || exit 1
+  case "$ep" in
+    */pulls) f="$GH_FIX/pulls.json" ;;
+    */git/commits/*) f="$GH_FIX/commit-${ep##*/}.json" ;;
+    */actions/runs*) f="$GH_FIX/runs.json" ;;
+    *) exit 1 ;;
+  esac
+  [[ -f "$f" ]] || exit 1
+  exec jq -r "$q" "$f"
+fi
 echo "$*" >>"$GH_LOG"
 [[ "${GH_AUTH_FAIL:-}" == "1" && "$1" == "auth" ]] && exit 1
 [[ "$1 $2" == "pr create" ]] && echo "https://example.invalid/pull/1"
 exit 0
 STUB
 chmod +x "$tmp/bin/gh"
-export PATH="$tmp/bin:$PATH" GH_LOG="$tmp/gh.log"
+export PATH="$tmp/bin:$PATH" GH_LOG="$tmp/gh.log" GH_FIX="$tmp/fix"
 
 setup() { # fresh work repo + bare origin, on main with version 0.1.0
-  rm -rf "$tmp/origin.git" "$tmp/work"
+  rm -rf "$tmp/origin.git" "$tmp/work" "$GH_FIX"; mkdir -p "$GH_FIX"
   git init -q --bare -b main "$tmp/origin.git"
   git clone -q "$tmp/origin.git" "$tmp/work" 2>/dev/null
   cd "$tmp/work" || exit 1
@@ -37,7 +50,7 @@ setup() { # fresh work repo + bare origin, on main with version 0.1.0
   git config commit.gpgSign false
   git switch -q -c main 2>/dev/null || true
   mkdir scripts
-  cp "$src"/scripts/{release.sh,release-meta.sh,verify-release-version.sh} scripts/
+  cp "$src"/scripts/{release.sh,release-meta.sh,verify-release-version.sh,ci-green-for-tree.sh} scripts/
   printf '#!/usr/bin/env bash\necho gate-ran >>"$GATE_LOG"\n[[ "${GATE_FAIL:-}" != 1 ]]\n' >scripts/release-checks.sh
   printf '{\n  "name": "x",\n  "version": "0.1.0",\n  "lockfileVersion": 3,\n  "packages": {\n    "": { "name": "x", "version": "0.1.0" }\n  }\n}\n' >package-lock.json
   printf '{\n  "name": "x",\n  "version": "0.1.0"\n}\n' >package.json
@@ -100,6 +113,54 @@ setup; refuse "gh not authenticated" "gh is not authenticated" VER=0.2.0 TITLE= 
 setup; refuse "gate fails" "checks failed" VER=0.2.0 TITLE= YES=1 GATE_FAIL=1
 setup; refuse "no tty and no values" "not a terminal"
 [[ -z "$(git status --porcelain)" ]]; expect "tree still clean" $?
+
+# ci-green-for-tree.sh: a passing CI run on a PR head with the same tree, else non-zero with a reason
+head=1111111111111111111111111111111111111111
+fixtures() { # fixtures <pr-head-tree> <ci-conclusion>
+  printf '[{"number":7,"head":{"sha":"%s"}}]\n' "$head" >"$GH_FIX/pulls.json"
+  printf '{"tree":{"sha":"%s"}}\n' "$1" >"$GH_FIX/commit-$head.json"
+  printf '{"workflow_runs":[{"name":"Other","conclusion":"failure","created_at":"2026-01-02T00:00:00Z","html_url":"x"},{"name":"CI","conclusion":%s,"status":"in_progress","created_at":"2026-01-01T00:00:00Z","html_url":"https://example.invalid/run/1"}]}\n' "$2" >"$GH_FIX/runs.json"
+}
+green() { bash scripts/ci-green-for-tree.sh "$@" </dev/null >"$tmp/out" 2>&1; }
+green_refused() { # green_refused <name> <expected-text> [env...]
+  local name="$1" text="$2"; shift 2
+  env "$@" bash scripts/ci-green-for-tree.sh origin/main </dev/null >"$tmp/out" 2>&1
+  local rc=$?
+  [[ $rc -ne 0 ]] && grep -q "$text" "$tmp/out"; expect "tree check: $name" $?
+}
+setup
+tree="$(git rev-parse 'origin/main^{tree}')"
+other=2222222222222222222222222222222222222222
+fixtures "$tree" '"success"'
+green origin/main; expect "tree check passes on a matching tree with a green run" $?
+grep -q "PR #7 (https://example.invalid/run/1)" "$tmp/out"; expect "tree check names the PR and run" $?
+green; expect "tree check defaults to HEAD" $?
+fixtures "$other" '"success"'; green_refused "refuses a different tree" "different tree"
+fixtures "$tree" '"failure"'; green_refused "refuses a failing run" "is failure"
+fixtures "$tree" null; green_refused "refuses a run still in progress" "is in_progress"
+printf '{"workflow_runs":[{"name":"Other","conclusion":"success","created_at":"2026-01-01T00:00:00Z","html_url":"x"}]}\n' >"$GH_FIX/runs.json"
+green_refused "refuses a head with no CI run" "is none"
+printf '[]\n' >"$GH_FIX/pulls.json"; green_refused "refuses a commit with no pull request" "no pull request"
+fixtures "$tree" '"success"'; green_refused "says why on an API error" "cannot decide" GH_API_FAIL=1
+green nonexistent; expect "tree check fails on an unknown commit" $([[ $? -ne 0 ]] && echo 0 || echo 1)
+
+# release.sh: the gate is skipped on a green tree; FORCE_CHECKS and a non-matching tree run it
+setup
+tree="$(git rev-parse 'origin/main^{tree}')"
+fixtures "$tree" '"success"'
+refuse "FORCE_CHECKS runs the gate despite a green tree" "checks failed" VER=0.2.0 TITLE= YES=1 FORCE_CHECKS=1 GATE_FAIL=1
+refuse "SKIP_CHECKS with FORCE_CHECKS" "contradict" VER=0.2.0 TITLE= YES=1 SKIP_CHECKS=1 FORCE_CHECKS=1
+VER=0.2.0 TITLE= YES=1 FORCE_CHECKS=1 run release; [[ -s "$tmp/gate.log" ]]; expect "FORCE_CHECKS runs the gate" $?
+setup
+tree="$(git rev-parse 'origin/main^{tree}')"
+fixtures "$tree" '"success"'
+VER=0.2.0 TITLE= YES=1 GATE_FAIL=1 run release; expect "a green tree skips the failing gate" $?
+[[ ! -s "$tmp/gate.log" ]]; expect "the gate did not run on a green tree" $?
+grep -q "skipping the local checks; ci-green-for-tree: tree .* passed CI on PR #7" "$tmp/out"; expect "the skip says why" $?
+setup
+fixtures "$other" '"success"'; refuse "a different tree still runs the gate" "checks failed" VER=0.2.0 TITLE= YES=1 GATE_FAIL=1
+fixtures "$tree" '"failure"'; refuse "a failing CI run still runs the gate" "checks failed" VER=0.2.0 TITLE= YES=1 GATE_FAIL=1
+VER=0.2.0 TITLE= YES=1 GATE_FAIL=1 SKIP_CHECKS=1 GH_API_FAIL=1 run release; expect "SKIP_CHECKS wins without any CI data" $?
 
 # publish on a simulated squash merge
 setup

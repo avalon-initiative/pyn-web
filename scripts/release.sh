@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Release flow. `release` bumps the version on a branch and opens a PR; `publish` tags the merged commit.
-# Env: VER, TITLE, SKIP_CHECKS=1 (release); YES=1 answers every prompt yes. See docs/releasing.md.
+# Env: VER, TITLE, SKIP_CHECKS=1, FORCE_CHECKS=1 (release); YES=1 answers every prompt yes. See docs/releasing.md.
 set -euo pipefail
 
 cmd="${1:-}"
@@ -51,6 +51,26 @@ cleanup_hint() {
   [[ $rc -eq 0 ]] || echo "release: failed; clean up with: git switch main && git branch -D $release_branch" >&2
 }
 
+# The release branch is cut from HEAD, which preconditions made equal to origin/main, so the tree check is on that commit.
+run_checks() {
+  [[ "${SKIP_CHECKS:-}" == "1" && "${FORCE_CHECKS:-}" == "1" ]] && die "SKIP_CHECKS and FORCE_CHECKS contradict each other"
+  if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
+    echo "release: skipping pre-release checks (SKIP_CHECKS=1)"
+    return
+  fi
+  if [[ "${FORCE_CHECKS:-}" != "1" ]]; then
+    local note
+    if note="$(bash scripts/ci-green-for-tree.sh origin/main 2>&1)"; then
+      echo "release: skipping the local checks; $note"
+      return
+    fi
+    echo "release: running pre-release checks; $note"
+  else
+    echo "release: running pre-release checks (FORCE_CHECKS=1)"
+  fi
+  bash scripts/release-checks.sh || die "pre-release checks failed; nothing was changed"
+}
+
 release() {
   preconditions
   gh auth status >/dev/null 2>&1 || die "gh is not authenticated (gh auth login)"
@@ -58,12 +78,7 @@ release() {
     [[ -t 0 ]] || die "stdin is not a terminal; pass VER=x.y.z TITLE=\"...\" YES=1 (see docs/releasing.md)"
   fi
 
-  if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
-    echo "release: skipping pre-release checks (SKIP_CHECKS=1)"
-  else
-    echo "release: running pre-release checks (scripts/release-checks.sh)"
-    bash scripts/release-checks.sh || die "pre-release checks failed; nothing was changed"
-  fi
+  run_checks
 
   local current ver title slug tag branch
   current="$(pkg_version)"
