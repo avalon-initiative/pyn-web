@@ -16,7 +16,7 @@ const FRIENDLY: Record<string, string> = {
   repo_not_found: 'That repository does not exist, or you have no role in it.',
   repo_exists: 'A repository with that name already exists for this owner.',
   invalid_repo_name:
-    'Use 1 to 100 lowercase letters, digits, "-", "_" or ".", starting with a letter or digit and not ending in ".".',
+    'Use 1 to 100 letters, digits, "-", "_" or ".", starting with a letter or digit and not ending in ".".',
   path_not_found: 'That folder does not exist in this repository.',
   not_namespace_owner: 'Only the repository owner, as an admin, can do that.',
   invalid_verification: 'This verification link is not valid. It may be used already or expired.',
