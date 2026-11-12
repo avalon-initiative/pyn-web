@@ -115,7 +115,7 @@ describe('error text', () => {
   it('explains the repository error codes', () => {
     expect(describeError(new ApiError(404, 'repo_not_found', 'x'))).toContain('no role')
     expect(describeError(new ApiError(409, 'repo_exists', 'x'))).toContain('already exists')
-    expect(describeError(new ApiError(400, 'invalid_repo_name', 'x'))).toContain('lowercase')
+    expect(describeError(new ApiError(400, 'invalid_repo_name', 'x'))).toContain('1 to 100 letters')
     expect(describeError(new ApiError(403, 'not_namespace_owner', 'x'))).toContain('owner')
     expect(describeError(new ApiError(409, 'lock_held', 'held by bob'))).toBe('held by bob')
   })
