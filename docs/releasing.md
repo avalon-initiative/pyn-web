@@ -18,9 +18,10 @@ pyn-web is an application, so nothing is published to a package registry. There 
    ```
 
    It refuses unless you are on `main`, the tree is clean, `main` matches `origin/main` and `gh` is authenticated. It runs
-   `scripts/release-checks.sh` (format, lint, typecheck, tests, build, API drift, public boundary), then creates
+   `scripts/release-checks.sh` (format, lint, typecheck, tests, build, API drift, public boundary) unless
+   [CI already passed on this tree](#when-the-checks-are-skipped), then creates
    `release-v<ver>`, bumps `package.json` and `package-lock.json`, commits `[noissue] - Release <tag>` and, on `y`, pushes
-   the branch and opens the PR. `make release-skip-tests` (or `SKIP_CHECKS=1`) skips the checks. The version must be greater
+   the branch and opens the PR. `make release-skip-tests` (or `SKIP_CHECKS=1`) skips the checks and `FORCE_CHECKS=1` always runs them. The version must be greater
    than the current one and the tag must not exist locally or on origin. Nothing is deleted if a step fails; the message
    says how to clean up.
 
@@ -42,6 +43,18 @@ The scripts are `scripts/release.sh` and are tested against a throwaway repo, ba
 
 The workflow refuses a tag whose commit is not on `main`, or whose `X.Y.Z` differs from `package.json`
 (`scripts/verify-release-version.sh`).
+
+## When the checks are skipped
+
+The checks would repeat what CI already ran on the release pull request. [`scripts/ci-green-for-tree.sh`](../scripts/ci-green-for-tree.sh)
+`[<commit>]` exits 0 only when the commit came from a pull request whose head has the same git tree and whose latest `CI`
+run concluded `success`. It prints one line saying which pull request and run satisfied it, or why not; any error is non-zero.
+
+`make release` runs it on `origin/main`, the commit the release branch is cut from, and skips the local checks with a message
+when it passes. `FORCE_CHECKS=1` runs them regardless; `SKIP_CHECKS=1` skips them without looking; both together is refused.
+It fails safe: when the check cannot decide (another pull request merged in between so the tree differs, a failed or missing
+CI run, an API error), the checks simply run. A squash merge of an unchanged release branch keeps the pull request's tree,
+which is the normal case. The tag workflow is unaffected: it always runs its checks, because they share a build with the packaging.
 
 ## Pre-releases and image tags
 
