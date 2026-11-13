@@ -26,7 +26,7 @@ import OrgMembersView from '../src/views/OrgMembersView.vue'
 import OrgSettingsView from '../src/views/OrgSettingsView.vue'
 import RepoInvitesView from '../src/views/RepoInvitesView.vue'
 import RepoMembersView from '../src/views/RepoMembersView.vue'
-import RepoSettingsView from '../src/views/RepoSettingsView.vue'
+import RepoGeneralView from '../src/views/RepoGeneralView.vue'
 import { orgs, repoPolicy } from './fixtures/org-data'
 
 const freeze = (frozen: boolean, owner = 'acme'): OwnerFreeze => ({
@@ -252,15 +252,14 @@ describe('gating', () => {
       expect(Boolean(w.findComponent(PynInvites).props('readonly'))).toBe(frozen)
     })
 
-    it.each([true, false])('RepoSettingsView sets readonly to %s', async (frozen) => {
+    it.each([true, false])('RepoGeneralView sets readonly to %s', async (frozen) => {
       stubFetch()
-      const w = mount(RepoSettingsView, {
+      const w = mount(RepoGeneralView, {
         global: {
           provide: {
             ...provide(repoKey as symbol, repoCtx(frozen)),
             [routerKey as symbol]: { replace: vi.fn(), push: vi.fn() },
           },
-          stubs: { RepoPolicyView: true },
         },
       })
       await flushPromises()
