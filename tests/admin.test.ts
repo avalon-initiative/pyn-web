@@ -4,6 +4,7 @@ import {
   PynPageNotFound,
   PynTopBar,
   accountActions,
+  adminNavItems,
   applyUpdate,
   navItems,
 } from '@avalon-initiative/pyn-common-ui'
@@ -37,8 +38,9 @@ describe('admin state', () => {
   })
 
   it('shows the Accounts link only to administrators', () => {
-    expect(navItems(false).some((i) => i.id === 'accounts')).toBe(false)
-    expect(navItems(true).some((i) => i.href === '/_/admin/accounts')).toBe(true)
+    expect(navItems(false).some((i) => i.id === 'admin')).toBe(false)
+    expect(navItems(true).some((i) => i.id === 'admin')).toBe(true)
+    expect(adminNavItems().some((i) => i.href === '/_/admin/accounts')).toBe(true)
     expect(activeNav('/_/admin/accounts')).toBe('accounts')
   })
 
@@ -55,9 +57,9 @@ describe('PynTopBar', () => {
     return w
   }
 
-  it('links Accounts in the account menu for administrators only', async () => {
-    expect((await open(true)).find('[href="/_/admin/accounts"]').exists()).toBe(true)
-    expect((await open()).find('[href="/_/admin/accounts"]').exists()).toBe(false)
+  it('links server administration in the account menu for administrators only', async () => {
+    expect((await open(true)).find('[href="/_/admin"]').exists()).toBe(true)
+    expect((await open()).find('[href="/_/admin"]').exists()).toBe(false)
   })
 })
 

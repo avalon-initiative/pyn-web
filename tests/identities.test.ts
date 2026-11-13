@@ -35,6 +35,11 @@ describe('PynIdentities', () => {
 describe('settings navigation', () => {
   it('adds linked sign-in only when a provider exists', () => {
     expect(accountNavItems(false)).toEqual(accountNav)
-    expect(accountNavItems(true).map((i) => i.id)).toEqual(['keys', 'tokens', 'identities'])
+    expect(accountNavItems(true).map((i) => i.id)).toEqual([
+      'password',
+      'keys',
+      'tokens',
+      'identities',
+    ])
   })
 })
