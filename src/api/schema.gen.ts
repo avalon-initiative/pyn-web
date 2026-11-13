@@ -2975,6 +2975,10 @@ export interface components {
     ServerCapabilities: {
       /** @description The server accepts pushed commits and serves fetches (`/push`, `/fetch`), so a client may keep commits locally. */
       local_commits: boolean
+      /** @description The commit the server binary was built from; null when the build did not record one. */
+      revision?: string | null
+      /** @description The server's release version; empty when an older server did not report one. */
+      version: string
     }
     ServiceCredentialInfo: {
       /** Format: date-time */

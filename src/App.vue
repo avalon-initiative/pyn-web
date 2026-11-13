@@ -13,6 +13,9 @@ import {
   signOut,
 } from './api/auth'
 import { fetchMe } from './api/admin'
+import { fetchServerBuild } from './api/server'
+import { webRevision, webVersion } from './state/version.state'
+import type { ServerBuild } from './types/version.types'
 import { describeError } from './api/client'
 import { blockedStatus } from './state/account.state'
 import { listMyInvitations, listMyOrgs } from './api/orgs'
@@ -30,6 +33,7 @@ import {
   PynSignIn,
   PynSideNav,
   PynTopBar,
+  PynVersionFooter,
   applyTheme,
   loadTheme,
   repoSlug,
@@ -58,6 +62,7 @@ const route = useRoute()
 const user = ref('')
 const admin = ref(false)
 const error = ref('')
+const serverBuild = ref<ServerBuild | null>(null)
 const { nameMessage, checkName } = useNameCheck()
 const busy = ref(false)
 const registration = ref<RegistrationInfo | null>(null)
@@ -198,6 +203,7 @@ function followLink(e: MouseEvent) {
 }
 
 onMounted(async () => {
+  void fetchServerBuild().then((b) => (serverBuild.value = b))
   const status = await fetchSetupStatus().catch(() => null)
   if (status && !status.initialised) setup.value = status
   registration.value = await fetchRegistration().catch(() => null)
@@ -273,6 +279,14 @@ onMounted(async () => {
           />
         </template>
         <RouterView />
+        <template #footer>
+          <PynVersionFooter
+            :web-version="webVersion"
+            :web-revision="webRevision"
+            :server-version="serverBuild?.version"
+            :server-revision="serverBuild?.revision"
+          />
+        </template>
       </PynShell>
     </template>
   </div>
