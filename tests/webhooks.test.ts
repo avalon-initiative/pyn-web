@@ -1,6 +1,5 @@
 import {
   PynDrawer,
-  PynPageNotFound,
   PynWebhookDetail,
   PynWebhookForm,
   PynWebhooks,
@@ -58,10 +57,11 @@ describe('webhooks state', () => {
     expect(asStatus('bogus')).toBe('')
   })
 
-  it('adds the Webhooks page to the sidebar for administrators only', () => {
-    expect(sideNavItems(false).some((i) => i.id === 'webhooks')).toBe(false)
-    expect(sideNavItems(true).some((i) => i.href === '/_/admin/webhooks')).toBe(true)
-    expect(activeNav('/_/admin/webhooks')).toBe('webhooks')
+  it('reaches the Webhooks page through Server administration, not its own sidebar entry', () => {
+    expect(sideNavItems(true).some((i) => i.id === 'webhooks')).toBe(false)
+    expect(sideNavItems(true).some((i) => i.id === 'admin')).toBe(true)
+    expect(sideNavItems(false).some((i) => i.id === 'admin')).toBe(false)
+    expect(activeNav('/_/admin/webhooks')).toBe('admin')
     expect(makeRouter(createMemoryHistory()).resolve('/_/admin/webhooks').name).toBe(
       'admin-webhooks',
     )
@@ -73,12 +73,12 @@ describe('AdminWebhooksView', () => {
   let handler: (s: Sent) => Response
   const expired = vi.fn()
 
-  const view = (admin = true) =>
+  const view = () =>
     mount(AdminWebhooksView, {
       attachTo: document.body,
       global: {
         provide: {
-          [sessionKey as symbol]: { user: ref('root'), admin: ref(admin), expire: expired },
+          [sessionKey as symbol]: { user: ref('root'), admin: ref(true), expire: expired },
         },
       },
     })
@@ -109,13 +109,6 @@ describe('AdminWebhooksView', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     document.body.innerHTML = ''
-  })
-
-  it('shows not found, and sends nothing, to a non-administrator', async () => {
-    const w = view(false)
-    await flushPromises()
-    expect(w.findComponent(PynPageNotFound).exists()).toBe(true)
-    expect(sent).toEqual([])
   })
 
   it('lists subscriptions and keeps the drawer closed until a row is selected', async () => {

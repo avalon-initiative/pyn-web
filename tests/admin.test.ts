@@ -4,7 +4,6 @@ import {
   PynPageNotFound,
   PynTopBar,
   accountActions,
-  adminNavItems,
   applyUpdate,
   navItems,
 } from '@avalon-initiative/pyn-common-ui'
@@ -37,11 +36,17 @@ describe('admin state', () => {
     expect(applyUpdate(accounts.slice(1, 2), active, 'pending_approval')).toEqual([])
   })
 
-  it('shows the Accounts link only to administrators', () => {
+  it('shows one Server administration sidebar entry, to administrators only', () => {
     expect(navItems(false).some((i) => i.id === 'admin')).toBe(false)
-    expect(navItems(true).some((i) => i.id === 'admin')).toBe(true)
-    expect(adminNavItems().some((i) => i.href === '/_/admin/accounts')).toBe(true)
-    expect(activeNav('/_/admin/accounts')).toBe('accounts')
+    const items = navItems(true).filter((i) => i.href === '/_/admin')
+    expect(items.map((i) => i.id)).toEqual(['admin'])
+    expect(navItems(true).some((i) => i.id === 'accounts')).toBe(false)
+  })
+
+  it('marks the admin sidebar item for every admin path', () => {
+    for (const p of ['/_/admin', '/_/admin/accounts', '/_/admin/audit', '/_/admin/webhooks'])
+      expect(activeNav(p)).toBe('admin')
+    expect(activeNav('/_/settings/keys')).toBe('')
   })
 
   it('routes the page under /_/', () => {
@@ -57,9 +62,13 @@ describe('PynTopBar', () => {
     return w
   }
 
-  it('links server administration in the account menu for administrators only', async () => {
-    expect((await open(true)).find('[href="/_/admin"]').exists()).toBe(true)
-    expect((await open()).find('[href="/_/admin"]').exists()).toBe(false)
+  it('has Account settings for everyone and Server administration for administrators only', async () => {
+    const admin = await open(true)
+    expect(admin.find('a[href="/_/settings"]').text()).toBe('Account settings')
+    expect(admin.find('a[href="/_/admin"]').text()).toBe('Server administration')
+    const user = await open()
+    expect(user.find('a[href="/_/settings"]').exists()).toBe(true)
+    expect(user.find('a[href="/_/admin"]').exists()).toBe(false)
   })
 })
 
@@ -138,40 +147,28 @@ describe('AdminAccountsView', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   const json = (body: unknown) => Promise.resolve(new Response(JSON.stringify(body)))
-  const view = (admin: boolean) =>
-    mount(AdminAccountsView, {
-      global: { provide: { [sessionKey as symbol]: { user: ref('root'), admin: ref(admin) } } },
-    })
 
-  it('shows not found and calls nothing for a non-administrator', async () => {
-    const fetchMock = vi.fn()
-    vi.stubGlobal('fetch', fetchMock)
-    const w = view(false)
-    await flushPromises()
-    expect(w.text()).toContain('Page not found')
-    expect(fetchMock).not.toHaveBeenCalled()
-  })
-
-  it('loads accounts and the audit log, then disables with a reason', async () => {
+  it('loads accounts only, then disables with a reason', async () => {
     const calls: string[] = []
     vi.stubGlobal(
       'fetch',
       vi.fn((url: string, init?: RequestInit) => {
         calls.push(`${init?.method ?? 'GET'} ${url} ${init?.body ?? ''}`.trim())
-        if (url.startsWith('/v1/admin/audit')) return json({ entries: [], next_before: null })
         if (url.endsWith('/disable')) return json({ ...bob, status: 'disabled' })
         return json(accounts)
       }),
     )
-    const w = view(true)
+    const w = mount(AdminAccountsView, {
+      global: { provide: { [sessionKey as symbol]: { user: ref('root'), admin: ref(true) } } },
+    })
     await flushPromises()
-    expect(w.text()).toContain('Server audit log')
+    expect(w.text()).not.toContain('Server audit log')
     expect(w.text()).toContain('bob')
     await buttons(w, 'Disable')[0].trigger('click')
     await w.find('input').setValue('spam')
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(calls).toContain('POST /v1/admin/users/bob/disable {"reason":"spam"}')
-    expect(calls.filter((c) => c.includes('/v1/admin/audit'))).toHaveLength(2)
+    expect(calls.some((c) => c.includes('/v1/admin/audit'))).toBe(false)
   })
 })
