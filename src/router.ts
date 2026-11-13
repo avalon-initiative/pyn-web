@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw, RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
+import AdminAuditView from './views/AdminAuditView.vue'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AdminWebhooksView from './views/AdminWebhooksView.vue'
+import AdminView from './views/AdminView.vue'
 import AccountView from './views/AccountView.vue'
 import InvitationsView from './views/InvitationsView.vue'
 import KeysView from './views/KeysView.vue'
@@ -39,8 +41,16 @@ export const routes = [
   { path: '/', name: 'repos', component: ReposView },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
-  { path: '/_/admin/accounts', name: 'admin-accounts', component: AdminAccountsView },
-  { path: '/_/admin/webhooks', name: 'admin-webhooks', component: AdminWebhooksView },
+  {
+    path: '/_/admin',
+    component: AdminView,
+    children: [
+      { path: '', redirect: '/_/admin/accounts' },
+      { path: 'accounts', name: 'admin-accounts', component: AdminAccountsView },
+      { path: 'audit', name: 'admin-audit', component: AdminAuditView },
+      { path: 'webhooks', name: 'admin-webhooks', component: AdminWebhooksView },
+    ],
+  },
   { path: '/_/new', name: 'new-repo', component: NewRepoView },
   { path: '/_/new-org', name: 'new-org', component: NewOrgView },
   { path: '/_/orgs', name: 'orgs', component: OrgsView },
