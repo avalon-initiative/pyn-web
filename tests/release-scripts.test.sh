@@ -69,7 +69,7 @@ setup
 VER=0.2.0 TITLE="First stable build!" YES=1 run release
 expect "release succeeds" $?
 [[ "$(git branch --show-current)" == "release-v0.2.0" ]]; expect "on release branch" $?
-[[ "$(git log -1 --format=%s)" == "[noissue] - Release v0.2.0-First-stable-build" ]]; expect "commit subject" $?
+[[ "$(git log -1 --format=%s)" == "[RELEASE] - v0.2.0-First-stable-build" ]]; expect "commit subject" $?
 files="$(git show --name-only --format= HEAD)"
 [[ "$(wc -l <<<"$files")" -eq 2 ]] && grep -qx package.json <<<"$files" && grep -qx package-lock.json <<<"$files"; expect "only version files changed" $?
 grep -q '"version": "0.2.0"' package.json && grep -q '"version": "0.2.0"' package-lock.json; expect "both files bumped" $?
@@ -77,7 +77,7 @@ origin_has refs/heads/release-v0.2.0; expect "branch pushed" $?
 ! origin_has refs/heads/main@{0} 2>/dev/null; [[ "$(git --git-dir="$tmp/origin.git" rev-parse main)" == "$(git rev-parse main)" ]]; expect "main untouched" $?
 ! git tag | grep -q .; expect "no local tag" $?
 [[ -z "$(git --git-dir="$tmp/origin.git" tag)" ]]; expect "no remote tag" $?
-grep -q '^pr create .*--title \[noissue\] - Release v0.2.0-First-stable-build' "$GH_LOG"; expect "gh pr create called" $?
+grep -q '^pr create .*--title \[RELEASE\] - v0.2.0-First-stable-build' "$GH_LOG"; expect "gh pr create called" $?
 [[ -s "$tmp/gate.log" ]]; expect "gate ran" $?
 
 # no title, answered no: nothing pushed
@@ -87,7 +87,7 @@ expect "non-tty without YES fails" $([[ $? -ne 0 ]] && echo 0 || echo 1)
 setup
 VER=0.1.1 TITLE= YES=1 SKIP_CHECKS=1 run release
 [[ ! -s "$tmp/gate.log" ]]; expect "SKIP_CHECKS skips the gate" $?
-[[ "$(git log -1 --format=%s)" == "[noissue] - Release v0.1.1" ]]; expect "untitled tag subject" $?
+[[ "$(git log -1 --format=%s)" == "[RELEASE] - v0.1.1" ]]; expect "untitled tag subject" $?
 
 # refusals change nothing
 refuse() { # refuse <name> <expected-text> [env...]
@@ -166,7 +166,7 @@ VER=0.2.0 TITLE= YES=1 GATE_FAIL=1 SKIP_CHECKS=1 GH_API_FAIL=1 run release; expe
 setup
 VER=0.2.0 TITLE="Big one" YES=1 run release
 git switch -q main
-git merge -q --squash release-v0.2.0 >/dev/null && git commit -q -m "[noissue] - Release v0.2.0-Big-one (#12)" && git push -q origin main
+git merge -q --squash release-v0.2.0 >/dev/null && git commit -q -m "[RELEASE] - v0.2.0-Big-one (#12)" && git push -q origin main
 YES=1 run publish
 expect "publish succeeds" $?
 origin_has refs/tags/v0.2.0-Big-one; expect "tag pushed" $?
@@ -176,10 +176,22 @@ origin_has refs/tags/v0.2.0-Big-one; expect "tag pushed" $?
 YES=1 run publish
 [[ $? -ne 0 ]] && grep -q "already exists" "$tmp/out"; expect "publish refuses existing tag" $?
 
+# the earlier "[noissue] - Release" subject still publishes; lookalikes do not
+setup
+VER=0.2.0 TITLE="Old form" YES=1 run release
+git switch -q main
+git merge -q --squash release-v0.2.0 >/dev/null && git commit -q -m "[noissue] - Release v0.2.0-Old-form (#13)" && git push -q origin main
+YES=1 run publish
+expect "publish accepts the earlier subject form" $?
+origin_has refs/tags/v0.2.0-Old-form; expect "earlier form tag pushed" $?
+git commit -q --allow-empty -m "[RELEASE] - Release v0.2.0-Odd (#14)" && git push -q origin main
+YES=1 run publish
+[[ $? -ne 0 ]] && grep -q "not a squash-merged release commit" "$tmp/out"; expect "publish refuses the old word after the new prefix" $?
+
 setup
 YES=1 run publish
 [[ $? -ne 0 ]] && grep -q "not a squash-merged release commit" "$tmp/out"; expect "publish refuses non-release HEAD" $?
-git commit -q --allow-empty -m "[noissue] - Release v0.3.0 (#5)" && git push -q origin main
+git commit -q --allow-empty -m "[RELEASE] - v0.3.0 (#5)" && git push -q origin main
 YES=1 run publish
 [[ $? -ne 0 ]] && grep -q "package.json is 0.1.0" "$tmp/out"; expect "publish refuses version mismatch" $?
 git switch -q -c other

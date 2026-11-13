@@ -20,12 +20,12 @@ pyn-web is an application, so nothing is published to a package registry. There 
    It refuses unless you are on `main`, the tree is clean, `main` matches `origin/main` and `gh` is authenticated. It runs
    `scripts/release-checks.sh` (format, lint, typecheck, tests, build, API drift, public boundary) unless
    [CI already passed on this tree](#when-the-checks-are-skipped), then creates
-   `release-v<ver>`, bumps `package.json` and `package-lock.json`, commits `[noissue] - Release <tag>` and, on `y`, pushes
+   `release-v<ver>`, bumps `package.json` and `package-lock.json`, commits `[RELEASE] - <tag>` and, on `y`, pushes
    the branch and opens the PR. `make release-skip-tests` (or `SKIP_CHECKS=1`) skips the checks and `FORCE_CHECKS=1` always runs them. The version must be greater
    than the current one and the tag must not exist locally or on origin. Nothing is deleted if a step fails; the message
    says how to clean up.
 
-2. Squash-merge the PR (the commit subject becomes `[noissue] - Release <tag> (#N)`).
+2. Squash-merge the PR (the commit subject becomes `[RELEASE] - <tag> (#N)`; the earlier `[noissue] - Release <tag> (#N)` form is still accepted by `make release-publish`).
 
 3. Tag the merged commit and push only the tag. This push is what releases:
 

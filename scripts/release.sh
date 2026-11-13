@@ -100,7 +100,7 @@ release() {
   git switch -q -c "$branch"
   npm version --no-git-tag-version "$ver" >/dev/null
   git add -- package.json package-lock.json
-  local subject="[noissue] - Release $tag"
+  local subject="[RELEASE] - $tag"
   git commit -q -m "$subject"
 
   echo "release: tag $tag, version $ver"
@@ -123,11 +123,12 @@ publish() {
   preconditions
   local subject tag ver
   subject="$(git log -1 --format=%s)"
-  local re='^\[noissue\] - Release (v([0-9]+\.[0-9]+\.[0-9]+)(-[A-Za-z0-9._-]+)?) \(#[0-9]+\)$'
+  # The earlier "[noissue] - Release" form still publishes.
+  local re='^(\[RELEASE\] - |\[noissue\] - Release )(v([0-9]+\.[0-9]+\.[0-9]+)(-[A-Za-z0-9._-]+)?) \(#[0-9]+\)$'
   [[ "$subject" =~ $re ]] ||
-    die "HEAD is not a squash-merged release commit ('[noissue] - Release v<ver>[-title] (#N)'): $subject"
-  tag="${BASH_REMATCH[1]}"
-  ver="${BASH_REMATCH[2]}"
+    die "HEAD is not a squash-merged release commit ('[RELEASE] - v<ver>[-title] (#N)'): $subject"
+  tag="${BASH_REMATCH[2]}"
+  ver="${BASH_REMATCH[3]}"
   [[ "$(pkg_version)" == "$ver" ]] || die "package.json is $(pkg_version) at HEAD but the commit releases $ver"
   tag_exists "$tag" && die "tag $tag already exists (locally or on origin)"
   confirm "Create tag $tag on $(git rev-parse --short HEAD) and push it? This starts the release pipeline. [y/N] " ||
