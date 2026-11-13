@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import {
   PynDrawer,
-  PynPageNotFound,
   PynViewHeader,
   PynViewStack,
   PynWebhookDetail,
   PynWebhookForm,
   PynWebhooks,
 } from '@avalon-initiative/pyn-common-ui'
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   createWebhook,
   deleteWebhook,
@@ -21,7 +20,6 @@ import {
   updateWebhook,
 } from '../api/webhooks'
 import { useAction } from '../state/action.state'
-import { sessionKey } from '../state/context.state'
 import { asStatus, replaceById, replaceDelivery, toViewDelivery } from '../state/webhooks.state'
 import type { WebhookCreate, WebhookUpdate } from '@avalon-initiative/pyn-common-ui'
 import type {
@@ -31,7 +29,6 @@ import type {
   WebhookDeliveryStatus,
 } from '../types/webhook.types'
 
-const { admin } = inject(sessionKey)!
 const webhooks = ref<Webhook[]>([])
 const selectedId = ref<number | null>(null)
 const secret = ref('')
@@ -152,14 +149,11 @@ const redeliver = async (id: number, deliveryId: string) => {
   redelivering.value = ''
 }
 
-onMounted(() => {
-  if (admin.value) loadList()
-})
+onMounted(loadList)
 </script>
 
 <template>
-  <PynPageNotFound v-if="!admin" />
-  <PynViewStack v-else>
+  <PynViewStack>
     <PynViewHeader title="Webhooks" />
     <PynWebhooks
       :webhooks="webhooks"
