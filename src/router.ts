@@ -11,6 +11,7 @@ import KeysView from './views/KeysView.vue'
 import IdentitiesView from './views/IdentitiesView.vue'
 import TokensView from './views/TokensView.vue'
 import MyLocksView from './views/MyLocksView.vue'
+import PasswordView from './views/PasswordView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
@@ -59,7 +60,8 @@ export const routes = [
     path: '/_/settings',
     component: AccountView,
     children: [
-      { path: '', redirect: '/_/settings/keys' },
+      { path: '', redirect: '/_/settings/password' },
+      { path: 'password', name: 'password', component: PasswordView },
       { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
       { path: 'tokens', name: 'tokens', component: TokensView, alias: '/_/tokens' },
       { path: 'identities', name: 'identities', component: IdentitiesView },
