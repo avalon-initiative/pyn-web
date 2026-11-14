@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {
-  PynRepoHeader,
+  PynRepoShell,
   PynOwnerFrozenNotice,
   PynRepoNotFound,
-  repoTabs,
+  orgPath,
+  repoShellTabs,
   PynViewError,
   PynViewSummary,
 } from '@avalon-initiative/pyn-common-ui'
@@ -15,17 +16,17 @@ import { getRepo, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
-import { canOpenSettings, isRepoOwner } from '../state/repo-access.state'
+import { isRepoOwner } from '../state/repo-access.state'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
-const user = inject(sessionKey)!.user
+const { user, admin } = inject(sessionKey)!
 const owner = computed(() => String(route.params.owner))
 const name = computed(() => String(route.params.name))
 const section = computed(() => {
-  const s = String(route.path.split('/')[3] ?? '')
-  return s === 'tree' ? '' : s
+  const [first, ...rest] = route.path.split('/').slice(3)
+  return first === 'tree' || first === 'blob' ? '' : [first, ...rest].filter(Boolean).join('/')
 })
 
 const { freeze, frozen } = useOwnerFreeze(owner, getOwnerFreeze)
@@ -75,11 +76,12 @@ provide(repoKey, {
 })
 
 const tabs = computed(() =>
-  repoTabs(
-    permissions.value,
-    canOpenSettings(permissions.value, isRepoOwner(owner.value, user.value, org.value)),
-  ),
+  repoShellTabs(permissions.value, isRepoOwner(owner.value, user.value, org.value), {
+    serverAdmin: admin.value,
+    insights: false,
+  }),
 )
+const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.value}`))
 </script>
 
 <template>
@@ -87,19 +89,23 @@ const tabs = computed(() =>
   <PynViewError v-else-if="error">{{ error }}</PynViewError>
   <template v-else-if="repo">
     <PynOwnerFrozenNotice v-if="freeze" :freeze="freeze" />
-    <PynRepoHeader
+    <PynRepoShell
       :owner="repo.owner"
       :name="repo.name"
       :visibility="repo.visibility"
-      :lease-hours="repo.lease_hours"
-      :role="repo.role"
-      :org-owned="org !== null"
       :tabs="permissions.includes('read') ? tabs : undefined"
       :current="section"
-    />
-    <PynViewSummary v-if="!permissions.includes('read')">
-      You have no role in this repository. Ask an admin to add you or send an invitation.
-    </PynViewSummary>
-    <RouterView v-else />
+      :owner-href="ownerHref"
+    >
+      <template #actions>
+        <span data-lease>{{ repo.lease_hours }}h leases</span>
+        <span v-if="repo.role" data-role>your role: {{ repo.role }}</span>
+        <span v-if="org" data-org>organization</span>
+      </template>
+      <PynViewSummary v-if="!permissions.includes('read')">
+        You have no role in this repository. Ask an admin to add you or send an invitation.
+      </PynViewSummary>
+      <RouterView v-else />
+    </PynRepoShell>
   </template>
 </template>

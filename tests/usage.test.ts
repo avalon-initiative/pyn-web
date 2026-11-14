@@ -1,8 +1,6 @@
 import {
   PynOwnerUsage,
   PynOrgHeader,
-  PynRepoDelete,
-  PynRepoForm,
   PynStorageCapForm,
   PynUsageBreakdown,
   PynUserHeader,
@@ -19,7 +17,7 @@ import { canOpenSettings, canSeeStorage, canSetCap } from '../src/state/repo-acc
 import { routes } from '../src/router'
 import OrgView from '../src/views/OrgView.vue'
 import OwnerUsageView from '../src/views/OwnerUsageView.vue'
-import RepoSettingsView from '../src/views/RepoSettingsView.vue'
+import RepoStorageView from '../src/views/RepoStorageView.vue'
 
 const row = (name: string, bytes: number, cap: number | null = null, lfs = 0): RepoUsage => ({
   repository: `acme/${name}`,
@@ -159,9 +157,8 @@ describe('repository Storage section', () => {
     const calls: string[] = []
     const bodies: unknown[] = []
     stubServer(calls, bodies)
-    const w = mount(RepoSettingsView, {
+    const w = mount(RepoStorageView, {
       global: {
-        stubs: { RepoPolicyView: true },
         provide: {
           [routerKey as symbol]: { replace: vi.fn(), push: vi.fn() },
           [sessionKey as symbol]: { user: ref(user), admin: ref(admin), expire: vi.fn() },
@@ -243,8 +240,6 @@ describe('repository Storage section', () => {
     expect(calls).toContain('GET /v1/repos/acme/big/usage/breakdown')
     expect(w.findComponent(PynUsageBreakdown).exists()).toBe(true)
     expect(w.findComponent(PynStorageCapForm).exists()).toBe(true)
-    expect(w.findComponent(PynRepoForm).exists()).toBe(false)
-    expect(w.findComponent(PynRepoDelete).exists()).toBe(false)
   })
 
   it('keeps the helpers closed to non-admin non-owners', () => {

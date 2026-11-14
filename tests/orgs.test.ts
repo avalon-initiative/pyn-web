@@ -1,7 +1,6 @@
 import {
   PynOrgHeader,
   PynRepoForm,
-  PynRepoHeader,
   PynSideNav,
   PynTopBar,
   PynOrgDelete,
@@ -42,7 +41,7 @@ describe('router', () => {
     expect(resolve('/studio/-/settings').name).toBe('org-settings')
     expect(resolve('/studio/-/audit').name).toBe('org-audit')
     expect(resolve('/studio/game').name).toBe('files')
-    expect(resolve('/studio/game/members').name).toBe('members')
+    expect(resolve('/studio/game/settings/members').name).toBe('settings-members')
     expect(resolve('/studio/game/settings').name).toBe('settings')
   })
 
@@ -203,14 +202,6 @@ describe('owner picker and headers', () => {
     await w.findAll('select')[0].setValue('studio')
     expect(w.findAll('select')).toHaveLength(2)
     expect(w.emitted('update:owner')?.[0]).toEqual(['studio'])
-  })
-
-  it('shows the organization chip on a repository header', () => {
-    const base = { owner: 'studio', name: 'game', visibility: 'private' as const, leaseHours: 8 }
-    const org = mount(PynRepoHeader, { props: { ...base, orgOwned: true } })
-    expect(org.find('[data-org]').exists()).toBe(true)
-    expect(org.find('a[href="/studio"]').exists()).toBe(true)
-    expect(mount(PynRepoHeader, { props: base }).find('[data-org]').exists()).toBe(false)
   })
 
   it('lists organizations in the sidebar and the create menu', async () => {

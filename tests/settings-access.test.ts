@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import { routerKey } from 'vue-router'
 import { repoKey, sessionKey } from '../src/state/context.state'
 import { canOpenSettings, isRepoOwner } from '../src/state/repo-access.state'
-import RepoSettingsView from '../src/views/RepoSettingsView.vue'
+import RepoGeneralView from '../src/views/RepoGeneralView.vue'
 
 vi.mock('../src/api/repos')
 
@@ -21,9 +21,8 @@ const repo = {
 
 function mountSettings(user: string, permissions: string[]) {
   const replace = vi.fn()
-  const w = mount(RepoSettingsView, {
+  const w = mount(RepoGeneralView, {
     global: {
-      stubs: { RepoPolicyView: { template: '<div class="policy" />' } },
       provide: {
         [routerKey as symbol]: { replace, push: vi.fn() },
         [sessionKey as symbol]: { user: ref(user), admin: ref(false), expire: vi.fn() },
@@ -50,36 +49,18 @@ describe('settings access', () => {
     expect(isRepoOwner('acme', 'ann', null)).toBe(false)
   })
 
-  it('shows every section to an owner with edit_policy', async () => {
+  it('shows the form and delete to an owner', async () => {
     const { w, replace } = mountSettings('acme', ['read', 'edit_policy'])
     await flushPromises()
     expect(w.findComponent(PynRepoForm).exists()).toBe(true)
-    expect(w.find('.policy').exists()).toBe(true)
     expect(w.findComponent(PynRepoDelete).exists()).toBe(true)
     expect(replace).not.toHaveBeenCalled()
   })
 
-  it('shows only the policy editor to a non-owner with edit_policy', async () => {
-    const { w, replace } = mountSettings('bob', ['read', 'edit_policy'])
+  it('shows nothing on General to a non-owner', async () => {
+    const { w } = mountSettings('bob', ['read', 'edit_policy'])
     await flushPromises()
-    expect(w.find('.policy').exists()).toBe(true)
     expect(w.findComponent(PynRepoForm).exists()).toBe(false)
     expect(w.findComponent(PynRepoDelete).exists()).toBe(false)
-    expect(replace).not.toHaveBeenCalled()
-  })
-
-  it('hides the policy editor from an owner without edit_policy', async () => {
-    const { w } = mountSettings('acme', ['read'])
-    await flushPromises()
-    expect(w.find('.policy').exists()).toBe(false)
-    expect(w.findComponent(PynRepoForm).exists()).toBe(true)
-  })
-
-  it('redirects a user with neither to the repository home', async () => {
-    const { w, replace } = mountSettings('bob', ['read', 'manage_roles'])
-    await flushPromises()
-    expect(replace).toHaveBeenCalledWith('/acme/game')
-    expect(w.find('.policy').exists()).toBe(false)
-    expect(w.findComponent(PynRepoForm).exists()).toBe(false)
   })
 })

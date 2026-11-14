@@ -2,12 +2,12 @@ import {
   PynAccountSettings,
   PynMenu,
   PynModeChip,
-  PynRepoHeader,
+  PynRepoShell,
   PynSearch,
   PynShell,
   PynSideNav,
   PynTopBar,
-  repoTabs,
+  repoShellTabs,
   accountNav,
   mainNav,
   matchRepos,
@@ -133,31 +133,45 @@ describe('PynAccountSettings', () => {
   })
 })
 
-describe('PynRepoHeader', () => {
+describe('PynRepoShell', () => {
   it('shows name, visibility and the permitted tabs', () => {
-    const w = mount(PynRepoHeader, {
+    const w = mount(PynRepoShell, {
       props: {
         owner: 'alice',
         name: 'game',
         visibility: 'private',
-        leaseHours: 24,
-        tabs: repoTabs(['read'], false),
+        tabs: repoShellTabs(['read'], false),
+        current: 'locks',
       },
     })
-    expect(w.find('h1').text()).toContain('alice/game')
-    expect(w.find('[data-visibility]').text()).toBe('private')
-    expect(w.findAll('nav a').map((a) => a.text())).toEqual(['Code', 'Locks', 'History'])
+    expect(w.text()).toContain('alice')
+    expect(w.text()).toContain('game')
+    expect(w.text()).toContain('Private')
+    expect(w.findAll('nav[aria-label=Repository] a').map((a) => a.text())).toEqual([
+      'Code',
+      'Locks',
+      'History',
+    ])
+    expect(w.find('[aria-current=page]').text()).toBe('Locks')
   })
 
   it('omits the tab row without access', () => {
-    const w = mount(PynRepoHeader, {
-      props: { owner: 'a', name: 'b', visibility: 'public', leaseHours: 1 },
-    })
-    expect(w.find('nav').exists()).toBe(false)
+    const w = mount(PynRepoShell, { props: { owner: 'a', name: 'b', visibility: 'public' } })
+    expect(w.find('nav[aria-label=Repository]').exists()).toBe(false)
   })
 })
 
 describe('PynShell', () => {
+  it('drops the side navigation and toggle when bare', () => {
+    const w = mount(PynShell, {
+      props: { bare: true },
+      slots: { top: 'top', side: '<a href="#x">x</a>', default: 'body' },
+    })
+    expect(w.find('aside').exists()).toBe(false)
+    expect(w.find('[aria-label="Toggle navigation"]').exists()).toBe(false)
+    expect(w.text()).toContain('top')
+  })
+
   it('toggles the sidebar and closes it after following a link', async () => {
     const w = mount(PynShell, { slots: { side: '<a href="#x">x</a>', default: 'body' } })
     const side = w.find('aside')

@@ -14,6 +14,7 @@ import {
   PynRoles,
   parseLockLimit,
   repoPath,
+  repoShellTabs,
   repoTabs,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -52,19 +53,11 @@ describe('repo state', () => {
   })
 
   it('shows only the tabs the permissions allow', () => {
-    const labels = (p: string[], owner: boolean) => repoTabs(p, owner).map((t) => t.label)
+    const labels = (p: string[], owner: boolean) => repoShellTabs(p, owner).map((t) => t.label)
     expect(labels(['read'], false)).toEqual(['Code', 'Locks', 'History'])
-    expect(labels(['read', 'view_audit', 'manage_users', 'manage_roles'], false)).toEqual([
-      'Code',
-      'Locks',
-      'History',
-      'Audit',
-      'Members',
-      'Roles',
-      'Invites',
-    ])
-    expect(labels(['read', 'manage_roles'], true)).toContain('Settings')
-    expect(labels(['read', 'manage_roles'], false)).not.toContain('Settings')
+    expect(labels(['read', 'view_audit'], false)).toEqual(['Code', 'Locks', 'History', 'Settings'])
+    expect(labels(['read'], true)).toContain('Settings')
+    expect(labels(['read', 'lock'], false)).not.toContain('Settings')
   })
 
   it('sorts repositories by owner then name', () => {

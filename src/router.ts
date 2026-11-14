@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw, RouterHistory } from 'vue-router'
+import type { RouteLocationNormalized, RouteRecordRaw, RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
 import AdminAuditView from './views/AdminAuditView.vue'
 import AdminAccountsView from './views/AdminAccountsView.vue'
@@ -21,7 +21,10 @@ import RepoInvitesView from './views/RepoInvitesView.vue'
 import RepoLocksView from './views/RepoLocksView.vue'
 import RepoMembersView from './views/RepoMembersView.vue'
 import RepoRolesView from './views/RepoRolesView.vue'
-import RepoSettingsView from './views/RepoSettingsView.vue'
+import RepoGeneralView from './views/RepoGeneralView.vue'
+import RepoPolicyView from './views/RepoPolicyView.vue'
+import RepoSettingsLayout from './views/RepoSettingsLayout.vue'
+import RepoStorageView from './views/RepoStorageView.vue'
 import VerifyEmailView from './views/VerifyEmailView.vue'
 import NewOrgView from './views/NewOrgView.vue'
 import OrgAuditView from './views/OrgAuditView.vue'
@@ -36,9 +39,17 @@ import OwnerView from './views/OwnerView.vue'
 import RepoView from './views/RepoView.vue'
 import ReposView from './views/ReposView.vue'
 
+const settingsRedirect =
+  (section: string) => (to: Pick<RouteLocationNormalized, 'params' | 'query' | 'hash'>) => ({
+    name: `settings-${section}`,
+    params: to.params,
+    query: to.query,
+    hash: to.hash,
+  })
+
 // Account pages live under "/_/" and organization pages under "/:owner/-/": neither "_" nor "-" can be a
 // user, organization or repository name.
-export const routes = [
+export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'repos', component: ReposView },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
@@ -84,17 +95,30 @@ export const routes = [
   {
     path: '/:owner/:name',
     component: RepoView,
+    meta: { bare: true },
     children: [
       { path: '', name: 'files', component: RepoFilesView },
       { path: 'tree/:path(.*)?', name: 'tree', component: RepoFilesView },
       { path: 'blob/:path(.+)', name: 'blob', component: RepoBlobView },
       { path: 'locks', name: 'locks', component: RepoLocksView },
       { path: 'history', name: 'history', component: RepoHistoryView },
-      { path: 'audit', name: 'audit', component: RepoAuditView },
-      { path: 'members', name: 'members', component: RepoMembersView },
-      { path: 'roles', name: 'roles', component: RepoRolesView },
-      { path: 'invites', name: 'invites', component: RepoInvitesView },
-      { path: 'settings', name: 'settings', component: RepoSettingsView },
+      ...['members', 'roles', 'invites', 'audit'].map((section) => ({
+        path: section,
+        redirect: settingsRedirect(section),
+      })),
+      {
+        path: 'settings',
+        component: RepoSettingsLayout,
+        children: [
+          { path: '', name: 'settings', component: RepoGeneralView },
+          { path: 'members', name: 'settings-members', component: RepoMembersView },
+          { path: 'roles', name: 'settings-roles', component: RepoRolesView },
+          { path: 'invites', name: 'settings-invites', component: RepoInvitesView },
+          { path: 'policy', name: 'settings-policy', component: RepoPolicyView },
+          { path: 'storage', name: 'settings-storage', component: RepoStorageView },
+          { path: 'audit', name: 'settings-audit', component: RepoAuditView },
+        ],
+      },
     ],
   },
 ]

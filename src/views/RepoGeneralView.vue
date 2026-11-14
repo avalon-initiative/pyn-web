@@ -7,28 +7,19 @@ import {
   repoSlug,
   PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
-import { computed, inject, watchEffect } from 'vue'
+import { computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { deleteRepo, updateRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
-import { EDIT_POLICY } from '../state/policy.state'
-import { canOpenSettings, canSeeStorage, isRepoOwner } from '../state/repo-access.state'
-import RepoPolicyView from './RepoPolicyView.vue'
-import RepoStorageView from './RepoStorageView.vue'
+import { isRepoOwner } from '../state/repo-access.state'
 
-const { repo, target, reload, permissions, org, frozen } = inject(repoKey)!
-const { user, admin } = inject(sessionKey)!
+const { repo, target, reload, org, frozen } = inject(repoKey)!
+const { user } = inject(sessionKey)!
 const router = useRouter()
 const saving = useAction()
 const removing = useAction()
-const canEditPolicy = computed(() => permissions.value.includes(EDIT_POLICY))
 const isOwner = computed(() => isRepoOwner(target.value.owner, user.value, org.value))
-
-watchEffect(() => {
-  if (repo.value && !canOpenSettings(permissions.value, isOwner.value, admin.value))
-    router.replace(repoPath(target.value))
-})
 
 const save = (s: RepoSettings) =>
   saving.attempt(async () => {
@@ -45,9 +36,8 @@ const remove = () =>
 </script>
 
 <template>
-  <PynViewStack v-if="repo && canOpenSettings(permissions, isOwner, admin)">
+  <PynViewStack v-if="repo && isOwner">
     <PynRepoForm
-      v-if="isOwner"
       :key="repo.id"
       :owner="repo.owner"
       :repo="repo"
@@ -57,14 +47,7 @@ const remove = () =>
       :error="saving.error.value"
       @submit="save"
     />
-    <RepoPolicyView v-if="canEditPolicy" :key="repo.id" />
-    <RepoStorageView
-      v-if="canSeeStorage(permissions, isOwner, admin)"
-      :key="`storage-${repo.id}`"
-      :owner="isOwner"
-    />
     <PynRepoDelete
-      v-if="isOwner"
       :slug="repoSlug(repo)"
       :readonly="frozen"
       :busy="removing.busy.value"

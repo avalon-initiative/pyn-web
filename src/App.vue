@@ -76,6 +76,7 @@ const orgs = ref<OrgInfo[]>([])
 const theme = ref<ThemeChoice>(loadTheme())
 applyTheme(theme.value)
 
+const bare = computed(() => route.matched.some((r) => r.meta.bare === true))
 const slugs = computed(() => repos.value.map(repoSlug))
 const currentRepo = computed(() =>
   route.params.owner && route.params.name
@@ -253,7 +254,7 @@ onMounted(async () => {
       />
     </main>
     <template v-else-if="user">
-      <PynShell>
+      <PynShell :bare="bare">
         <template #top>
           <PynTopBar
             :user="user"
@@ -267,7 +268,7 @@ onMounted(async () => {
             @sign-out="leave"
           />
         </template>
-        <template #side>
+        <template v-if="!bare" #side>
           <PynSideNav
             :account="user"
             :items="sideNavItems(admin, navItems, pendingInvitations)"
