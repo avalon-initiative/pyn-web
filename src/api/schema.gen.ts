@@ -20,6 +20,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/account/deletion': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['account_deletion_status']
+    put?: never
+    post: operations['schedule_account_deletion']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/account/deletion/restore': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['restore_account_deletion']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/audit': {
     parameters: {
       query?: never
@@ -190,6 +222,22 @@ export interface paths {
     get?: never
     put?: never
     post: operations['approve']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/users/{user}/delete': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['admin_delete_account']
     delete?: never
     options?: never
     head?: never
@@ -421,6 +469,86 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/avatar': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['put_avatar']
+    post?: never
+    delete: operations['delete_avatar']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/emails': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_emails']
+    put?: never
+    post: operations['add_email']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/emails/{address}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['delete_email']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/emails/{address}/primary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['set_primary_email']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/emails/{address}/resend': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['resend_email']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/identities': {
     parameters: {
       query?: never
@@ -542,6 +670,38 @@ export interface paths {
     }
     get?: never
     put: operations['change_password']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['update_profile']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/username': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['rename_account']
     post?: never
     delete?: never
     options?: never
@@ -1708,6 +1868,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/users/{user}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_profile']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/users/{user}/avatar': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_avatar']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1716,8 +1908,15 @@ export interface components {
     Account: {
       /** @description Runs the server: may approve and disable accounts under `/v1/admin`. */
       admin?: boolean
+      /**
+       * @description Whether the account has a password. False for an account created through external sign-in until it sets
+       *     one, in which case `PUT /v1/me/password` takes no current password.
+       */
+      has_password?: boolean
       /** @description Stable, never reused: the name can be recycled after a delete, the id cannot. */
       id: string
+      /** @description The account's profile; the email address is never part of it. */
+      profile?: components['schemas']['Profile']
       user: string
     }
     /** @description `account.approved`. */
@@ -1735,6 +1934,51 @@ export interface components {
       /** @description The account's stable id. */
       user_id: string
     }
+    /** @description `account.deleted`: the account was purged. Its name stays reserved; history keeps it. */
+    AccountDeletedData: {
+      /** @description The administrator that deleted it, or `@account-deletion` for the server's timers. */
+      actor: string
+      reason: string | null
+      user: string
+      user_id: string
+    }
+    /** @description `account.deletion_restored`: the account holder cancelled a scheduled deletion. */
+    AccountDeletionRestoredData: {
+      user: string
+      user_id: string
+    }
+    /** @description `account.deletion_scheduled`. */
+    AccountDeletionScheduledData: {
+      /** @description The account itself (self-service) or the administrator that scheduled it. */
+      actor: string
+      /** @description True when the account holder scheduled it and may restore it until `purge_at`. */
+      by_owner: boolean
+      /**
+       * Format: date-time
+       * @description When the account is deleted unless restored.
+       */
+      purge_at: string
+      /** @description An administrator's reason; null for self-service. */
+      reason: string | null
+      user: string
+      user_id: string
+    }
+    /** @description Whether the signed-in account is scheduled for deletion. */
+    AccountDeletionStatus: {
+      /** @description True while the account is disabled and waiting to be deleted. */
+      pending: boolean
+      /**
+       * Format: date-time
+       * @description When the account is deleted unless it is restored first; null while nothing is scheduled.
+       */
+      purge_at: string | null
+      /**
+       * Format: date-time
+       * @description When the deletion was requested; null while nothing is scheduled.
+       */
+      scheduled_at: string | null
+      user: string
+    }
     /** @description `account.disabled`. */
     AccountDisabledData: {
       actor: string
@@ -1742,6 +1986,19 @@ export interface components {
       reason: string | null
       user: string
       user_id: string
+    }
+    /** @description One address an account holds. Only the account's owner ever sees these. */
+    AccountEmail: {
+      /** Format: date-time */
+      added_at: string
+      /** @description Lowercase. */
+      address: string
+      /** @description The address the server uses for the account; always verified. */
+      primary: boolean
+      /** @description False until the link mailed to the address is used; a pending address cannot be the primary. */
+      verified: boolean
+      /** Format: date-time */
+      verified_at?: string | null
     }
     /** @description `account.enabled`. */
     AccountEnabledData: {
@@ -1764,6 +2021,14 @@ export interface components {
       status: components['schemas']['AccountStatus']
       user: string
     }
+    /** @description `account.renamed`. */
+    AccountRenamedData: {
+      /** @description Who renamed it: the account itself. */
+      actor: string
+      new_name: string
+      old_name: string
+      user_id: string
+    }
     /**
      * @description An account's state.
      * @enum {string}
@@ -1779,6 +2044,9 @@ export interface components {
       /** Format: int64 */
       id: number
       path?: string | null
+    }
+    AddEmailRequest: {
+      address: string
     }
     AddKeyRequest: {
       /** @description The public key as an OpenSSH line. */
@@ -1802,6 +2070,24 @@ export interface components {
       name: string
       /** @description An existing active user, who becomes the organization's first owner. */
       owner: string
+    }
+    /** @description Deletes a disabled account. */
+    AdminDeleteAccountRequest: {
+      /** @description Delete now instead of after the recovery window. */
+      immediately?: boolean
+      /** @description Recorded in the audit log; required. */
+      reason: string
+    }
+    /** @description What an administrator's deletion did. */
+    AdminDeleteAccountResult: {
+      /** @description True when the account is gone; false when its deletion is scheduled. */
+      deleted: boolean
+      /**
+       * Format: date-time
+       * @description When a scheduled account is deleted; null once it is gone.
+       */
+      purge_at: string | null
+      user: string
     }
     /** @description Chunks already uploaded as objects, to be joined into one object. */
     AssembleObjectRequest: {
@@ -1914,6 +2200,11 @@ export interface components {
      */
     Commit: {
       author: components['schemas']['Person']
+      /**
+       * @description The author's account name now, when it was renamed after the commit (decision #986); `author.name` stays as
+       *     written because the commit id covers it.
+       */
+      author_current?: string | null
       /**
        * Format: date-time
        * @description The author time, in whole seconds; its timezone is `author.offset_minutes`. Absent from servers that predate it.
@@ -2057,6 +2348,11 @@ export interface components {
      * @enum {string}
      */
     CreationSubjectKind: 'team' | 'user' | 'role'
+    /** @description Schedules the deletion of the signed-in account after the recovery window. */
+    DeleteOwnAccountRequest: {
+      /** @description The account's password, entered again. An account with no password needs a web session and may leave it empty. */
+      password?: string
+    }
     DisableAccountRequest: {
       /** @description Shown to administrators; not to the account holder. */
       reason?: string | null
@@ -2634,6 +2930,51 @@ export interface components {
       /** @description The proposed contents of `.pyn/pyn.toml`. */
       content: string
     }
+    /** @description The optional, user-edited part of an account: what others see on its profile page. */
+    Profile: {
+      /**
+       * @description Where the avatar image is served, with a `v` parameter that changes when the image does; absent when the
+       *     account has none.
+       */
+      avatar_url?: string | null
+      /** @description At most 160 characters; may span lines. */
+      bio?: string | null
+      /** @description At most 64 characters. */
+      company?: string | null
+      /** @description At most 64 characters, trimmed, no control characters. */
+      display_name?: string | null
+      /** @description Up to 5 `http` or `https` URLs. */
+      links?: string[]
+      /** @description At most 64 characters. */
+      location?: string | null
+    }
+    /**
+     * @description An account's public profile as the caller may see it: no email address, and only the repositories and
+     *     organizations the caller may know about.
+     */
+    PublicProfile: {
+      /** Format: date-time */
+      created_at: string
+      /** @description Stable, never reused. */
+      id: string
+      /**
+       * @description The organizations the user belongs to that the caller belongs to as well, with the caller's role; always
+       *     empty when signed out.
+       */
+      organizations: components['schemas']['OrgInfo'][]
+      profile: components['schemas']['Profile']
+      /**
+       * @description The repositories the user owns that the caller may see: public ones, and private ones where the caller has
+       *     a role. `role` is the caller's.
+       */
+      repositories: components['schemas']['RepoInfo'][]
+      /**
+       * Format: int64
+       * @description How many repositories are listed.
+       */
+      repository_count: number
+      user: string
+    }
     /** @description One git object of a push: its id and its body (the bytes after git's `<kind> <length>` header), base64. */
     PushObject: {
       data: string
@@ -2704,6 +3045,20 @@ export interface components {
     }
     RenameBranchRequest: {
       name: string
+    }
+    /** @description A username change; the old name is free for anyone to take afterwards. */
+    RenameRequest: {
+      /** @description The account's current password; omitted only by an account with none, from a web session. */
+      password?: string | null
+      /** @description The new name: 2 to 39 lowercase letters, digits, `-` or `_`. */
+      username: string
+    }
+    /** @description The answer to a username change. */
+    Renamed: {
+      new_name: string
+      old_name: string
+      /** @description The account's repositories; their old addresses now redirect (`X-Pyn-Moved-To`). */
+      repositories: string[]
     }
     RepoInfo: {
       /** Format: date-time */
@@ -2907,6 +3262,11 @@ export interface components {
     }
     Revision: {
       author: string
+      /**
+       * @description The author's name now, when the account was renamed after writing this revision (decision #986). `author`
+       *     stays as written because the hash covers it; show this one.
+       */
+      author_current?: string | null
       author_identity?: components['schemas']['Person'] | null
       /**
        * Format: int64
@@ -3180,6 +3540,14 @@ export interface components {
     }
     /** @enum {string} */
     TreeMode: 'shared' | 'exclusive' | 'mixed'
+    /** @description The new profile text: every field is replaced, and one left out or blank is cleared. */
+    UpdateProfileRequest: {
+      bio?: string | null
+      company?: string | null
+      display_name?: string | null
+      links?: string[]
+      location?: string | null
+    }
     /** @description Fields left out stay as they are. */
     UpdateRepoRequest: {
       /** Format: int32 */
@@ -3364,6 +3732,133 @@ export interface operations {
         }
         content: {
           'text/plain': string
+        }
+      }
+    }
+  }
+  account_deletion_status: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description works while the account is scheduled for deletion */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountDeletionStatus']
+        }
+      }
+      /** @description unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  schedule_account_deletion: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DeleteOwnAccountRequest']
+      }
+    }
+    responses: {
+      /** @description the account is disabled and will be deleted at purge_at unless restored; other credentials of the account now answer account_pending_deletion */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountDeletionStatus']
+        }
+      }
+      /** @description invalid_request: the account is already scheduled */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description unauthenticated: the password is wrong */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description account_owns_resources (the message lists the repositories and organizations to transfer or delete), account_frozen or last_server_admin */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts; Retry-After says how many seconds to wait */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  restore_account_deletion: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the account is enabled again */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountDeletionStatus']
+        }
+      }
+      /** @description invalid_request: nothing is scheduled, or the recovery window has ended */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
@@ -3981,6 +4476,68 @@ export interface operations {
       }
       /** @description user_not_found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  admin_delete_account: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the account's user name */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminDeleteAccountRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminDeleteAccountResult']
+        }
+      }
+      /** @description invalid_request: no reason, or one's own account */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_accounts */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description account_not_disabled, account_owns_resources (the message lists the repositories and organizations), account_frozen or last_server_admin */
+      409: {
         headers: {
           [name: string]: unknown
         }
@@ -4675,6 +5232,7 @@ export interface operations {
       }
     }
     responses: {
+      /** @description an account its owner scheduled for deletion signs in too, but the token works only on /v1/account/deletion until the account is restored; every other route answers account_pending_deletion */
       200: {
         headers: {
           [name: string]: unknown
@@ -4730,6 +5288,306 @@ export interface operations {
         }
       }
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  put_avatar: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description the image bytes (png, jpeg or webp, at most 1 MiB); the type is judged from the bytes, not the `Content-Type` header */
+    requestBody: {
+      content: {
+        'image/png': string
+      }
+    }
+    responses: {
+      /** @description the profile with the new `avatar_url` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Profile']
+        }
+      }
+      /** @description invalid_request: an empty body */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description object_too_large: over 1 MiB */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description unsupported_image: not a png, jpeg or webp */
+      415: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many avatar changes in an hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_avatar: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the profile without an avatar; removing none is not an error */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Profile']
+        }
+      }
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_emails: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the caller's addresses, the primary first */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountEmail'][]
+        }
+      }
+    }
+  }
+  add_email: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddEmailRequest']
+      }
+    }
+    responses: {
+      /** @description added unverified; a link was mailed */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountEmail']
+        }
+      }
+      /** @description not a valid address */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description email_unavailable (held by or pending for another account, never says whose), or email_refused */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_email: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description an address of the caller */
+        address: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description email_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description email_refused: the last verified address, on a server that requires one */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  set_primary_email: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a verified address of the caller */
+        address: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description email_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description email_refused: the address is not verified */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  resend_email: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description an unverified address of the caller */
+        address: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description email_not_found (not held, or already verified) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts */
+      429: {
         headers: {
           [name: string]: unknown
         }
@@ -5025,6 +5883,125 @@ export interface operations {
         }
       }
       /** @description too_many_attempts; Retry-After says how many seconds to wait */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  update_profile: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateProfileRequest']
+      }
+    }
+    responses: {
+      /** @description the stored profile */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Profile']
+        }
+      }
+      /** @description invalid_request: a field is too long, has control characters, or a link is not an http(s) URL */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  rename_account: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RenameRequest']
+      }
+    }
+    responses: {
+      /** @description renamed; the old name is free for anyone, and each repository's old address redirects until a live repository takes it */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Renamed']
+        }
+      }
+      /** @description invalid_request or reserved_name */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description the password is wrong */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description owner_frozen */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_exists: a user or organization holds the name */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts */
       429: {
         headers: {
           [name: string]: unknown
@@ -8938,6 +9915,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description also answers while the account is scheduled for deletion, so it can be restored */
       200: {
         headers: {
           [name: string]: unknown
@@ -9214,6 +10192,89 @@ export interface operations {
         content?: never
       }
       /** @description token_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_profile: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the account's name */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description readable signed out; never includes an email address, and lists only the repositories and organizations the caller may see */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PublicProfile']
+        }
+      }
+      /** @description credentials were sent but are not valid */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found: no such user, or an organization, or an account that is disabled or not yet approved */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_avatar: {
+    parameters: {
+      query?: {
+        /** @description the version from `avatar_url`; when it is the current one the image is cached for a year */
+        v?: string
+      }
+      header?: never
+      path: {
+        /** @description the account's name */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the image, as `image/png`, `image/jpeg` or `image/webp` according to its bytes; readable signed out, with an `ETag` and `Cache-Control` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'image/png': string
+        }
+      }
+      /** @description `If-None-Match` matches the current image */
+      304: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description user_not_found, or avatar_not_found when the user has none */
       404: {
         headers: {
           [name: string]: unknown
