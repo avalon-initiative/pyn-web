@@ -2077,6 +2077,7 @@ export interface components {
       actor: string
       /** @description The actor's name now, when it differs from `actor`. */
       actor_current?: string | null
+      actor_public?: components['schemas']['PublicIdentity'] | null
       /** Format: date-time */
       at: string
       /** Format: int64 */
@@ -2142,6 +2143,7 @@ export interface components {
       actor: string
       /** @description The actor's name now, when it differs from `actor`. */
       actor_current?: string | null
+      actor_public?: components['schemas']['PublicIdentity'] | null
       /** Format: date-time */
       at: string
       detail: string
@@ -2250,6 +2252,7 @@ export interface components {
        *     written because the commit id covers it.
        */
       author_current?: string | null
+      author_public?: components['schemas']['PublicIdentity'] | null
       /**
        * Format: date-time
        * @description The author time, in whole seconds; its timezone is `author.offset_minutes`. Absent from servers that predate it.
@@ -2591,6 +2594,7 @@ export interface components {
       acquired_at: string
       /** Format: date-time */
       expires_at: string
+      identity?: components['schemas']['PublicIdentity'] | null
       owner: string
       path: string
     }
@@ -2662,6 +2666,7 @@ export interface components {
       user_id: string
     }
     Member: {
+      identity?: components['schemas']['PublicIdentity'] | null
       /** @description The effective role: the highest of the direct grant, team grants and organization ownership. */
       role: string
       source: components['schemas']['MemberSource']
@@ -2845,6 +2850,7 @@ export interface components {
     }
     /** @description A person in an organization. */
     OrgMember: {
+      identity?: components['schemas']['PublicIdentity'] | null
       role: components['schemas']['OrgRole']
       user: string
     }
@@ -3000,6 +3006,13 @@ export interface components {
       links?: string[]
       /** @description At most 64 characters. */
       location?: string | null
+    }
+    /** @description What others may see of an account next to its name: the account name, display name and avatar address. */
+    PublicIdentity: {
+      /** @description Same form as `Profile.avatar_url`. */
+      avatar_url?: string | null
+      display_name?: string | null
+      user: string
     }
     /**
      * @description An account's public profile as the caller may see it: no email address, and only the repositories and
@@ -3321,6 +3334,7 @@ export interface components {
        */
       author_current?: string | null
       author_identity?: components['schemas']['Person'] | null
+      author_public?: components['schemas']['PublicIdentity'] | null
       /**
        * Format: int64
        * @description The revision this one was based on, the committing branch's revision of the path; absent when the branch had
@@ -3519,6 +3533,7 @@ export interface components {
       author: string
       /** @description The author's name now, when it differs from `author` (decision #986). */
       author_current?: string | null
+      author_public?: components['schemas']['PublicIdentity'] | null
       /** @description The branch that holds the version. */
       branch: string
       /** @description Who created the branch; the audit log tells them (`version_stranded`). */
