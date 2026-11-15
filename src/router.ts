@@ -11,6 +11,9 @@ import KeysView from './views/KeysView.vue'
 import IdentitiesView from './views/IdentitiesView.vue'
 import TokensView from './views/TokensView.vue'
 import MyLocksView from './views/MyLocksView.vue'
+import EmailAddressesView from './views/EmailAddressesView.vue'
+import ProfileSettingsView from './views/ProfileSettingsView.vue'
+import UsernameView from './views/UsernameView.vue'
 import DeleteAccountView from './views/DeleteAccountView.vue'
 import PasswordView from './views/PasswordView.vue'
 import NewRepoView from './views/NewRepoView.vue'
@@ -73,6 +76,9 @@ export const routes: RouteRecordRaw[] = [
     component: AccountView,
     children: [
       { path: '', redirect: '/_/settings/password' },
+      { path: 'profile', name: 'profile-settings', component: ProfileSettingsView },
+      { path: 'emails', name: 'emails', component: EmailAddressesView },
+      { path: 'username', name: 'username', component: UsernameView },
       { path: 'password', name: 'password', component: PasswordView },
       { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
       { path: 'tokens', name: 'tokens', component: TokensView, alias: '/_/tokens' },

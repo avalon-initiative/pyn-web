@@ -10,6 +10,9 @@ onMounted(async () => {
   hasProvider.value = !!(await fetchSignInOptions().catch(() => null))?.external
 })
 const items = computed(() => [
+  { id: 'profile-settings', label: 'Profile', href: '/_/settings/profile' },
+  { id: 'emails', label: 'Email addresses', href: '/_/settings/emails' },
+  { id: 'username', label: 'Username', href: '/_/settings/username' },
   ...accountNavItems(hasProvider.value),
   { id: 'delete-account', label: 'Delete account', href: '/_/settings/delete' },
 ])
