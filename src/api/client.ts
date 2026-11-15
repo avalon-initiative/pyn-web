@@ -7,6 +7,7 @@ export class ApiError extends Error {
     readonly code: string,
     message: string,
     readonly retryAfter?: number,
+    readonly blockers?: { repos: string[]; orgs: string[] },
   ) {
     super(message)
   }
@@ -21,6 +22,8 @@ const FRIENDLY: Record<string, string> = {
   not_namespace_owner: 'Only the repository owner, as an admin, can do that.',
   invalid_verification: 'This verification link is not valid. It may be used already or expired.',
   server_admin_required: 'Only a server administrator can do that.',
+  account_owns_resources:
+    'Transfer or delete the repositories and organizations this account owns first.',
   user_not_found: 'That account does not exist.',
   user_exists: 'That name is already taken by a user or an organization.',
   org_not_found: 'That organization does not exist.',

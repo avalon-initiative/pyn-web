@@ -1,5 +1,10 @@
-import type { AccountInfo, AdminAccountStatus } from '@avalon-initiative/pyn-common-ui'
-import type { AccountMe } from '../types/admin.types'
+import type {
+  AccountInfo,
+  AdminAccountStatus,
+  DeleteAccountRequest,
+} from '@avalon-initiative/pyn-common-ui'
+import type { Schemas } from './schema'
+import type { AccountMe, AdminSettings } from '../types/admin.types'
 import type { AuditPage } from '../types/repo.types'
 import { api, call } from './http'
 
@@ -28,3 +33,13 @@ export const enableAccount = (user: string) =>
 
 export const listServerAudit = (before?: number) =>
   call<AuditPage>(api.GET('/v1/admin/audit', { params: { query: { before } } }))
+
+export const deleteAccount = (r: DeleteAccountRequest) =>
+  call<Schemas['AdminDeleteAccountResult']>(
+    api.POST('/v1/admin/users/{user}/delete', {
+      ...path(r.user),
+      body: { reason: r.reason, immediately: r.immediately },
+    }),
+  )
+
+export const fetchAdminSettings = () => call<AdminSettings>(api.GET('/v1/admin/settings'))

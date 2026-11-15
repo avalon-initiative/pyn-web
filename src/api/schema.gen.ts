@@ -180,6 +180,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['admin_settings']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/users': {
     parameters: {
       query?: never
@@ -1963,6 +1979,19 @@ export interface components {
       user: string
       user_id: string
     }
+    /** @description The server's account-deletion settings, set by the operator and read-only here. */
+    AccountDeletionSettings: {
+      /**
+       * Format: int32
+       * @description Days a disabled account is kept before the server deletes it (`PYN_DISABLED_ACCOUNT_RETENTION_DAYS`); 0 means never.
+       */
+      disabled_retention_days: number
+      /**
+       * Format: int32
+       * @description Days a self-service or administrator deletion can be undone (`PYN_ACCOUNT_DELETION_WINDOW_DAYS`); 0 purges at the next pass.
+       */
+      window_days: number
+    }
     /** @description Whether the signed-in account is scheduled for deletion. */
     AccountDeletionStatus: {
       /** @description True while the account is disabled and waiting to be deleted. */
@@ -2018,6 +2047,13 @@ export interface components {
       email_verified: boolean
       /** @description Stable, never reused. */
       id: string
+      /**
+       * Format: date-time
+       * @description When the account's scheduled deletion runs, as in `GET /v1/account/deletion`; null when none is scheduled
+       *     (an account disabled with no schedule is deleted by the server's retention setting instead). Filled on
+       *     `GET /v1/admin/users`.
+       */
+      purge_at?: string | null
       status: components['schemas']['AccountStatus']
       user: string
     }
@@ -2039,6 +2075,8 @@ export interface components {
       /** @description checkout, release, checkin, restore or force_unlock. */
       action: string
       actor: string
+      /** @description The actor's name now, when it differs from `actor`. */
+      actor_current?: string | null
       /** Format: date-time */
       at: string
       /** Format: int64 */
@@ -2089,6 +2127,10 @@ export interface components {
       purge_at: string | null
       user: string
     }
+    /** @description Server settings an administrator can read. */
+    AdminSettings: {
+      account_deletion: components['schemas']['AccountDeletionSettings']
+    }
     /** @description Chunks already uploaded as objects, to be joined into one object. */
     AssembleObjectRequest: {
       /** @description SHA-256 hex digests of stored chunks, in order; each at most 4 MiB. */
@@ -2096,7 +2138,10 @@ export interface components {
     }
     AuditEntry: {
       action: string
+      /** @description The name the event was recorded with; the log never rewrites it. */
       actor: string
+      /** @description The actor's name now, when it differs from `actor`. */
+      actor_current?: string | null
       /** Format: date-time */
       at: string
       detail: string
@@ -2353,12 +2398,20 @@ export interface components {
       /** @description The account's password, entered again. An account with no password needs a web session and may leave it empty. */
       password?: string
     }
+    /** @description What stops an account from being deleted until it is transferred or deleted. */
+    DeletionBlockers: {
+      /** @description Organizations the account is the only owner of. */
+      organizations: string[]
+      /** @description Repositories the account owns, as `owner/name`. */
+      repositories: string[]
+    }
     DisableAccountRequest: {
       /** @description Shown to administrators; not to the account holder. */
       reason?: string | null
     }
     /** @description Body of every non-2xx response; `code` is stable and machine-readable. */
     ErrorBody: {
+      blockers?: components['schemas']['DeletionBlockers'] | null
       code: string
       message: string
     }
@@ -3464,6 +3517,8 @@ export interface components {
     StrandedVersion: {
       /** @description Who made the stranded revision. */
       author: string
+      /** @description The author's name now, when it differs from `author` (decision #986). */
+      author_current?: string | null
       /** @description The branch that holds the version. */
       branch: string
       /** @description Who created the branch; the audit log tells them (`version_stranded`). */
@@ -4293,6 +4348,35 @@ export interface operations {
       }
       /** @description service_credential_not_found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  admin_settings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the effective server settings an administrator can read */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminSettings']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_accounts */
+      403: {
         headers: {
           [name: string]: unknown
         }
