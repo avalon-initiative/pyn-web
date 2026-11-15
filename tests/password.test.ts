@@ -2,13 +2,15 @@ import { PynPasswordForm, accountNavItems } from '@avalon-initiative/pyn-common-
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
+import { fetchMe } from '../src/api/admin'
 import { changePassword } from '../src/api/password'
 import { ApiError } from '../src/api/client'
 import { makeRouter } from '../src/router'
-import { PASSWORD_CHANGED, passwordError } from '../src/state/password.state'
+import { PASSWORD_CHANGED, PASSWORD_SET, passwordError } from '../src/state/password.state'
 import PasswordView from '../src/views/PasswordView.vue'
 
 vi.mock('../src/api/password')
+vi.mock('../src/api/admin')
 
 const submitForm = async (w: ReturnType<typeof mountView>) => {
   w.findComponent(PynPasswordForm).vm.$emit('submit', {
@@ -22,6 +24,8 @@ const mountView = () => mount(PasswordView)
 
 beforeEach(() => {
   vi.mocked(changePassword).mockReset()
+  vi.mocked(fetchMe).mockReset()
+  vi.mocked(fetchMe).mockResolvedValue({ has_password: true } as never)
 })
 
 describe('PasswordView', () => {
@@ -71,8 +75,18 @@ describe('PasswordView', () => {
     ).toBe('a password needs at least 10 characters')
   })
 
-  it('says why an external sign-in account cannot use it', () => {
-    expect(mountView().text()).toContain('no password yet')
+  it('sets a first password without a current one for an external sign-in account', async () => {
+    vi.mocked(fetchMe).mockResolvedValue({ has_password: false } as never)
+    vi.mocked(changePassword).mockResolvedValue(undefined)
+    const w = mountView()
+    await flushPromises()
+    const form = w.findComponent(PynPasswordForm)
+    expect(form.props('hasPassword')).toBe(false)
+    form.vm.$emit('submit', { next: 'new-password-1' })
+    await flushPromises()
+    expect(changePassword).toHaveBeenCalledWith(undefined, 'new-password-1')
+    expect(form.props('success')).toBe(PASSWORD_SET)
+    expect(form.props('hasPassword')).toBe(true)
   })
 })
 

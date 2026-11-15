@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { PynPasswordForm } from '@avalon-initiative/pyn-common-ui'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { fetchMe } from '../api/admin'
 import { changePassword } from '../api/password'
 import {
   PASSWORD_CHANGED,
   PASSWORD_MIN_LENGTH,
+  PASSWORD_SET,
   PASSWORD_RULES,
   passwordError,
 } from '../state/password.state'
@@ -12,14 +14,21 @@ import {
 const busy = ref(false)
 const error = ref('')
 const success = ref('')
+const hasPassword = ref(true)
 
-async function submit(form: { current: string; next: string }) {
+onMounted(async () => {
+  hasPassword.value = (await fetchMe().catch(() => null))?.has_password !== false
+})
+
+async function submit(form: { current?: string; next: string }) {
   busy.value = true
   error.value = ''
   success.value = ''
   try {
-    await changePassword(form.current, form.next)
-    success.value = PASSWORD_CHANGED
+    const first = !hasPassword.value
+    await changePassword(first ? undefined : form.current, form.next)
+    if (first) hasPassword.value = true
+    success.value = first ? PASSWORD_SET : PASSWORD_CHANGED
   } catch (e) {
     error.value = passwordError(e)
   } finally {
@@ -32,13 +41,10 @@ async function submit(form: { current: string; next: string }) {
   <PynPasswordForm
     :rules="PASSWORD_RULES"
     :min-length="PASSWORD_MIN_LENGTH"
+    :has-password="hasPassword"
     :busy="busy"
     :error="error"
     :success="success"
     @submit="submit"
   />
-  <p>
-    An account created through an external sign-in has no password yet; setting a first one is not
-    available on this page.
-  </p>
 </template>

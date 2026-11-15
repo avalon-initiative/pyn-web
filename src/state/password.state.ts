@@ -10,6 +10,9 @@ export const PASSWORD_RULES = [
 export const PASSWORD_CHANGED =
   'Password changed. Your other web sessions and the tokens made by pyn login are signed out; this session stays signed in. Tokens you created and SSH keys keep working.'
 
+export const PASSWORD_SET =
+  'Password set. You can now sign in with it. Your other web sessions are signed out; this session stays signed in.'
+
 /** The text for a failed change. A 401 here is the wrong current password, not an ended session. */
 export function passwordError(e: unknown): string {
   if (e instanceof ApiError && e.status === 401) return 'The current password is wrong.'
