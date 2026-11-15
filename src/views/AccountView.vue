@@ -9,11 +9,13 @@ const hasProvider = ref(false)
 onMounted(async () => {
   hasProvider.value = !!(await fetchSignInOptions().catch(() => null))?.external
 })
+const items = computed(() => [
+  ...accountNavItems(hasProvider.value),
+  { id: 'delete-account', label: 'Delete account', href: '/_/settings/delete' },
+])
 const current = computed(() => String(route.name ?? ''))
 </script>
 
 <template>
-  <PynAccountSettings :items="accountNavItems(hasProvider)" :current="current"
-    ><RouterView
-  /></PynAccountSettings>
+  <PynAccountSettings :items="items" :current="current"><RouterView /></PynAccountSettings>
 </template>

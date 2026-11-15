@@ -13,6 +13,8 @@ import {
   signOut,
 } from './api/auth'
 import { fetchMe } from './api/admin'
+import { fetchDeletionStatus, restoreAccount } from './api/account-deletion'
+import type { AccountDeletionStatus } from './api/account-deletion'
 import { fetchServerBuild } from './api/server'
 import { webRevision, webVersion } from './state/version.state'
 import type { ServerBuild } from './types/version.types'
@@ -29,6 +31,7 @@ import { activeNav, sideNavItems } from './state/shell.state'
 import { selectAccountItem } from './state/extension.state'
 import type { AccountMenuItem } from './types/extension.types'
 import {
+  PynAccountPendingDeletion,
   PynShell,
   PynSignIn,
   PynSideNav,
@@ -71,6 +74,7 @@ const callbackError = new URLSearchParams(window.location.search).get('error') ?
 const notice = ref<{ status: BlockedStatus; user?: string } | null>(null)
 const resent = ref(false)
 const ready = ref(false)
+const deletion = ref<AccountDeletionStatus | null>(null)
 const repos = ref<RepoInfo[]>([])
 const orgs = ref<OrgInfo[]>([])
 const theme = ref<ThemeChoice>(loadTheme())
@@ -107,14 +111,22 @@ watch(
 )
 
 const expire = () => {
+  deletion.value = null
   user.value = ''
   admin.value = false
 }
-provide(sessionKey, { user, admin, expire })
+provide(sessionKey, {
+  user,
+  admin,
+  expire,
+  scheduled: (status) => (deletion.value = status),
+})
 
 /** Reads the admin flag before the user is set, so admin pages do not flash as not found. */
 async function begin(name: string) {
-  admin.value = (await fetchMe().catch(() => null))?.admin === true
+  const status = await fetchDeletionStatus().catch(() => null)
+  deletion.value = status?.pending ? status : null
+  admin.value = deletion.value ? false : (await fetchMe().catch(() => null))?.admin === true
   user.value = name
 }
 
@@ -184,6 +196,13 @@ const resend = (email: string) =>
     resent.value = true
   })
 
+const restore = () =>
+  attempt(async () => {
+    await restoreAccount()
+    deletion.value = null
+    await begin(user.value)
+  })
+
 function dismissNotice() {
   notice.value = null
   resent.value = false
@@ -251,6 +270,15 @@ onMounted(async () => {
         @register="join"
         @resend="resend"
         @dismiss="dismissNotice"
+      />
+    </main>
+    <main v-else-if="user && deletion?.pending && deletion.purge_at">
+      <PynAccountPendingDeletion
+        :deadline="deletion.purge_at"
+        :user="user"
+        :busy="busy"
+        :error="error"
+        @restore="restore"
       />
     </main>
     <template v-else-if="user">

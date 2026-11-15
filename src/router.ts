@@ -11,6 +11,7 @@ import KeysView from './views/KeysView.vue'
 import IdentitiesView from './views/IdentitiesView.vue'
 import TokensView from './views/TokensView.vue'
 import MyLocksView from './views/MyLocksView.vue'
+import DeleteAccountView from './views/DeleteAccountView.vue'
 import PasswordView from './views/PasswordView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoBlobView from './views/RepoBlobView.vue'
@@ -76,6 +77,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
       { path: 'tokens', name: 'tokens', component: TokensView, alias: '/_/tokens' },
       { path: 'identities', name: 'identities', component: IdentitiesView },
+      { path: 'delete', name: 'delete-account', component: DeleteAccountView },
     ],
   },
   { path: '/:owner/-', redirect: { name: 'owner' } },

@@ -9,7 +9,15 @@ export async function failure(res: Response): Promise<ApiError> {
     .json()
     .catch(() => ({ code: 'error', message: `server returned ${res.status}` }))
   const wait = Number.parseInt(res.headers.get('Retry-After') ?? '', 10)
-  return new ApiError(res.status, err.code, err.message, Number.isNaN(wait) ? undefined : wait)
+  const b = err.blockers
+  const blockers = b ? { repos: b.repositories ?? [], orgs: b.organizations ?? [] } : undefined
+  return new ApiError(
+    res.status,
+    err.code,
+    err.message,
+    Number.isNaN(wait) ? undefined : wait,
+    blockers,
+  )
 }
 
 // Requests are same-origin and relative: the client builds absolute URLs, so strip the origin back off.

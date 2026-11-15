@@ -1,4 +1,5 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
+import type { AccountDeletionStatus } from '../api/account-deletion'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
@@ -8,6 +9,8 @@ export interface SessionContext {
   admin: Ref<boolean>
   /** Called when the server says the session is gone. */
   expire: () => void
+  /** Called when the account's deletion has just been scheduled. */
+  scheduled?: (status: AccountDeletionStatus) => void
 }
 
 export interface RepoContext {

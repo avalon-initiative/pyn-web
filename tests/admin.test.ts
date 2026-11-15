@@ -27,7 +27,7 @@ describe('admin state', () => {
     expect(accountActions(root, 'other')).toEqual(['disable'])
     expect(accountActions(bob, 'root')).toEqual(['approve', 'disable'])
     expect(accountActions(carol, 'root')).toEqual(['disable'])
-    expect(accountActions(dave, 'root')).toEqual(['enable'])
+    expect(accountActions(dave, 'root')).toEqual(['enable', 'delete'])
   })
 
   it('replaces an updated account and drops it when the filter no longer matches', () => {
