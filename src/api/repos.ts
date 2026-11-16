@@ -1,7 +1,6 @@
 import type { FileRow, LockInfo, MyLock } from '@avalon-initiative/pyn-common-ui'
 import type { FileEntry, FilePage, Me } from '../types/lock.types'
 import type { CheckinBody, CheckinResult, PolicyPreview } from '../types/policy.types'
-import { csrfHeaders } from '../state/csrf.state'
 import type { InviteInfo, Member, RepoInfo, RoleGrant } from '@avalon-initiative/pyn-common-ui'
 import type { AuditPage, HistoryPage, HistoryQuery } from '../types/repo.types'
 import {
@@ -11,10 +10,9 @@ import {
   type RepoSettings,
   type RepoSummary,
   type TreeListing,
-  contentUrl,
 } from '@avalon-initiative/pyn-common-ui'
 import type { Registered } from '../types/auth.types'
-import { api, call, failure } from './http'
+import { api, binaryBody, call } from './http'
 
 type Repo = { owner: string; name: string }
 
@@ -72,10 +70,12 @@ export async function fetchContent(
   limit: number,
   revision?: number,
 ): Promise<FetchedContent> {
-  const res = await fetch(contentUrl(r, path, revision))
-  if (!res.ok) throw await failure(res)
-  const reader = res.body?.getReader()
-  if (!reader) return { bytes: new Uint8Array(await res.arrayBuffer()), truncated: false }
+  const { data } = await api.GET('/v1/repos/{owner}/{name}/content', {
+    params: { path: r, query: { path, revision } },
+    parseAs: 'stream',
+  })
+  const reader = data?.getReader()
+  if (!reader) return { bytes: new Uint8Array(), truncated: false }
   const chunks: Uint8Array[] = []
   let size = 0
   while (size <= limit) {
@@ -108,13 +108,13 @@ export async function fetchFileEntry(r: Repo, path: string): Promise<FileEntry |
 
 /** Uploads the text (as UTF-8) as an object and returns its blob id. */
 export async function putObject(r: Repo, text: string): Promise<string> {
-  const res = await fetch(`/v1/repos/${r.owner}/${r.name}/objects`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/octet-stream', ...csrfHeaders('PUT') },
-    body: text,
-  })
-  if (!res.ok) throw await failure(res)
-  return ((await res.json()) as { content: string }).content
+  const { content } = await call<{ content: string }>(
+    api.PUT('/v1/repos/{owner}/{name}/objects', {
+      ...at(r),
+      ...binaryBody(new TextEncoder().encode(text), 'application/octet-stream'),
+    }),
+  )
+  return content
 }
 
 export const checkin = (r: Repo, body: CheckinBody) =>
