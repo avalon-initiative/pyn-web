@@ -33,6 +33,7 @@ const remove = (password?: string) =>
   <PynAccountDelete
     :external="external"
     :blockers="blockers"
+    :recovery-days="session.recoveryDays?.value"
     :busy="busy"
     :error="error"
     @remove="remove"

@@ -77,6 +77,7 @@ const notice = ref<{ status: BlockedStatus; user?: string } | null>(null)
 const resent = ref(false)
 const ready = ref(false)
 const deletion = ref<AccountDeletionStatus | null>(null)
+const recoveryDays = ref<number | undefined>()
 const repos = ref<RepoInfo[]>([])
 const orgs = ref<OrgInfo[]>([])
 const theme = ref<ThemeChoice>(loadTheme())
@@ -122,12 +123,14 @@ provide(sessionKey, {
   user,
   admin,
   expire,
+  recoveryDays,
   scheduled: (status) => (deletion.value = status),
 })
 
 /** Reads the admin flag before the user is set, so admin pages do not flash as not found. */
 async function begin(name: string) {
   const status = await fetchDeletionStatus().catch(() => null)
+  recoveryDays.value = status?.window_days
   deletion.value = status?.pending ? status : null
   const me = deletion.value ? null : await fetchMe().catch(() => null)
   admin.value = me?.admin === true

@@ -9,6 +9,8 @@ export interface SessionContext {
   admin: Ref<boolean>
   /** Called when the server says the session is gone. */
   expire: () => void
+  /** The effective deletion recovery window in days, once the shell has read it. */
+  recoveryDays?: Ref<number | undefined>
   /** Called when the account's deletion has just been scheduled. */
   scheduled?: (status: AccountDeletionStatus) => void
 }

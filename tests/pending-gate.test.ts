@@ -1,4 +1,5 @@
 import {
+  PynAccountDelete,
   PynAccountPendingDeletion,
   PynSideNav,
   PynSignIn,
@@ -17,12 +18,13 @@ const reply = (status: number, body: unknown) =>
 const refused = () =>
   reply(403, { code: 'account_pending_deletion', message: 'deletes on 2026-12-15' })
 const pending = {
+  window_days: 30,
   pending: true,
   purge_at: '2026-12-15T00:00:00Z',
   scheduled_at: null,
   user: 'wendy',
 }
-const idle = { pending: false, purge_at: null, scheduled_at: null, user: 'wendy' }
+const idle = { window_days: 30, pending: false, purge_at: null, scheduled_at: null, user: 'wendy' }
 
 type Routes = Record<string, () => Response>
 
@@ -79,6 +81,21 @@ describe('pending-deletion gate', () => {
     const w = await open()
     expect(w.findComponent(PynAccountPendingDeletion).exists()).toBe(false)
     expect(calls(fn, 'GET /v1/me')).toBe(1)
+  })
+
+  it('hands the recovery window to the delete page without another status request', async () => {
+    const fn = serve({
+      ...base,
+      'GET /v1/account/deletion': () => reply(200, { ...idle, window_days: 14 }),
+    })
+    const router = makeRouter(createMemoryHistory())
+    await router.push('/_/settings/delete')
+    await router.isReady()
+    const { default: App } = await import('../src/App.vue')
+    const w = mount(App, { global: { plugins: [router] } })
+    await flushPromises()
+    expect(w.findComponent(PynAccountDelete).props('recoveryDays')).toBe(14)
+    expect(calls(fn, 'GET /v1/account/deletion')).toBe(1)
   })
 
   it('checks the status on sign-in and gates a pending account', async () => {
