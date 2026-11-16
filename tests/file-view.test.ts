@@ -214,12 +214,12 @@ describe('content api', () => {
   })
 
   it('stops at the limit and says it truncated', async () => {
-    const fetchMock = vi.fn(async () => stream('aaaa', 'bbbb', 'cccc'))
+    const fetchMock = vi.fn(async (..._a: unknown[]) => stream('aaaa', 'bbbb', 'cccc'))
     vi.stubGlobal('fetch', fetchMock)
     const got = await fetchContent(r, 'a.txt', 6)
     expect(got.truncated).toBe(true)
     expect(new TextDecoder().decode(got.bytes)).toBe('aaaabb')
-    expect(fetchMock.mock.calls[0]).toEqual(['/v1/repos/acme/castle-quest/content?path=a.txt'])
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/v1/repos/acme/castle-quest/content?path=a.txt')
   })
 
   it('throws the server error', async () => {

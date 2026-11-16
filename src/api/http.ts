@@ -22,15 +22,28 @@ export async function failure(res: Response): Promise<ApiError> {
   )
 }
 
+const isBinary = (type: string | null) => /^(application\/octet-stream|image\/)/i.test(type ?? '')
+
 // Requests are same-origin and relative: the client builds absolute URLs, so strip the origin back off.
+// Binary bodies pass through as bytes; everything else is read as text.
 async function sameOriginFetch(req: Request): Promise<Response> {
   const url = new URL(req.url)
+  let body: BodyInit | undefined
+  if (req.body)
+    body = isBinary(req.headers.get('Content-Type')) ? await req.arrayBuffer() : await req.text()
   return globalThis.fetch(`${url.pathname}${url.search}`, {
     method: req.method,
     headers: req.headers,
-    body: req.body ? await req.text() : undefined,
+    body,
   })
 }
+
+/** Request options that send `body` unserialized under `type`; the schema types binary bodies as arrays or strings. */
+export const binaryBody = (body: Blob | ArrayBuffer | Uint8Array, type: string) => ({
+  body: body as never,
+  bodySerializer: (b: unknown) => b as BodyInit,
+  headers: { 'Content-Type': type },
+})
 
 export const api = createClient<paths>({
   baseUrl: globalThis.location?.origin ?? 'http://localhost',
