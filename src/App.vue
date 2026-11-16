@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, provide, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   completeSetup,
@@ -23,6 +23,7 @@ import { blockedStatus } from './state/account.state'
 import { listMyInvitations, listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
+import { onPendingDeletion } from './state/pending.state'
 import { pendingInvitations } from './state/invitations.state'
 import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
@@ -221,6 +222,14 @@ function followLink(e: MouseEvent) {
   e.preventDefault()
   router.push(path)
 }
+
+onPendingDeletion(async () => {
+  if (user.value && !deletion.value) {
+    const status = await fetchDeletionStatus().catch(() => null)
+    if (status?.pending) deletion.value = status
+  }
+})
+onUnmounted(() => onPendingDeletion(null))
 
 onMounted(async () => {
   void fetchServerBuild().then((b) => (serverBuild.value = b))
