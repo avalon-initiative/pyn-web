@@ -31,6 +31,12 @@ export const disableAccount = (user: string, reason: string) =>
 export const enableAccount = (user: string) =>
   call<AccountInfo>(api.POST('/v1/admin/users/{user}/enable', path(user)))
 
+export const grantAdmin = (user: string) =>
+  call<AccountInfo>(api.PUT('/v1/admin/users/{user}/admin', path(user)))
+
+export const revokeAdmin = (user: string) =>
+  call<AccountInfo>(api.DELETE('/v1/admin/users/{user}/admin', path(user)))
+
 export const listServerAudit = (before?: number) =>
   call<AuditPage>(api.GET('/v1/admin/audit', { params: { query: { before } } }))
 

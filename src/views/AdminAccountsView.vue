@@ -3,6 +3,7 @@ import {
   PynAccounts,
   applyUpdate,
   PynViewHeader,
+  PynViewNotice,
   PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
@@ -12,11 +13,14 @@ import {
   disableAccount,
   enableAccount,
   fetchAdminSettings,
+  grantAdmin,
   listAccounts,
+  revokeAdmin,
 } from '../api/admin'
 import { retentionNote } from '../state/admin-settings.state'
 import { useAction } from '../state/action.state'
 import { sessionKey } from '../state/context.state'
+import type { AdminSettings } from '../types/admin.types'
 import type {
   AccountInfo,
   AdminAccountStatus,
@@ -55,17 +59,39 @@ const remove = (r: DeleteAccountRequest) =>
   })
 
 const note = ref('')
+const administrators = ref<AdminSettings['administrators']>({ active: 0, single: false })
+
+const loadSettings = () =>
+  fetchAdminSettings()
+    .then((s) => {
+      note.value = retentionNote(s)
+      administrators.value = s.administrators
+    })
+    .catch(() => undefined)
+
+const changeAdmin = (action: () => Promise<AccountInfo>) =>
+  people.attempt(async () => {
+    await action()
+    accounts.value = await listAccounts(status.value)
+    await loadSettings()
+  })
+
+const grant = (name: string) => changeAdmin(() => grantAdmin(name))
+const revoke = (name: string) => changeAdmin(() => revokeAdmin(name))
+
 onMounted(() => {
   void loadAccounts()
-  fetchAdminSettings()
-    .then((s) => (note.value = retentionNote(s)))
-    .catch(() => undefined)
+  void loadSettings()
 })
 </script>
 
 <template>
   <PynViewStack>
     <PynViewHeader title="Accounts" />
+    <PynViewNotice v-if="administrators.single" title="Only one administrator">
+      This server has a single administrator, so one lost credential means recovery on the host.
+      Grant the administrator role to a second account in the list below.
+    </PynViewNotice>
     <p v-if="note">{{ note }}</p>
     <PynAccounts
       :accounts="accounts"
@@ -73,11 +99,14 @@ onMounted(() => {
       :self="user"
       :busy="people.busy.value"
       :error="people.error.value"
+      :can-revoke-admin="!administrators.single"
       @status="filter"
       @approve="approve"
       @enable="enable"
       @disable="disable"
       @delete="remove"
+      @grant-admin="grant"
+      @revoke-admin="revoke"
     />
   </PynViewStack>
 </template>

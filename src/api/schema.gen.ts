@@ -5306,7 +5306,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description public repositories; `role` is the caller's, if they have one */
+      /** @description public repositories; `role` is the caller's, if they have one (a scoped token has none outside its repositories) */
       200: {
         headers: {
           [name: string]: unknown
@@ -6010,7 +6010,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description live locks in repositories the caller can read, ordered by repository then path */
+      /** @description live locks in repositories the caller can read (a scoped token: only its repositories), ordered by repository then path */
       200: {
         headers: {
           [name: string]: unknown
@@ -9053,7 +9053,7 @@ export interface operations {
           'application/json': components['schemas']['CreatedInvite']
         }
       }
-      /** @description needs manage_users and every permission the role grants */
+      /** @description needs a full-scope credential, manage_users and every permission the role grants */
       403: {
         headers: {
           [name: string]: unknown
