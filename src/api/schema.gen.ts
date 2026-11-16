@@ -821,6 +821,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/orgs/{org}/avatar': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_org_avatar']
+    put: operations['put_org_avatar']
+    post?: never
+    delete: operations['delete_org_avatar']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/orgs/{org}/invitations': {
     parameters: {
       query?: never
@@ -883,6 +899,22 @@ export interface paths {
     options?: never
     head?: never
     patch: operations['set_member_role']
+    trace?: never
+  }
+  '/v1/orgs/{org}/profile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_org_profile']
+    put: operations['update_org_profile']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
   '/v1/orgs/{org}/repo-policy': {
@@ -1884,6 +1916,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/users': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_people']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/users/{user}': {
     parameters: {
       query?: never
@@ -1926,9 +1974,10 @@ export interface components {
       admin?: boolean
       /**
        * @description Whether the account has a password. False for an account created through external sign-in until it sets
-       *     one, in which case `PUT /v1/me/password` takes no current password.
+       *     one, in which case `PUT /v1/me/password` takes no current password. Absent for a credential that is not
+       *     full-scope.
        */
-      has_password?: boolean
+      has_password?: boolean | null
       /** @description Stable, never reused: the name can be recycled after a delete, the id cannot. */
       id: string
       /** @description The account's profile; the email address is never part of it. */
@@ -2136,6 +2185,17 @@ export interface components {
     /** @description Server settings an administrator can read. */
     AdminSettings: {
       account_deletion: components['schemas']['AccountDeletionSettings']
+      administrators: components['schemas']['AdministratorSummary']
+    }
+    /** @description How many active server administrators exist. */
+    AdministratorSummary: {
+      /**
+       * Format: int32
+       * @description Active accounts holding the administrator flag.
+       */
+      active: number
+      /** @description True when exactly one does: one lost credential from needing host recovery. */
+      single: boolean
     }
     /** @description Chunks already uploaded as objects, to be joined into one object. */
     AssembleObjectRequest: {
@@ -2859,6 +2919,14 @@ export interface components {
       role: components['schemas']['OrgRole']
       user: string
     }
+    /** @description What an organization shows about itself. */
+    OrgProfile: {
+      /** @description `/v1/orgs/{org}/avatar?v=` and the start of the image's hash; null when there is no avatar. */
+      avatar_url?: string | null
+      /** @description At most 256 characters; null when unset. */
+      description?: string | null
+      name: string
+    }
     /**
      * @description A person's standing in an organization.
      * @enum {string}
@@ -2967,6 +3035,12 @@ export interface components {
       /** Format: int64 */
       stored_bytes: number
     }
+    PeoplePage: {
+      /** @description Pass as `after` to fetch the next page; null on the last page. */
+      next_after: string | null
+      /** @description Ordered by account name. */
+      people: components['schemas']['PersonEntry'][]
+    }
     /** @description A commit's author or committer, apart from the time (the commit's `created_at`). */
     Person: {
       email: string
@@ -2976,6 +3050,14 @@ export interface components {
        * @description Minutes east of UTC.
        */
       offset_minutes: number
+    }
+    /** @description A person in the people directory: the public identity and the profile fields their owner shows. */
+    PersonEntry: {
+      bio?: string | null
+      company?: string | null
+      identity: components['schemas']['PublicIdentity']
+      links?: string[]
+      location?: string | null
     }
     /** @description What a proposed policy would change in the repository, without applying it. */
     PolicyPreview: {
@@ -3168,6 +3250,7 @@ export interface components {
       owner: string
       /** @description The id of `owner`, a user or an organization. */
       owner_id: string
+      owner_identity?: components['schemas']['PublicIdentity'] | null
       /** @description The caller's role in the repository; absent when they have none. */
       role?: string | null
       visibility: components['schemas']['Visibility']
@@ -3625,6 +3708,10 @@ export interface components {
     }
     /** @enum {string} */
     TreeMode: 'shared' | 'exclusive' | 'mixed'
+    /** @description The new organization description; blank or left out clears it. */
+    UpdateOrgProfileRequest: {
+      description?: string | null
+    }
     /** @description The new profile text: every field is replaced, and one left out or blank is cleared. */
     UpdateProfileRequest: {
       bio?: string | null
@@ -3842,6 +3929,15 @@ export interface operations {
       }
       /** @description unauthenticated */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description a token that is not full-scope, or a service credential */
+      403: {
         headers: {
           [name: string]: unknown
         }
@@ -5394,6 +5490,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description a full-scope credential gets its own full view; any narrower credential (a repository-scoped token) gets the public profile view, no visibility settings, no has_password and admin false */
       200: {
         headers: {
           [name: string]: unknown
@@ -6472,6 +6569,189 @@ export interface operations {
       }
     }
   }
+  get_org_avatar: {
+    parameters: {
+      query?: {
+        /** @description the version from `avatar_url`; when it is the current one the image is cached for a year */
+        v?: string
+      }
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the image, as `image/png`, `image/jpeg` or `image/webp` according to its bytes; readable signed out, with an `ETag` and `Cache-Control` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'image/png': string
+        }
+      }
+      /** @description `If-None-Match` matches the current image */
+      304: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description org_not_found, or avatar_not_found when it has none */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  put_org_avatar: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    /** @description the image bytes (png, jpeg or webp, at most 1 MiB); the type is judged from the bytes, not the `Content-Type` header */
+    requestBody: {
+      content: {
+        'image/png': string
+      }
+    }
+    responses: {
+      /** @description the profile with the new `avatar_url` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgProfile']
+        }
+      }
+      /** @description invalid_request: an empty body */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description not_org_owner, or a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description owner_frozen */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description object_too_large: over 1 MiB */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description unsupported_image: not a png, jpeg or webp */
+      415: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many avatar changes in an hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_org_avatar: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the profile without an avatar; removing none is not an error */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgProfile']
+        }
+      }
+      /** @description not_org_owner, or a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description owner_frozen */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   list_invitations: {
     parameters: {
       query?: never
@@ -6771,6 +7051,101 @@ export interface operations {
         }
       }
       /** @description last_org_owner: the only owner cannot be demoted */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_org_profile: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description any signed-in account can read it, as it can look the organization up */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgProfile']
+        }
+      }
+      /** @description org_not_found (also for a user name) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  update_org_profile: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateOrgProfileRequest']
+      }
+    }
+    responses: {
+      /** @description the stored profile */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgProfile']
+        }
+      }
+      /** @description invalid_request: the description is too long or has control characters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description not_org_owner, or a token that is not full-scope */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description owner_frozen */
       409: {
         headers: {
           [name: string]: unknown
@@ -7352,7 +7727,7 @@ export interface operations {
           'application/json': components['schemas']['OwnerFreeze']
         }
       }
-      /** @description not_namespace_owner (also for a name that does not exist): only the user themself, a member of the organization, an administrator or a service credential with manage_freeze may look; service_scope_required for a service credential without it */
+      /** @description not_namespace_owner (also for a name that does not exist): only the user themself, a member of the organization, an administrator or a service credential with manage_freeze may look; service_scope_required for a service credential without it; forbidden for a repository-scoped or otherwise limited token */
       403: {
         headers: {
           [name: string]: unknown
@@ -7393,7 +7768,7 @@ export interface operations {
           'application/json': components['schemas']['OwnerLimits']
         }
       }
-      /** @description not_namespace_owner (also for a name that does not exist) or not_org_owner (a member who does not own it): only the owner, an administrator or a service credential with manage_limits may look */
+      /** @description not_namespace_owner (also for a name that does not exist) or not_org_owner (a member who does not own it): only the owner, an administrator or a service credential with manage_limits may look; forbidden for a repository-scoped or otherwise limited token */
       403: {
         headers: {
           [name: string]: unknown
@@ -7434,7 +7809,7 @@ export interface operations {
           'application/json': components['schemas']['OwnerUsage']
         }
       }
-      /** @description not_namespace_owner (also for a name that does not exist) or not_org_owner (a member who does not own it): only the owner, an administrator or a service credential with manage_limits may look */
+      /** @description not_namespace_owner (also for a name that does not exist) or not_org_owner (a member who does not own it): only the owner, an administrator or a service credential with manage_limits may look; forbidden for a repository-scoped or otherwise limited token */
       403: {
         headers: {
           [name: string]: unknown
@@ -9943,7 +10318,7 @@ export interface operations {
           'application/json': components['schemas']['Registered']
         }
       }
-      /** @description needs manage_users */
+      /** @description needs manage_users and a full-scope credential */
       403: {
         headers: {
           [name: string]: unknown
@@ -10308,6 +10683,60 @@ export interface operations {
       }
       /** @description token_not_found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_people: {
+    parameters: {
+      query?: {
+        /** @description keeps accounts whose name or visible display name contains this text, ignoring case; at most 64 characters */
+        q?: string
+        /** @description return accounts after this account name */
+        after?: string
+        /** @description page size, default 30, max 100 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description active user accounts by name; never an email address, a hidden field, or an account that is disabled, not yet approved, scheduled for deletion or an organization */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PeoplePage']
+        }
+      }
+      /** @description invalid_request: a search over 64 characters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description sign-in required */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description forbidden for a token that is not full-scope, service_credential_not_allowed for a service credential */
+      403: {
         headers: {
           [name: string]: unknown
         }
