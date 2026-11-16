@@ -104,7 +104,10 @@ describe('failure', () => {
 })
 
 describe('AdminAccountsView deletion', () => {
-  const settings = { account_deletion: { window_days: 30, disabled_retention_days: 0 } }
+  const settings = {
+    account_deletion: { window_days: 30, disabled_retention_days: 0 },
+    administrators: { active: 2, single: false },
+  }
 
   it('deletes with the reason and the immediate choice, then reloads', async () => {
     vi.mocked(admin.listAccounts).mockResolvedValue(accounts)
@@ -133,7 +136,10 @@ describe('AdminAccountsView deletion', () => {
 
   it('describes automatic deletion', () => {
     expect(
-      retentionNote({ account_deletion: { window_days: 30, disabled_retention_days: 90 } }),
+      retentionNote({
+        account_deletion: { window_days: 30, disabled_retention_days: 90 },
+        administrators: { active: 2, single: false },
+      }),
     ).toContain('deleted automatically after 90 days')
   })
 })
