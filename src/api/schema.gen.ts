@@ -2007,6 +2007,11 @@ export interface components {
        */
       scheduled_at: string | null
       user: string
+      /**
+       * Format: int64
+       * @description The recovery window in days: how long after scheduling a deletion can still be undone.
+       */
+      window_days: number
     }
     /** @description `account.disabled`. */
     AccountDisabledData: {
@@ -3006,6 +3011,16 @@ export interface components {
       links?: string[]
       /** @description At most 64 characters. */
       location?: string | null
+      visibility?: components['schemas']['ProfileVisibility'] | null
+    }
+    /** @description Per-field visibility of a profile. A missing field is visible. */
+    ProfileVisibility: {
+      avatar?: boolean
+      bio?: boolean
+      company?: boolean
+      display_name?: boolean
+      links?: boolean
+      location?: boolean
     }
     /** @description What others may see of an account next to its name: the account name, display name and avatar address. */
     PublicIdentity: {
@@ -3617,6 +3632,7 @@ export interface components {
       display_name?: string | null
       links?: string[]
       location?: string | null
+      visibility?: components['schemas']['ProfileVisibility'] | null
     }
     /** @description Fields left out stay as they are. */
     UpdateRepoRequest: {
@@ -10313,7 +10329,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description readable signed out; never includes an email address, and lists only the repositories and organizations the caller may see */
+      /** @description readable signed out; never includes an email address, hides the fields the user made private (everyone but the user sees them absent, an administrator included), and lists only the repositories and organizations the caller may see */
       200: {
         headers: {
           [name: string]: unknown
@@ -10373,7 +10389,16 @@ export interface operations {
         }
         content?: never
       }
-      /** @description user_not_found, or avatar_not_found when the user has none */
+      /** @description credentials were sent but are not valid */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found, or avatar_not_found when the user has none or hides it from the caller */
       404: {
         headers: {
           [name: string]: unknown

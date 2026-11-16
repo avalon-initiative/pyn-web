@@ -40,6 +40,7 @@ describe('DeleteAccountView', () => {
       purge_at: '2026-12-15T00:00:00Z',
       scheduled_at: null,
       user: 'root',
+      window_days: 30,
     }
     vi.mocked(scheduleDeletion).mockResolvedValue(status)
     const w = mount(DeleteAccountView, { global: { provide } })
@@ -48,6 +49,18 @@ describe('DeleteAccountView', () => {
     await flushPromises()
     expect(scheduleDeletion).toHaveBeenCalledWith('pw')
     expect(scheduled).toHaveBeenCalledWith(status)
+  })
+
+  it('passes the recovery window on, and falls back to none', async () => {
+    const withDays = {
+      [sessionKey as symbol]: { ...provide[sessionKey as symbol], recoveryDays: ref(14) },
+    }
+    const w = mount(DeleteAccountView, { global: { provide: withDays } })
+    await flushPromises()
+    expect(w.findComponent(PynAccountDelete).props('recoveryDays')).toBe(14)
+    const bare = mount(DeleteAccountView, { global: { provide } })
+    await flushPromises()
+    expect(bare.findComponent(PynAccountDelete).props('recoveryDays')).toBeUndefined()
   })
 
   it('treats an account with no password as external', async () => {
