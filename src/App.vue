@@ -24,6 +24,7 @@ import { listMyInvitations, listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { onPendingDeletion } from './state/pending.state'
+import { ownProfile } from './state/own-profile.state'
 import { pendingInvitations } from './state/invitations.state'
 import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
@@ -115,6 +116,7 @@ const expire = () => {
   deletion.value = null
   user.value = ''
   admin.value = false
+  ownProfile.value = {}
 }
 provide(sessionKey, {
   user,
@@ -127,7 +129,9 @@ provide(sessionKey, {
 async function begin(name: string) {
   const status = await fetchDeletionStatus().catch(() => null)
   deletion.value = status?.pending ? status : null
-  admin.value = deletion.value ? false : (await fetchMe().catch(() => null))?.admin === true
+  const me = deletion.value ? null : await fetchMe().catch(() => null)
+  admin.value = me?.admin === true
+  ownProfile.value = me?.profile ?? {}
   user.value = name
 }
 
@@ -295,6 +299,8 @@ onMounted(async () => {
         <template #top>
           <PynTopBar
             :user="user"
+            :display-name="ownProfile.display_name"
+            :avatar-url="ownProfile.avatar_url"
             :repos="slugs"
             :theme="theme"
             :admin="admin"
@@ -308,6 +314,8 @@ onMounted(async () => {
         <template v-if="!bare" #side>
           <PynSideNav
             :account="user"
+            :display-name="ownProfile.display_name"
+            :avatar-url="ownProfile.avatar_url"
             :items="sideNavItems(admin, navItems, pendingInvitations)"
             :current="activeNav(route.path, navItems)"
             :repos="repos"

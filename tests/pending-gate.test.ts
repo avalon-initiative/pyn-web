@@ -1,10 +1,16 @@
-import { PynAccountPendingDeletion, PynSignIn } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynAccountPendingDeletion,
+  PynSideNav,
+  PynSignIn,
+  PynTopBar,
+} from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { failure } from '../src/api/http'
 import { makeRouter } from '../src/router'
 import { onPendingDeletion } from '../src/state/pending.state'
+import { ownProfile } from '../src/state/own-profile.state'
 
 const reply = (status: number, body: unknown) =>
   new Response(body === null ? null : JSON.stringify(body), { status })
@@ -128,5 +134,46 @@ describe('pending-deletion gate', () => {
     await flushPromises()
     expect(calls(fn, 'GET /v1/account/deletion')).toBe(1)
     expect(w.findComponent(PynAccountPendingDeletion).exists()).toBe(false)
+  })
+})
+
+describe('own identity in the shell', () => {
+  const profile = { display_name: 'Wendy W', avatar_url: '/v1/users/wendy/avatar?v=1' }
+  const withProfile = {
+    ...base,
+    'GET /v1/me': () => reply(200, { id: 'a', user: 'wendy', admin: false, profile }),
+    'GET /v1/account/deletion': () => reply(200, idle),
+  }
+
+  it('passes the display name and avatar to the top bar and side nav', async () => {
+    serve(withProfile)
+    const w = await open()
+    for (const c of [PynTopBar, PynSideNav]) {
+      const part = w.findComponent(c)
+      expect(part.props('displayName')).toBe('Wendy W')
+      expect(part.props('avatarUrl')).toBe(profile.avatar_url)
+    }
+  })
+
+  it('falls back to the account name when the profile cannot load', async () => {
+    serve({ ...withProfile, 'GET /v1/me': () => reply(500, { code: 'x', message: 'x' }) })
+    const w = await open()
+    expect(w.findComponent(PynTopBar).props('displayName')).toBeUndefined()
+    expect(w.findComponent(PynTopBar).props('user')).toBe('wendy')
+  })
+
+  it('follows the profile page', async () => {
+    serve(withProfile)
+    const w = await open()
+    ownProfile.value = { display_name: 'New Name', avatar_url: null }
+    await flushPromises()
+    expect(w.findComponent(PynSideNav).props('displayName')).toBe('New Name')
+  })
+
+  it('makes no profile request for a pending account', async () => {
+    const fn = serve({ ...withProfile, 'GET /v1/account/deletion': () => reply(200, pending) })
+    await open()
+    expect(calls(fn, 'GET /v1/me')).toBe(0)
+    expect(ownProfile.value).toEqual({})
   })
 })
