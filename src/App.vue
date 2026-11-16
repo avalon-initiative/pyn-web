@@ -169,14 +169,17 @@ const finishSetup = (form: SetupForm) =>
     setupDone.value = form
   })
 
-const enterAfterSetup = () =>
+const enterAfterSetup = (to?: string) =>
   attempt(async () => {
     if (!setupDone.value) return
     const { username, password } = setupDone.value
     await begin((await signIn({ username, password })).user)
     setup.value = null
     setupDone.value = null
+    if (to) await router.push(to)
   })
+
+const manageAdmins = () => enterAfterSetup('/_/admin/accounts')
 
 const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
@@ -261,9 +264,11 @@ onMounted(async () => {
         :busy="busy"
         :error="error"
         :name-message="nameMessage"
+        suggest-second-admin
         @name-input="checkName"
         @finish="finishSetup"
-        @sign-in="enterAfterSetup"
+        @sign-in="enterAfterSetup()"
+        @manage-admins="manageAdmins"
       />
     </main>
     <main v-else-if="ready && !user">
