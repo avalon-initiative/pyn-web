@@ -6,10 +6,12 @@ import { fetchMe } from '../api/admin'
 import { removeAvatar, saveProfile, uploadAvatar } from '../api/profile'
 import type { Profile } from '../api/profile'
 import { useAction } from '../state/action.state'
+import { ownProfile } from '../state/own-profile.state'
 import { sessionKey } from '../state/context.state'
 
 const session = inject(sessionKey)!
 const profile = ref<Profile>({})
+const keep = (next: Profile) => (ownProfile.value = profile.value = next)
 const success = ref('')
 const avatarError = ref('')
 const { busy, error, attempt } = useAction()
@@ -22,14 +24,14 @@ onMounted(async () => {
 const save = (values: ProfileValues) =>
   attempt(async () => {
     success.value = ''
-    profile.value = await saveProfile(values)
+    keep(await saveProfile(values))
     success.value = 'Profile saved.'
   })
 
 async function changeAvatar(change: () => Promise<Profile>) {
   avatarError.value = ''
   const ok = await avatar.attempt(async () => {
-    profile.value = await change()
+    keep(await change())
   })
   if (!ok) avatarError.value = avatar.error.value
 }
