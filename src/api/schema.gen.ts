@@ -6455,7 +6455,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description any signed-in account can look an organization up */
+      /** @description any signed-in account can look an organization up; role is the caller's and is absent for a token that is not full-scope */
       200: {
         headers: {
           [name: string]: unknown
@@ -7073,7 +7073,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description any signed-in account can read it, as it can look the organization up */
+      /** @description any signed-in account can read it, as it can look the organization up; it holds nothing specific to the caller */
       200: {
         headers: {
           [name: string]: unknown
@@ -9206,6 +9206,15 @@ export interface operations {
       }
       /** @description needs manage_users and every permission the role grants */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found: the account must already exist, it is never created here */
+      404: {
         headers: {
           [name: string]: unknown
         }
