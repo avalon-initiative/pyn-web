@@ -52,6 +52,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/access': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations['set_access_mode']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/audit': {
     parameters: {
       query?: never
@@ -1968,6 +1984,11 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /**
+     * @description Whether a signed-out caller can read anything: `private` shows nothing, `public` shows public things.
+     * @enum {string}
+     */
+    AccessMode: 'private' | 'public'
     /** @description The signed-in account, independent of any repository. */
     Account: {
       /** @description Runs the server: may approve and disable accounts under `/v1/admin`. */
@@ -3496,6 +3517,10 @@ export interface components {
       /** Format: int64 */
       secret_id: number
     }
+    /** @description The server's access mode, as read and as changed by an administrator. */
+    ServerAccess: {
+      access_mode: components['schemas']['AccessMode']
+    }
     /** @description What this server supports beyond the base API; a client checks it before it relies on a newer route. */
     ServerCapabilities: {
       /** @description The server accepts pushed commits and serves fetches (`/push`, `/fetch`), so a client may keep commits locally. */
@@ -3564,6 +3589,7 @@ export interface components {
       user: string
     }
     SetupRequest: {
+      access_mode?: components['schemas']['AccessMode'] | null
       email?: string | null
       password: string
       /** @description The address people reach the web app at; verification links use it. */
@@ -3577,6 +3603,8 @@ export interface components {
     }
     /** @description Whether first-run setup has happened; carries no secrets. */
     SetupStatus: {
+      /** @description What setup recorded or an administrator set later; before setup, the configured default. */
+      access_mode: components['schemas']['AccessMode']
       initialised: boolean
       /** @description What setup recorded; before setup, the address the server is configured with. */
       public_url: string
@@ -4036,6 +4064,48 @@ export interface operations {
       }
       /** @description unauthenticated */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  set_access_mode: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ServerAccess']
+      }
+    }
+    responses: {
+      /** @description the mode now in force; it applies to the next request, and setting the current mode changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ServerAccess']
+        }
+      }
+      /** @description invalid_request: not private or public */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required: also for any service credential */
+      403: {
         headers: {
           [name: string]: unknown
         }
