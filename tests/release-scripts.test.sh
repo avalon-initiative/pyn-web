@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Exercises scripts/release.sh, ci-green-for-tree.sh, release-meta.sh and verify-release-version.sh in a throwaway repo
+# Exercises scripts/release.sh, ci-green-for-tree.sh, release-meta.sh, release-latest.sh, release-body.sh and verify-release-version.sh in a throwaway repo
 # with a bare origin and a stub gh. No network, nothing real is pushed.
 set -uo pipefail
-unset YES VER TITLE SKIP_CHECKS FORCE_CHECKS GH_API_FAIL GH_REPO GITHUB_REPOSITORY
+unset YES VER TITLE SKIP_CHECKS FORCE_CHECKS GH_API_FAIL GH_REPO GITHUB_REPOSITORY GITHUB_SHA
 
 src="$(cd "$(dirname "$0")/.." && pwd)"
 tmp="$(mktemp -d)"
@@ -23,6 +23,8 @@ if [[ "$1" == "api" ]]; then # answers from the JSON files in $GH_FIX through th
   while [[ $# -gt 0 ]]; do [[ "$1" == "--jq" ]] && q="$2"; shift; done
   [[ -z "${GH_API_FAIL:-}" ]] || exit 1
   case "$ep" in
+    */releases/generate-notes) f="$GH_FIX/notes.json" ;;
+    */releases) f="$GH_FIX/releases.json" ;;
     */pulls) f="$GH_FIX/pulls.json" ;;
     */git/commits/*) f="$GH_FIX/commit-${ep##*/}.json" ;;
     */actions/runs*) f="$GH_FIX/runs.json" ;;
@@ -50,7 +52,7 @@ setup() { # fresh work repo + bare origin, on main with version 0.1.0
   git config commit.gpgSign false
   git switch -q -c main 2>/dev/null || true
   mkdir scripts
-  cp "$src"/scripts/{release.sh,release-meta.sh,verify-release-version.sh,ci-green-for-tree.sh} scripts/
+  cp "$src"/scripts/{release.sh,release-meta.sh,release-latest.sh,release-body.sh,verify-release-version.sh,ci-green-for-tree.sh} scripts/
   printf '#!/usr/bin/env bash\necho gate-ran >>"$GATE_LOG"\n[[ "${GATE_FAIL:-}" != 1 ]]\n' >scripts/release-checks.sh
   printf '{\n  "name": "x",\n  "version": "0.1.0",\n  "lockfileVersion": 3,\n  "packages": {\n    "": { "name": "x", "version": "0.1.0" }\n  }\n}\n' >package-lock.json
   printf '{\n  "name": "x",\n  "version": "0.1.0"\n}\n' >package.json
@@ -79,6 +81,8 @@ origin_has refs/heads/release-v0.2.0; expect "branch pushed" $?
 [[ -z "$(git --git-dir="$tmp/origin.git" tag)" ]]; expect "no remote tag" $?
 grep -q '^pr create .*--title \[RELEASE\] - v0.2.0-First-stable-build' "$GH_LOG"; expect "gh pr create called" $?
 [[ -s "$tmp/gate.log" ]]; expect "gate ran" $?
+grep -qx '## TLDR' "$GH_LOG"; expect "release PR body ends with an empty TLDR heading" $?
+grep -q "fill in the ## TLDR section" "$tmp/out"; expect "release prints the TLDR reminder" $?
 
 # no title, answered no: nothing pushed
 setup
@@ -198,19 +202,46 @@ git switch -q -c other
 YES=1 run publish
 [[ $? -ne 0 ]] && grep -q "not on main" "$tmp/out"; expect "publish refuses off main" $?
 
-# release-meta: pre-release flag and image tags
+# release-meta: image tags (the title changes nothing)
 meta() { bash scripts/release-meta.sh "$1" img; }
-for t in v1.0.0 v1.0.0-first-stable v1.0.0-Big-One v1.0.0-prerequisites v1.0.0-bethany v1.0.0-release-candidate; do
-  grep -qx "prerelease=false" <<<"$(meta $t)"; expect "meta $t is not a pre-release" $?
-done
-for t in v1.0.0-alpha v1.0.0-beta.1 v1.0.0-rc1 v1.0.0-RC-2 v1.0.0-pre v1.0.0-Pre-release v1.0.0-Alpha.3 v1.0.0-beta-2; do
-  grep -qx "prerelease=true" <<<"$(meta $t)"; expect "meta $t is a pre-release" $?
+for t in v1.0.0 v1.0.0-alpha v1.0.0-rc1 v1.0.0-first-stable; do
+  ! meta $t | grep -q prerelease; expect "meta $t has no pre-release output" $?
 done
 out="$(meta v1.2.3)"
 [[ "$(sed -n '/^image_tags<</,/^EOF$/p' <<<"$out" | grep -c '^img:')" == 1 ]] && grep -qx "img:v1.2.3" <<<"$out"; expect "meta plain tag pushes plain version only" $?
 out="$(meta v1.2.3-first-stable)"
 [[ "$(sed -n '/^image_tags<</,/^EOF$/p' <<<"$out" | grep -c '^img:')" == 1 ]] && grep -qx "img:v1.2.3" <<<"$out"; expect "meta titled tag pushes the plain version only" $?
 bash scripts/release-meta.sh nonsense >/dev/null 2>&1; expect "meta rejects a bad tag" $([[ $? -ne 0 ]] && echo 0 || echo 1)
+
+# release-latest: --latest only for the highest X.Y.Z among existing release tags
+latest() { GITHUB_REPOSITORY=o/r bash scripts/release-latest.sh "$1" 2>/dev/null; }
+printf '%s\n' '[{"tag_name":"v0.1.9-alpha"},{"tag_name":"v0.1.10"},{"tag_name":"v0.2.0-Big-one"}]' >"$GH_FIX/releases.json"
+[[ "$(latest v0.2.1)" == "--latest" ]]; expect "latest: higher version is Latest" $?
+[[ "$(latest v0.2.1-some-title)" == "--latest" ]]; expect "latest: title slug is ignored" $?
+[[ "$(latest v0.1.11)" == "--latest=false" ]]; expect "latest: backport is not Latest" $?
+[[ "$(latest v0.10.0)" == "--latest" ]]; expect "latest: numeric not lexical order" $?
+[[ "$(latest v0.2.0)" == "--latest" ]]; expect "latest: the tag itself already listed stays Latest" $?
+printf '[]\n' >"$GH_FIX/releases.json"
+[[ "$(latest v0.1.0)" == "--latest" ]]; expect "latest: first release is Latest" $?
+GITHUB_REPOSITORY=o/r GH_API_FAIL=1 bash scripts/release-latest.sh v0.1.0 >/dev/null 2>&1; expect "latest: fails on an API error" $([[ $? -ne 0 ]] && echo 0 || echo 1)
+GITHUB_REPOSITORY=o/r bash scripts/release-latest.sh nonsense >/dev/null 2>&1; expect "latest: rejects a bad tag" $([[ $? -ne 0 ]] && echo 0 || echo 1)
+
+# release-body: TLDR, blank line, generated notes; notes alone without a TLDR
+body() { GITHUB_REPOSITORY=o/r GITHUB_SHA=abc bash scripts/release-body.sh v0.2.0; }
+printf '%s\n' '{"body":"## What'"'"'s Changed\n* a by @x in #1\n"}' >"$GH_FIX/notes.json"
+notes="$(jq -r .body "$GH_FIX/notes.json")"
+printf '%s\n' '[{"number":7,"body":"Intro\n\n## TLDR\n\nFirst line.\n\nSecond line.\n\n\n## Other\nignored"}]' >"$GH_FIX/pulls.json"
+[[ "$(body)" == "$(printf 'First line.\n\nSecond line.\n\n%s' "$notes")" ]]; expect "body: TLDR, blank line, notes" $?
+printf '%s\n' '[{"number":7,"body":"## TLDR\r\nCRLF text\r\n"}]' >"$GH_FIX/pulls.json"
+[[ "$(body)" == "$(printf 'CRLF text\n\n%s' "$notes")" ]]; expect "body: TLDR to the end of the description, CRLF" $?
+printf '%s\n' '[{"number":7,"body":"x\n## TLDR\n\n   \n## Next\ny"}]' >"$GH_FIX/pulls.json"
+[[ "$(body)" == "$notes" ]]; expect "body: empty TLDR gives the notes alone" $?
+printf '%s\n' '[{"number":7,"body":"no section here"}]' >"$GH_FIX/pulls.json"
+[[ "$(body)" == "$notes" ]]; expect "body: no TLDR gives the notes alone" $?
+printf '%s\n' '[{"number":7,"body":null}]' >"$GH_FIX/pulls.json"
+[[ "$(body)" == "$notes" ]]; expect "body: null description gives the notes alone" $?
+printf '[]\n' >"$GH_FIX/pulls.json"
+[[ "$(body)" == "$notes" ]]; expect "body: no pull request gives the notes alone" $?
 
 # verify-release-version
 verify() { bash scripts/verify-release-version.sh "$1" >/dev/null 2>&1; }

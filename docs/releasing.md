@@ -1,7 +1,7 @@
 # Releasing
 
 A release is a `v<X.Y.Z>[-title]` tag on a commit on `main`. The title is a free-text slug (`v1.0.0-first-stable`); it
-names the release and does not make it a pre-release. Pushing the tag runs `.github/workflows/release.yml`, which builds
+names the release and changes no flag. Pushing the tag runs `.github/workflows/release.yml`, which builds
 the app, publishes the container image `ghcr.io/avalon-initiative/pyn-web` and creates a GitHub Release with the tarball.
 pyn-web is an application, so nothing is published to a package registry. There is no `latest` tag.
 
@@ -56,20 +56,21 @@ It fails safe: when the check cannot decide (another pull request merged in betw
 CI run, an API error), the checks simply run. A squash merge of an unchanged release branch keeps the pull request's tree,
 which is the normal case. The tag workflow is unaffected: it always runs its checks, because they share a build with the packaging.
 
-## Pre-releases and image tags
+## Latest, the release text and image tags
 
-`scripts/release-meta.sh` derives both from the tag.
+There is no pre-release: a release is final, and a fix is a new patch. The workflow creates the GitHub Release with
+`--latest` when the tag's `X.Y.Z` is the highest among the existing release tags (`scripts/release-latest.sh`, title ignored)
+and with `--latest=false` otherwise, so a backport to an older line never takes Latest.
 
-| Tag                                       | GitHub Release | Image tag |
-| ----------------------------------------- | -------------- | --------- |
-| `v1.0.0`                                  | release        | `v1.0.0`  |
-| `v1.0.0-first-stable`                     | release        | `v1.0.0`  |
-| `v1.0.0-rc.1`, `-beta`, `-alpha2`, `-pre` | pre-release    | `v1.0.0`  |
+The release body is the `## TLDR` section of the release pull request (the pull request of the tagged commit, from that
+heading to the next `## ` heading) followed by GitHub's generated "What's Changed"; with no TLDR text it is the generated
+notes alone (`scripts/release-body.sh`). `make release` opens the pull request with an empty `## TLDR` section: fill it in
+before merging.
 
-A title is a pre-release only when it starts with `alpha`, `beta`, `rc` or `pre` (case-insensitive) followed by the end,
-`.`, `-` or a digit; `v1.0.0-prerequisites` is a normal release. The image carries only the plain `:v<X.Y.Z>`
-(no title, no `latest`); the title lives in the git tag and the GitHub Release. Because the image tag would be overwritten,
-`make release` refuses a version for which any `v<X.Y.Z>` or `v<X.Y.Z>-*` tag exists, locally or on origin.
+`scripts/release-meta.sh` derives the image tag from the tag: `v1.0.0` and `v1.0.0-first-stable` both give `v1.0.0`. The
+image carries only the plain `:v<X.Y.Z>` (no title, no `latest`); the title lives in the git tag and the GitHub Release.
+Because the image tag would be overwritten, `make release` refuses a version for which any `v<X.Y.Z>` or `v<X.Y.Z>-*` tag
+exists, locally or on origin.
 
 ## What the workflow does
 
@@ -81,8 +82,8 @@ A title is a pre-release only when it starts with `alpha`, `beta`, `rc` or `pre`
 5. Builds the image from that same `dist/` for linux/amd64 and linux/arm64 and pushes `ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>`.
    The Dockerfile only copies files (no Node, no registry token in the build), so the multi-platform build needs no
    emulation.
-6. Creates the GitHub Release with the tarball, `SHA256SUMS` and generated notes, once the image is pushed. It is marked as a pre-release only for
-   an `alpha`, `beta`, `rc` or `pre` title (see above).
+6. Creates the GitHub Release with the tarball, `SHA256SUMS` and the body described above, once the image is pushed. It is
+   Latest only when its version is the highest.
 
 If a run fails after the image push, fix forward with a new patch version rather than re-tagging. After the first push the
 org owner must set the `pyn-web` package on ghcr.io to public (GitHub Packages settings); it starts private.

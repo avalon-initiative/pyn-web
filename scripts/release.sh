@@ -55,7 +55,7 @@ cleanup_hint() {
 run_checks() {
   [[ "${SKIP_CHECKS:-}" == "1" && "${FORCE_CHECKS:-}" == "1" ]] && die "SKIP_CHECKS and FORCE_CHECKS contradict each other"
   if [[ "${SKIP_CHECKS:-}" == "1" ]]; then
-    echo "release: skipping pre-release checks (SKIP_CHECKS=1)"
+    echo "release: skipping release checks (SKIP_CHECKS=1)"
     return
   fi
   if [[ "${FORCE_CHECKS:-}" != "1" ]]; then
@@ -64,11 +64,11 @@ run_checks() {
       echo "release: skipping the local checks; $note"
       return
     fi
-    echo "release: running pre-release checks; $note"
+    echo "release: running release checks; $note"
   else
-    echo "release: running pre-release checks (FORCE_CHECKS=1)"
+    echo "release: running release checks (FORCE_CHECKS=1)"
   fi
-  bash scripts/release-checks.sh || die "pre-release checks failed; nothing was changed"
+  bash scripts/release-checks.sh || die "release checks failed; nothing was changed"
 }
 
 release() {
@@ -107,10 +107,14 @@ release() {
   git diff --stat HEAD~1 HEAD
   local body="Release $tag: bumps package.json and package-lock.json to $ver.
 
-The tag is created on the merged commit after this PR is squash-merged, with \`make release-publish\`."
+The tag is created on the merged commit after this PR is squash-merged, with \`make release-publish\`.
+
+## TLDR
+"
   if confirm "Push the branch and open the pull request? [y/N] "; then
     git push -q -u origin "$branch"
     gh pr create --base main --head "$branch" --title "$subject" --body "$body"
+    echo "release: fill in the ## TLDR section of the pull request description before merging"
   else
     echo "release: later, run:"
     echo "  git push -u origin $branch"

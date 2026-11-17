@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-release gate: the CI checks plus the production build.
+# Release gate: the CI checks plus the production build.
 # `make release` runs it before changing anything; the release workflow runs it too.
 # PYN_OPENAPI (path or URL) selects the OpenAPI document for the drift check.
 set -euo pipefail
