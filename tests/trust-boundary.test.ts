@@ -18,6 +18,20 @@ const json = (body: unknown, status = 200) =>
 const CLAIM =
   /^(user|username|actor|owner_id|role|roles|permissions?|admin|is_admin|entitlements?)$/i
 const ALLOWED_HEADERS = new Set(['accept', 'content-type', 'x-pyn-csrf'])
+const CREATED_TOKEN = {
+  token: 'pyn_secret',
+  info: {
+    id: 't1',
+    user: 'ann',
+    name: 'ci',
+    owner: 'ann',
+    created_at: '2026-11-17T00:00:00Z',
+    sign_in: false,
+    repository_access: { mode: 'all' },
+    permissions: [],
+  },
+}
+const TOKEN_FORM = { name: 'ci', repos: [], permissions: [], expires_at: null }
 
 function claimKeys(value: unknown, found: string[] = []): string[] {
   if (Array.isArray(value)) value.forEach((v) => claimKeys(v, found))
@@ -44,6 +58,7 @@ describe('requests through the typed client', () => {
           body: String(init.body ?? ''),
         })
         if (url === '/v1/session') return json({ user: 'ann', csrf_token: 'csrf-from-server' })
+        if (url === '/v1/tokens' && init.method === 'POST') return json(CREATED_TOKEN)
         return init.method === 'GET' ? json({ admin: false, user: 'ann' }) : json({}, 200)
       }),
     )
@@ -56,7 +71,7 @@ describe('requests through the typed client', () => {
   })
 
   it('takes the CSRF token only from the server session answer', async () => {
-    await createToken({ name: 'ci', scopes: [] } as never).catch(() => undefined)
+    await createToken(TOKEN_FORM).catch(() => undefined)
     expect(sent[0].headers.has('x-pyn-csrf')).toBe(false)
     await signIn({ username: 'ann', password: 'pw' })
     sent.length = 0
@@ -71,12 +86,14 @@ describe('requests through the typed client', () => {
     await fetchMe()
     await releaseLock(repo, 'a.bin')
     await forceUnlock(repo, 'a.bin', 'stuck')
-    await createToken({ name: 'ci', scopes: [] } as never)
+    await createToken(TOKEN_FORM)
     expect(sent).toHaveLength(4)
     for (const r of sent) {
       expect([...r.headers.keys()].filter((h) => !ALLOWED_HEADERS.has(h))).toEqual([])
       expect(r.url).not.toMatch(/[?&](user|role|admin|permission|entitlement)/i)
-      if (r.body) expect(claimKeys(JSON.parse(r.body))).toEqual([])
+      // A token request carries the grants its form chose; the mapping test pins them exactly.
+      const allowed = r.url.endsWith('/v1/tokens') ? /^permissions$/i : /^$/
+      if (r.body) expect(claimKeys(JSON.parse(r.body)).filter((k) => !allowed.test(k))).toEqual([])
     }
   })
 

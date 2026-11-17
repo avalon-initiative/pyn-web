@@ -2422,12 +2422,20 @@ export interface components {
       slug: string
     }
     CreateTokenRequest: {
-      /** Format: date-time */
+      description?: string | null
+      /**
+       * Format: date-time
+       * @description When the token expires; without it and without `never` the token lasts 30 days.
+       */
       expires_at?: string | null
       name: string
-      permissions: string[]
-      /** @description Repositories the token is valid for, as `owner/name`; at least one. */
-      repos: string[]
+      /** @description Never expires; not combinable with `expires_at`. */
+      never?: boolean
+      /** @description The resource owner: the caller's own account or an organization they belong to. Defaults to the caller. */
+      owner?: string | null
+      /** @description Metadata read is implied for `all` and `selected`; none are allowed with `public`. */
+      permissions: components['schemas']['TokenPermission'][]
+      repository_access: components['schemas']['RepositoryAccess']
     }
     CreateWebhookRequest: {
       /** @description Defaults to true. */
@@ -3382,6 +3390,16 @@ export interface components {
        */
       stored_bytes: number
     }
+    /** @description Which repositories of the token's owner it reaches. */
+    RepositoryAccess: {
+      /**
+       * @description `public` (none beyond the public repositories every token can read), `all` (every repository the owner
+       *     has now and later) or `selected` (only `repos`).
+       */
+      mode: string
+      /** @description `owner/name` of each selected repository, all owned by the token's owner; empty unless `selected`. */
+      repos?: string[]
+    }
     /** @description `repository.created`. */
     RepositoryCreatedData: {
       actor: string
@@ -3703,18 +3721,33 @@ export interface components {
     TokenInfo: {
       /** Format: date-time */
       created_at: string
-      /** Format: date-time */
+      description?: string | null
+      /**
+       * Format: date-time
+       * @description Absent means the token never expires.
+       */
       expires_at?: string | null
       id: string
       /** Format: date-time */
       last_used_at?: string | null
       name: string
-      permissions: string[]
-      /** @description `owner/name` of each repository the token is limited to; empty means every repository. */
-      repos: string[]
+      /** @description The resource owner. */
+      owner: string
+      permissions: components['schemas']['TokenPermission'][]
+      repository_access: components['schemas']['RepositoryAccess']
       /** Format: date-time */
       revoked_at?: string | null
+      /** @description Issued by `pyn login`: a full-scope credential rather than a fine-grained token. */
+      sign_in: boolean
+      /** @description The account that created the token and whose role it is capped by. */
       user: string
+    }
+    /** @description One permission of a fine-grained token: a resource at a level. */
+    TokenPermission: {
+      /** @description `read` or `write` (write includes read); `admin` for `locks` only (includes write). */
+      level: string
+      /** @description `metadata`, `contents`, `locks`, `policy`, `members`, `administration` or `audit`. */
+      resource: string
     }
     TreeEntry: {
       kind: components['schemas']['TreeEntryKind']
@@ -10722,7 +10755,16 @@ export interface operations {
           'application/json': components['schemas']['CreatedToken']
         }
       }
-      /** @description asked for a permission the caller lacks in a listed repository */
+      /** @description invalid_request: an unknown resource, level or access mode, a level above the resource's top one, a selected repository the owner does not own, or both expires_at and never */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description not_org_member: the owner is an organization the caller is not in */
       403: {
         headers: {
           [name: string]: unknown
