@@ -10829,7 +10829,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description active user accounts by name; never an email address, a hidden field, or an account that is disabled, not yet approved, scheduled for deletion or an organization */
+      /** @description the same public entries signed out or with any valid user credential: active user accounts by name; never an email address, a hidden field, or an account that is disabled, not yet approved, scheduled for deletion or an organization */
       200: {
         headers: {
           [name: string]: unknown
@@ -10847,7 +10847,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description sign-in required */
+      /** @description a credential that is not valid, or signed out on a private server */
       401: {
         headers: {
           [name: string]: unknown
@@ -10856,8 +10856,17 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description forbidden for a token that is not full-scope, service_credential_not_allowed for a service credential */
+      /** @description service_credential_not_allowed for a service credential */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: a signed-out client asked too often; Retry-After says how many seconds to wait */
+      429: {
         headers: {
           [name: string]: unknown
         }
