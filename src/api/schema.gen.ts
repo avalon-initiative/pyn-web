@@ -9561,7 +9561,7 @@ export interface operations {
           'application/json': components['schemas']['PutObjectResponse']
         }
       }
-      /** @description invalid_request for a malformed hash, an oversized chunk or too many chunks; object_missing when a chunk was not uploaded */
+      /** @description invalid_request for an empty list, a malformed hash, an oversized chunk or too many chunks; object_missing when a chunk was not uploaded */
       400: {
         headers: {
           [name: string]: unknown

@@ -52,6 +52,13 @@ describe('admin area', () => {
         urls.push(url)
         if (url.startsWith('/v1/admin/audit')) return audit()
         if (url.startsWith('/v1/admin/webhooks')) return json([])
+        if (url.startsWith('/v1/setup'))
+          return json({
+            initialised: true,
+            public_url: 'https://pyn.example.com',
+            registration: 'invite',
+            access_mode: 'private',
+          })
         return json(accounts)
       }),
     )
@@ -66,6 +73,7 @@ describe('admin area', () => {
 
   it.each([
     ['/_/admin/accounts', 'accounts'],
+    ['/_/admin/access', 'access'],
     ['/_/admin/audit', 'audit'],
     ['/_/admin/webhooks', 'webhooks'],
   ])('wraps %s in the admin layout with current %s', async (path, current) => {
@@ -75,6 +83,7 @@ describe('admin area', () => {
     expect(layout.props('current')).toBe(current)
     expect(layout.props('items').map((i: { id: string }) => i.id)).toEqual([
       'accounts',
+      'access',
       'audit',
       'webhooks',
     ])
@@ -91,7 +100,7 @@ describe('admin area', () => {
     expect(auditPage.findComponent(PynAccounts).exists()).toBe(false)
   })
 
-  it.each(['/_/admin/accounts', '/_/admin/audit', '/_/admin/webhooks'])(
+  it.each(['/_/admin/accounts', '/_/admin/access', '/_/admin/audit', '/_/admin/webhooks'])(
     'refuses a non-administrator on %s and sends nothing',
     async (path) => {
       stub()
