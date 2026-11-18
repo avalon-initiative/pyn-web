@@ -3,7 +3,7 @@
 The web UI for [pyn](https://github.com/avalon-initiative/pyn), version control that merges what can be merged and
 locks what shouldn't be. It shows a repository's files with each path's mode (`shared` or `exclusive`) and lock holder,
 and covers the day-to-day work around them: locks, history, the audit log, members, roles, invitations, organizations
-and teams, and account settings (SSH keys, API tokens, linked identities). Vue 3, Vite and TypeScript.
+and teams, and account settings (SSH keys, fine-grained API tokens, linked identities). Vue 3, Vite and TypeScript.
 
 The server is the only authority: this app is a client of its API and enforces nothing itself.
 
