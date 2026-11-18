@@ -28,6 +28,8 @@ const grantsOf = (permissions: string[]): Grant[] => {
     const have = grant && best.get(grant.resource)
     if (grant && (!have || RANK[grant.level] > RANK[have.level])) best.set(grant.resource, grant)
   }
+  if (best.has('contents') && !best.has('locks'))
+    best.set('locks', { resource: 'locks', level: 'read' })
   return [...best.values()]
 }
 
