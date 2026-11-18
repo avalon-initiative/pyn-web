@@ -19,6 +19,17 @@ describe('token request mapping', () => {
     ])
   })
 
+  it('gives a contents grant without a locks grant locks read, as the server does', () => {
+    const body = tokenBody({ name: 'x', repos: [], permissions: ['read'], expires_at: null })
+    expect(body.permissions).toEqual([
+      { resource: 'metadata', level: 'read' },
+      { resource: 'contents', level: 'read' },
+      { resource: 'locks', level: 'read' },
+    ])
+    const none = tokenBody({ name: 'x', repos: [], permissions: ['view_audit'], expires_at: null })
+    expect(none.permissions.some((p) => p.resource === 'locks')).toBe(false)
+  })
+
   it('uses all repositories without a list and never without an expiry', () => {
     const body = tokenBody({ name: 'x', repos: [], permissions: ['view_audit'], expires_at: null })
     expect(body.repository_access).toEqual({ mode: 'all' })
