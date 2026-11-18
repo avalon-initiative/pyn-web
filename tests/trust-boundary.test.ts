@@ -31,7 +31,12 @@ const CREATED_TOKEN = {
     permissions: [],
   },
 }
-const TOKEN_FORM = { name: 'ci', repos: [], permissions: [], expires_at: null }
+const TOKEN_FORM = {
+  name: 'ci',
+  owner: 'ann',
+  repository_access: { mode: 'all' as const },
+  permissions: [{ resource: 'contents', level: 'read' as const }],
+}
 
 function claimKeys(value: unknown, found: string[] = []): string[] {
   if (Array.isArray(value)) value.forEach((v) => claimKeys(v, found))
@@ -91,8 +96,8 @@ describe('requests through the typed client', () => {
     for (const r of sent) {
       expect([...r.headers.keys()].filter((h) => !ALLOWED_HEADERS.has(h))).toEqual([])
       expect(r.url).not.toMatch(/[?&](user|role|admin|permission|entitlement)/i)
-      // A token request carries the grants its form chose; the mapping test pins them exactly.
-      const allowed = r.url.endsWith('/v1/tokens') ? /^permissions$/i : /^$/
+      // A token request carries the owner and grants its form chose; the view test pins them.
+      const allowed = r.url.endsWith('/v1/tokens') ? /^(owner|permissions)$/i : /^$/
       if (r.body) expect(claimKeys(JSON.parse(r.body)).filter((k) => !allowed.test(k))).toEqual([])
     }
   })
