@@ -2433,7 +2433,10 @@ export interface components {
       never?: boolean
       /** @description The resource owner: the caller's own account or an organization they belong to. Defaults to the caller. */
       owner?: string | null
-      /** @description Metadata read is implied for `all` and `selected`; none are allowed with `public`. */
+      /**
+       * @description Metadata read is implied for `all` and `selected`, which need at least one repository permission; `public`
+       *     takes no repository permissions. Organization and account permissions go with any repository access.
+       */
       permissions: components['schemas']['TokenPermission'][]
       repository_access: components['schemas']['RepositoryAccess']
     }
@@ -3744,9 +3747,17 @@ export interface components {
     }
     /** @description One permission of a fine-grained token: a resource at a level. */
     TokenPermission: {
-      /** @description `read` or `write` (write includes read); `admin` for `locks` only (includes write). */
+      /**
+       * @description `read` or `write` (write includes read); `admin` for `locks` only (includes write). `org_audit` and
+       *     `account_locks` take `read` only.
+       */
       level: string
-      /** @description `metadata`, `contents`, `locks`, `policy`, `members`, `administration` or `audit`. */
+      /**
+       * @description Repository permissions: `metadata`, `contents`, `locks`, `policy`, `members`, `administration` or `audit`.
+       *     Organization permissions, for an organization owner: `org_members`, `org_teams`, `org_administration` or
+       *     `org_audit`. Account permissions, for the caller's own account as owner: `account_profile`,
+       *     `account_ssh_keys` or `account_locks`.
+       */
       resource: string
     }
     TreeEntry: {
@@ -5458,6 +5469,15 @@ export interface operations {
           'application/json': components['schemas']['SshKeyInfo'][]
         }
       }
+      /** @description a token owned by the account lists only its own keys */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
     }
   }
   add_key: {
@@ -5521,6 +5541,15 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      /** @description a token owned by the account removes only its own keys */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
       }
       /** @description key_not_found */
       404: {
@@ -5652,7 +5681,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description a token that is not full-scope */
+      /** @description a token without the account grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -5716,7 +5745,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description a token that is not full-scope */
+      /** @description a token without the account grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -6247,7 +6276,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description a token that is not full-scope */
+      /** @description a token without the account grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -6652,7 +6681,7 @@ export interface operations {
           'application/json': components['schemas']['AuditPage']
         }
       }
-      /** @description not_org_owner, or a token that is not full-scope */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -6749,7 +6778,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token that is not full-scope */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -6826,7 +6855,7 @@ export interface operations {
           'application/json': components['schemas']['OrgProfile']
         }
       }
-      /** @description not_org_owner, or a token that is not full-scope */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -6876,7 +6905,7 @@ export interface operations {
           'application/json': components['schemas']['OrgInvitation'][]
         }
       }
-      /** @description not_org_owner, or a token that is not full-scope */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -6917,7 +6946,7 @@ export interface operations {
         }
         content?: never
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -6958,7 +6987,7 @@ export interface operations {
           'application/json': components['schemas']['OrgMember'][]
         }
       }
-      /** @description not_org_member, or a token that is not full-scope */
+      /** @description not_org_member, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7021,7 +7050,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7071,7 +7100,7 @@ export interface operations {
         }
         content?: never
       }
-      /** @description not_org_owner (removing someone else), or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner (removing someone else), or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7135,7 +7164,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7230,7 +7259,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token that is not full-scope */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7279,7 +7308,7 @@ export interface operations {
           'application/json': components['schemas']['RepoPolicyInfo']
         }
       }
-      /** @description not_org_owner, or a token that is not full-scope */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7333,7 +7362,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7391,7 +7420,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7452,7 +7481,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7493,7 +7522,7 @@ export interface operations {
           'application/json': components['schemas']['TeamInfo'][]
         }
       }
-      /** @description not_org_member, or a token that is not full-scope */
+      /** @description not_org_member, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7546,7 +7575,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7598,7 +7627,7 @@ export interface operations {
           'application/json': components['schemas']['TeamInfo']
         }
       }
-      /** @description not_org_member, or a token that is not full-scope */
+      /** @description not_org_member, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7639,7 +7668,7 @@ export interface operations {
         }
         content?: never
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7694,7 +7723,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7737,7 +7766,7 @@ export interface operations {
         }
         content?: never
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -7789,7 +7818,7 @@ export interface operations {
         }
         content?: never
       }
-      /** @description not_org_owner, or a token without manage_roles or limited to repositories */
+      /** @description not_org_owner, or a token without the organization grant */
       403: {
         headers: {
           [name: string]: unknown
@@ -10755,7 +10784,7 @@ export interface operations {
           'application/json': components['schemas']['CreatedToken']
         }
       }
-      /** @description invalid_request: an unknown resource, level or access mode, a level above the resource's top one, a selected repository the owner does not own, or both expires_at and never */
+      /** @description invalid_request: an unknown resource, level or access mode, a level above the resource's top one, a selected repository the owner does not own, an organization permission for an owner that is not an organization, an account permission for an owner that is not the caller's own account, a repository permission with public repository access, or both expires_at and never */
       400: {
         headers: {
           [name: string]: unknown
@@ -10764,7 +10793,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description not_org_member: the owner is an organization the caller is not in */
+      /** @description not_org_member: the owner is an organization the caller is not in; not_org_owner: an organization grant that needs an owner (every write, invitations, audit log, creation policy) from a caller who is only a member */
       403: {
         headers: {
           [name: string]: unknown
