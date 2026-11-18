@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized, RouteRecordRaw, RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
+import AdminAccessView from './views/AdminAccessView.vue'
 import AdminAuditView from './views/AdminAuditView.vue'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AdminWebhooksView from './views/AdminWebhooksView.vue'
@@ -63,6 +64,7 @@ export const routes: RouteRecordRaw[] = [
     children: [
       { path: '', redirect: '/_/admin/accounts' },
       { path: 'accounts', name: 'admin-accounts', component: AdminAccountsView },
+      { path: 'access', name: 'admin-access', component: AdminAccessView },
       { path: 'audit', name: 'admin-audit', component: AdminAuditView },
       { path: 'webhooks', name: 'admin-webhooks', component: AdminWebhooksView },
     ],

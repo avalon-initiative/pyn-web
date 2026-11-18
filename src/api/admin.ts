@@ -49,3 +49,8 @@ export const deleteAccount = (r: DeleteAccountRequest) =>
   )
 
 export const fetchAdminSettings = () => call<AdminSettings>(api.GET('/v1/admin/settings'))
+
+export const fetchAccessMode = () => call<Schemas['SetupStatus']>(api.GET('/v1/setup'))
+
+export const setAccessMode = (access_mode: Schemas['AccessMode']) =>
+  call<Schemas['ServerAccess']>(api.PUT('/v1/admin/access', { body: { access_mode } }))
