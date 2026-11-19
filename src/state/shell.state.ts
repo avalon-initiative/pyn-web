@@ -6,6 +6,7 @@ import type { NavItem } from '@avalon-initiative/pyn-common-ui'
 export function activeNav(path: string, extra: NavItem[] = []): string {
   if (path === '/') return 'home'
   if (path === '/_/locks') return 'locks'
+  if (path === '/_/people') return 'people'
   if (path === '/_/orgs') return 'orgs'
   if (path === '/_/invitations') return 'invitations'
   if (path === '/_/admin' || path.startsWith('/_/admin/')) return 'admin'
@@ -15,6 +16,7 @@ export function activeNav(path: string, extra: NavItem[] = []): string {
 /** The library's sidebar items, Invitations (badged with the pending count), then the build-time extras. */
 export const sideNavItems = (admin: boolean, extra: NavItem[] = [], badge = 0): NavItem[] => [
   ...navItems(admin),
+  { id: 'people', label: 'People', href: '/_/people', icon: 'user' },
   { id: 'invitations', label: 'Invitations', href: '/_/invitations', icon: 'user', badge },
   ...extra,
 ]

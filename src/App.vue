@@ -102,6 +102,7 @@ const orgs = ref<OrgInfo[]>([])
 const theme = ref<ThemeChoice>(loadTheme())
 applyTheme(theme.value)
 
+const publicPage = computed(() => route.matched.some((r) => r.meta.public === true))
 const bare = computed(() => route.matched.some((r) => r.meta.bare === true))
 const slugs = computed(() => repos.value.map(repoSlug))
 const currentRepo = computed(() =>
@@ -366,6 +367,12 @@ onMounted(async () => {
         @manage-admins="manageAdmins"
       />
     </main>
+    <PynShell v-else-if="ready && !user && publicPage" bare>
+      <template #top>
+        <PynTopBar signed-out sign-in-href="/" :theme="theme" @theme="setTheme" />
+      </template>
+      <RouterView />
+    </PynShell>
     <main v-else-if="ready && !user">
       <RouterView v-if="route.name === 'verify-email'" />
       <PynSecondFactor
