@@ -757,6 +757,102 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/passkeys': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_passkeys']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/passkeys/register/begin': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['begin_registration']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/passkeys/register/finish': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['finish_registration']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/passkeys/verify/begin': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['begin_verify']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/passkeys/verify/finish': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['finish_verify']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/passkeys/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['remove_passkey']
+    options?: never
+    head?: never
+    patch: operations['rename_passkey']
+    trace?: never
+  }
   '/v1/me/password': {
     parameters: {
       query?: never
@@ -2060,6 +2156,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/session/passkey/begin': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['begin_sign_in']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/session/passkey/finish': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['finish_sign_in']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/setup': {
     parameters: {
       query?: never
@@ -2442,6 +2570,17 @@ export interface components {
        * @description Pass as `before` to fetch the next, older page; null on the last page.
        */
       next_before: number | null
+    }
+    BeginPasskeyRequest: {
+      /**
+       * @description The current password. Required to add the account's first second factor when it has a password; an account that
+       *     already has a factor needs a fresh check instead.
+       */
+      password?: string | null
+    }
+    BeginPasskeySignInRequest: {
+      /** @description Offer this account's passkeys to the browser. Without it the browser picks a discoverable passkey. */
+      username?: string | null
     }
     BeginTotpRequest: {
       /** @description A name for the app, such as `phone`. Defaults to `Authenticator app`. */
@@ -3292,6 +3431,153 @@ export interface components {
       repositories: components['schemas']['RepoUsage'][]
       usage: components['schemas']['Usage']
     }
+    /** @description A passkey or security key the account has registered. */
+    Passkey: {
+      /** @description The passkey can be synced to other devices. */
+      backup_eligible: boolean
+      /** @description The passkey is currently synced or backed up. */
+      backup_state: boolean
+      /** Format: date-time */
+      created_at: string
+      id: string
+      /** Format: date-time */
+      last_used_at?: string | null
+      name: string
+      /**
+       * Format: int32
+       * @description The signature counter last seen; 0 for authenticators that keep none.
+       */
+      sign_count: number
+      /** @description How the authenticator reaches the browser (`usb`, `nfc`, `ble`, `internal`, `hybrid`), as the browser reported. */
+      transports: string[]
+    }
+    /** @description `AuthenticationResponseJSON`; fields beyond these are accepted and ignored. */
+    PasskeyAssertionCredential: {
+      /** @description The credential id, base64url. */
+      id: string
+      response: components['schemas']['PasskeyAssertionResponse']
+    }
+    /** @description An authentication answer, for a passkey sign-in or a fresh check. */
+    PasskeyAssertionRequest: {
+      ceremony: string
+      credential: components['schemas']['PasskeyAssertionCredential']
+    }
+    /** @description The authenticator's authentication response (`AuthenticatorAssertionResponseJSON`). */
+    PasskeyAssertionResponse: {
+      /** @description base64url */
+      authenticatorData: string
+      /** @description base64url */
+      clientDataJSON: string
+      /** @description base64url */
+      signature: string
+      /** @description base64url; absent for a credential that is not discoverable. */
+      userHandle?: string | null
+    }
+    /** @description `RegistrationResponseJSON`; fields beyond these are accepted and ignored. */
+    PasskeyAttestationCredential: {
+      id: string
+      response: components['schemas']['PasskeyAttestationResponse']
+    }
+    /** @description The authenticator's registration response (`AuthenticatorAttestationResponseJSON`), as `credential.toJSON()` yields. */
+    PasskeyAttestationResponse: {
+      /** @description base64url */
+      attestationObject: string
+      /** @description base64url */
+      clientDataJSON: string
+      transports?: string[]
+    }
+    /**
+     * @description An authentication ceremony to run in the browser (`navigator.credentials.get`); answer it with
+     *     `PasskeyAssertionRequest` before `expires_at`.
+     */
+    PasskeyAuthenticationBegun: {
+      /** @description Send back with the answer. Single use. */
+      ceremony: string
+      /** Format: date-time */
+      expires_at: string
+      public_key: components['schemas']['PasskeyRequestOptions']
+    }
+    /**
+     * @description `PublicKeyCredentialCreationOptionsJSON`: pass it to `PublicKeyCredential.parseCreationOptionsFromJSON` or
+     *     decode the base64url fields for `navigator.credentials.create`.
+     */
+    PasskeyCreationOptions: {
+      /** @description Always `none`. */
+      attestation: string
+      authenticatorSelection: components['schemas']['PasskeySelection']
+      /** @description base64url */
+      challenge: string
+      excludeCredentials: components['schemas']['PasskeyDescriptor'][]
+      pubKeyCredParams: components['schemas']['PasskeyParam'][]
+      rp: components['schemas']['PasskeyRp']
+      /**
+       * Format: int64
+       * @description Milliseconds.
+       */
+      timeout: number
+      user: components['schemas']['PasskeyUser']
+    }
+    /** @description A WebAuthn credential descriptor (`PublicKeyCredentialDescriptorJSON`). */
+    PasskeyDescriptor: {
+      /** @description The credential id, base64url. */
+      id: string
+      transports: string[]
+      /** @description Always `public-key`. */
+      type: string
+    }
+    PasskeyParam: {
+      /**
+       * Format: int64
+       * @description COSE algorithm: -7 (ES256) or -8 (EdDSA).
+       */
+      alg: number
+      /** @description Always `public-key`. */
+      type: string
+    }
+    /** @description A passkey that is now on. */
+    PasskeyRegistered: {
+      /** Format: date-time */
+      fresh_until: string
+      passkey: components['schemas']['Passkey']
+      /** @description Ten single-use recovery codes, shown only now, and only with the account's first second factor. */
+      recovery_codes?: string[] | null
+    }
+    /** @description A registration ceremony to run in the browser; answer it with `RegisterPasskeyRequest` before `expires_at`. */
+    PasskeyRegistrationBegun: {
+      /** @description Send back with the answer. Single use. */
+      ceremony: string
+      /** Format: date-time */
+      expires_at: string
+      public_key: components['schemas']['PasskeyCreationOptions']
+    }
+    /** @description `PublicKeyCredentialRequestOptionsJSON`. */
+    PasskeyRequestOptions: {
+      /** @description Empty lets the browser offer any discoverable passkey for this server. */
+      allowCredentials: components['schemas']['PasskeyDescriptor'][]
+      /** @description base64url */
+      challenge: string
+      rpId: string
+      /** Format: int64 */
+      timeout: number
+      /** @description Always `required`. */
+      userVerification: string
+    }
+    PasskeyRp: {
+      id: string
+      name: string
+    }
+    PasskeySelection: {
+      /** @description `required`: a discoverable credential, so a passkey can sign in without a user name. */
+      residentKey: string
+      /** @description `required`: the authenticator checks the person (PIN, biometrics). */
+      userVerification: string
+    }
+    PasskeyUser: {
+      displayName: string
+      /** @description base64url */
+      id: string
+      name: string
+    }
     /** @description Distinct stored bytes of one path across its revisions. */
     PathUsage: {
       path: string
@@ -3446,6 +3732,12 @@ export interface components {
     RecoveryCodes: {
       recovery_codes: string[]
     }
+    RegisterPasskeyRequest: {
+      ceremony: string
+      credential: components['schemas']['PasskeyAttestationCredential']
+      /** @description A name for the passkey, such as `laptop`. Defaults to `Passkey`. */
+      name?: string | null
+    }
     RegisterRequest: {
       /** @description Required when the server is open and verifies email addresses (`RegistrationInfo.email_verification`). */
       email?: string | null
@@ -3481,6 +3773,9 @@ export interface components {
       path: string
     }
     RenameBranchRequest: {
+      name: string
+    }
+    RenamePasskeyRequest: {
       name: string
     }
     /** @description A username change; the old name is free for anyone to take afterwards. */
@@ -3795,6 +4090,11 @@ export interface components {
     ServerCapabilities: {
       /** @description The server accepts pushed commits and serves fetches (`/push`, `/fetch`), so a client may keep commits locally. */
       local_commits: boolean
+      /**
+       * @description The server can register and sign in with passkeys: it has a public address WebAuthn accepts (a host name over
+       *     https, or localhost). Without it, only authenticator apps are offered.
+       */
+      passkeys?: boolean
       /** @description The commit the server binary was built from; null when the build did not record one. */
       revision?: string | null
       /** @description The server's release version; empty when an older server did not report one. */
@@ -3899,6 +4199,11 @@ export interface components {
     /** @description How people can sign in to this server. */
     SignInOptions: {
       external?: components['schemas']['ExternalProviderInfo'] | null
+      /**
+       * @description Whether a passkey can sign in (`POST /v1/session/passkey/begin`); false when the server has no public address
+       *     WebAuthn accepts.
+       */
+      passkeys?: boolean
       /** @description Whether anyone may sign in with a password. When false, server administrators still can. */
       password: boolean
     }
@@ -4097,9 +4402,13 @@ export interface components {
     }
     /** @description The caller's second-factor state. */
     TwoFactorStatus: {
-      /** @description Whether the account has a confirmed factor, so sign-in asks for a code. */
+      /** @description Whether the account has a confirmed factor or a passkey, so sign-in asks for a second step. */
       enabled: boolean
       factors: components['schemas']['TwoFactorFactor'][]
+      /** @description Passkeys and security keys; each one also counts as a second factor, so `enabled` is true when there is one. */
+      passkeys?: components['schemas']['Passkey'][]
+      /** @description Whether this server can register passkeys (see `ServerCapabilities.passkeys`). */
+      passkeys_available?: boolean
       recovery_codes_left: number
       required?: components['schemas']['TwoFactorRequired'] | null
     }
@@ -6690,6 +6999,309 @@ export interface operations {
       }
       /** @description a token that is not full-scope */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_passkeys: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the account's passkeys, oldest first */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Passkey'][]
+        }
+      }
+    }
+  }
+  begin_registration: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BeginPasskeyRequest']
+      }
+    }
+    responses: {
+      /** @description run `navigator.credentials.create` with `public_key`, then post the result to `register/finish`; the ceremony is single use and expires in five minutes */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PasskeyRegistrationBegun']
+        }
+      }
+      /** @description invalid_request: the account holds the most passkeys it may */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description unauthenticated: the password is wrong or missing */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description fresh_check_required: the account already has a second factor */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkeys_unavailable: the server has no public address WebAuthn accepts */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  finish_registration: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegisterPasskeyRequest']
+      }
+    }
+    responses: {
+      /** @description the passkey is on; the account's first second factor also gets its recovery codes, shown only now */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PasskeyRegistered']
+        }
+      }
+      /** @description invalid_request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkey_invalid: the answer failed verification, the ceremony expired or was used, the authenticator did not verify the person, or it is already registered */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkeys_unavailable */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  begin_verify: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description run `navigator.credentials.get` with `public_key`, then post the result to `verify/finish` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PasskeyAuthenticationBegun']
+        }
+      }
+      /** @description invalid_request: the account has no passkey */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkeys_unavailable */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  finish_verify: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasskeyAssertionRequest']
+      }
+    }
+    responses: {
+      /** @description sensitive actions stay open on this credential until `fresh_until` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FreshCheck']
+        }
+      }
+      /** @description passkey_invalid */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts; Retry-After says how many seconds to wait */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkeys_unavailable */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  remove_passkey: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a passkey */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description removed; removing the last second factor turns two-factor authentication off and drops the recovery codes */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description fresh_check_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkey_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  rename_passkey: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a passkey */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RenamePasskeyRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Passkey']
+        }
+      }
+      /** @description invalid_request: the name is empty or too long */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkey_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -11577,6 +12189,117 @@ export interface operations {
       }
       /** @description csrf_failed */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  begin_sign_in: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BeginPasskeySignInRequest']
+      }
+    }
+    responses: {
+      /** @description run `navigator.credentials.get` with `public_key`, then post the result to `/v1/session/passkey/finish` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PasskeyAuthenticationBegun']
+        }
+      }
+      /** @description origin_not_allowed */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkeys_unavailable */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  finish_sign_in: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasskeyAssertionRequest']
+      }
+    }
+    responses: {
+      /** @description sets the HttpOnly session cookie; the passkey stood for the password and the second factor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SessionInfo']
+        }
+      }
+      /** @description passkey_invalid */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description the account cannot sign in: email_not_verified, approval_pending or account_disabled; or origin_not_allowed */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description passkeys_unavailable */
+      501: {
         headers: {
           [name: string]: unknown
         }
