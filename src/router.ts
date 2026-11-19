@@ -5,6 +5,7 @@ import AdminAccessView from './views/AdminAccessView.vue'
 import AdminAuditView from './views/AdminAuditView.vue'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AdminWebhooksView from './views/AdminWebhooksView.vue'
+import AdminTwoFactorView from './views/AdminTwoFactorView.vue'
 import AdminView from './views/AdminView.vue'
 import AccountView from './views/AccountView.vue'
 import InvitationsView from './views/InvitationsView.vue'
@@ -17,6 +18,7 @@ import ProfileSettingsView from './views/ProfileSettingsView.vue'
 import UsernameView from './views/UsernameView.vue'
 import DeleteAccountView from './views/DeleteAccountView.vue'
 import PasswordView from './views/PasswordView.vue'
+import SecurityView from './views/SecurityView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
@@ -65,6 +67,7 @@ export const routes: RouteRecordRaw[] = [
       { path: '', redirect: '/_/admin/accounts' },
       { path: 'accounts', name: 'admin-accounts', component: AdminAccountsView },
       { path: 'access', name: 'admin-access', component: AdminAccessView },
+      { path: 'two-factor', name: 'admin-two-factor', component: AdminTwoFactorView },
       { path: 'audit', name: 'admin-audit', component: AdminAuditView },
       { path: 'webhooks', name: 'admin-webhooks', component: AdminWebhooksView },
     ],
@@ -82,6 +85,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'emails', name: 'emails', component: EmailAddressesView },
       { path: 'username', name: 'username', component: UsernameView },
       { path: 'password', name: 'password', component: PasswordView },
+      { path: 'security', name: 'security', component: SecurityView },
       { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
       { path: 'tokens', name: 'tokens', component: TokensView, alias: '/_/tokens' },
       { path: 'identities', name: 'identities', component: IdentitiesView },

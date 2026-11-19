@@ -15,6 +15,7 @@ import {
   fetchAdminSettings,
   grantAdmin,
   listAccounts,
+  resetTwoFactor,
   revokeAdmin,
 } from '../api/admin'
 import { retentionNote } from '../state/admin-settings.state'
@@ -57,6 +58,11 @@ const remove = (r: DeleteAccountRequest) =>
     await deleteAccount(r)
     accounts.value = await listAccounts(status.value)
   })
+
+const reset = (name: string) => {
+  if (!window.confirm(`Remove every second factor and recovery code of ${name}?`)) return
+  return people.attempt(() => resetTwoFactor(name))
+}
 
 const note = ref('')
 const administrators = ref<AdminSettings['administrators']>({ active: 0, single: false })
@@ -107,6 +113,7 @@ onMounted(() => {
       @delete="remove"
       @grant-admin="grant"
       @revoke-admin="revoke"
+      @reset="reset"
     />
   </PynViewStack>
 </template>

@@ -1,9 +1,11 @@
 import { inject, ref } from 'vue'
 import { ApiError, describeError } from '../api/client'
 import { sessionKey } from './context.state'
+import { withFreshCheck } from './fresh.state'
 
 /** Busy flag and error text around a user-triggered request. */
-export function useAction() {
+/** A request whose 401 means a wrong password or code, not an ended session, passes `false`. */
+export function useAction(expiring = true) {
   const session = inject(sessionKey)
   const busy = ref(false)
   const error = ref('')
@@ -12,10 +14,10 @@ export function useAction() {
     busy.value = true
     error.value = ''
     try {
-      await action()
+      await withFreshCheck(action)
       return true
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) session?.expire()
+      if (e instanceof ApiError && e.status === 401 && expiring) session?.expire()
       error.value = describeError(e)
       return false
     } finally {

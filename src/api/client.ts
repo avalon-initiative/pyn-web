@@ -47,6 +47,15 @@ const FRIENDLY: Record<string, string> = {
     'That invitation is no longer pending. It may have been cancelled or expired.',
   member_limit_reached:
     'The organization has reached its member limit. The invitation stays; try again once there is room.',
+  second_factor_invalid: 'That code is not right, or it was already used. Try the next one.',
+  passkey_invalid: 'The passkey could not be verified. Try again, or use another passkey.',
+  passkey_not_found: 'That passkey no longer exists.',
+  factor_not_found: 'That second factor no longer exists.',
+  passkeys_unavailable:
+    'This server cannot use passkeys: it has no public address WebAuthn accepts.',
+  fresh_check_required: 'Confirm with a second factor first, then try again.',
+  two_factor_enrolment_required:
+    'Set up a second factor under Account settings, Security, before doing anything else.',
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 

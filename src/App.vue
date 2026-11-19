@@ -11,7 +11,15 @@ import {
   restoreSession,
   signIn,
   signOut,
+  beginPasskeySignIn,
+  finishPasskeySignIn,
 } from './api/auth'
+import {
+  beginPasskeyVerify,
+  fetchTwoFactor,
+  finishPasskeyVerify,
+  verifySecondFactor,
+} from './api/two-factor'
 import { fetchMe } from './api/admin'
 import { fetchDeletionStatus, restoreAccount } from './api/account-deletion'
 import type { AccountDeletionStatus } from './api/account-deletion'
@@ -23,6 +31,14 @@ import { blockedStatus } from './state/account.state'
 import { listMyInvitations, listMyOrgs } from './api/orgs'
 import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
+import { freshPrompt } from './state/fresh.state'
+import {
+  SECURITY_PATH,
+  needsSecondFactor,
+  onEnrolmentRequired,
+  twoFactorDue,
+} from './state/two-factor.state'
+import { getPasskey, passkeyBrowserError, passkeysSupported } from './state/webauthn.state'
 import { onPendingDeletion } from './state/pending.state'
 import { ownProfile } from './state/own-profile.state'
 import { pendingInvitations } from './state/invitations.state'
@@ -35,10 +51,12 @@ import type { AccountMenuItem } from './types/extension.types'
 import {
   PynAccountPendingDeletion,
   PynShell,
+  PynSecondFactor,
   PynSignIn,
   PynSideNav,
   PynTopBar,
   PynVersionFooter,
+  PynTwoFactorNag,
   applyTheme,
   loadTheme,
   repoSlug,
@@ -54,6 +72,7 @@ import type {
   RegisterForm,
   SetupForm,
   SetupStatus,
+  SecondFactorForm,
   SignInForm,
 } from '@avalon-initiative/pyn-common-ui'
 import type { RegistrationInfo, SignInOptions } from './types/auth.types'
@@ -114,6 +133,8 @@ watch(
 )
 
 const expire = () => {
+  twoFactorDue.value = null
+  challenge.value = null
   deletion.value = null
   user.value = ''
   admin.value = false
@@ -134,6 +155,7 @@ async function begin(name: string) {
   deletion.value = status?.pending ? status : null
   const me = deletion.value ? null : await fetchMe().catch(() => null)
   admin.value = me?.admin === true
+  twoFactorDue.value = me?.two_factor_required ?? null
   ownProfile.value = me?.profile ?? {}
   user.value = name
 }
@@ -153,6 +175,9 @@ async function attempt(action: () => Promise<void>) {
 }
 
 const pendingUser = ref('')
+const challenge = ref<SignInForm | null>(null)
+const freshPasskeys = ref(false)
+const passkeysOffered = computed(() => !!signInOptions.value?.passkeys && passkeysSupported())
 
 /** Shows the format problem and returns true when the name cannot be valid. */
 function refuseName(name: string): boolean {
@@ -184,8 +209,75 @@ const manageAdmins = () => enterAfterSetup('/_/admin/accounts')
 const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
     pendingUser.value = form.username
-    await begin((await signIn(form)).user)
+    try {
+      await begin((await signIn(form)).user)
+    } catch (e) {
+      if (!needsSecondFactor(e)) throw e
+      challenge.value = form
+    }
   })
+
+const submitChallenge = (second: SecondFactorForm) =>
+  attempt(async () => {
+    if (!challenge.value) return
+    await begin((await signIn(challenge.value, second.code.trim())).user)
+    challenge.value = null
+  })
+
+/** Runs a passkey ceremony, turning a dismissed browser prompt into the error text. */
+async function ceremony(run: () => Promise<void>) {
+  try {
+    await run()
+  } catch (e) {
+    const text = passkeyBrowserError(e)
+    if (!text) throw e
+    error.value = text
+  }
+}
+
+const signInWithPasskey = () =>
+  attempt(() =>
+    ceremony(async () => {
+      const begun = await beginPasskeySignIn(challenge.value?.username)
+      const session = await finishPasskeySignIn(begun.ceremony, await getPasskey(begun.public_key))
+      challenge.value = null
+      await begin(session.user)
+    }),
+  )
+
+const submitFresh = (second: SecondFactorForm) =>
+  attempt(async () => {
+    await verifySecondFactor(second.code.trim())
+    freshPrompt.value?.settle(true)
+  })
+
+const freshWithPasskey = () =>
+  attempt(() =>
+    ceremony(async () => {
+      const begun = await beginPasskeyVerify()
+      await finishPasskeyVerify(begun.ceremony, await getPasskey(begun.public_key))
+      freshPrompt.value?.settle(true)
+    }),
+  )
+
+const cancelFresh = () => {
+  error.value = ''
+  freshPrompt.value?.settle(false)
+}
+
+watch(freshPrompt, async (prompt) => {
+  freshPasskeys.value = false
+  if (!prompt) return
+  const status = await fetchTwoFactor().catch(() => null)
+  freshPasskeys.value =
+    !!status?.passkeys_available && (status.passkeys?.length ?? 0) > 0 && passkeysSupported()
+})
+
+onEnrolmentRequired(async () => {
+  if (!twoFactorDue.value)
+    twoFactorDue.value = (await fetchTwoFactor().catch(() => null))?.required ?? null
+  if (route.path !== SECURITY_PATH) await router.push(SECURITY_PATH)
+})
 
 const join = (form: RegisterForm) =>
   attempt(async () => {
@@ -239,7 +331,10 @@ onPendingDeletion(async () => {
     if (status?.pending) deletion.value = status
   }
 })
-onUnmounted(() => onPendingDeletion(null))
+onUnmounted(() => {
+  onPendingDeletion(null)
+  onEnrolmentRequired(null)
+})
 
 onMounted(async () => {
   void fetchServerBuild().then((b) => (serverBuild.value = b))
@@ -273,11 +368,21 @@ onMounted(async () => {
     </main>
     <main v-else-if="ready && !user">
       <RouterView v-if="route.name === 'verify-email'" />
+      <PynSecondFactor
+        v-else-if="challenge"
+        :passkeys="passkeysOffered"
+        :busy="busy"
+        :error="error"
+        @submit="submitChallenge"
+        @passkey="signInWithPasskey"
+        @cancel="((challenge = null), dismissNotice())"
+      />
       <PynSignIn
         v-else
         :registration="registration?.registration ?? null"
         :external="signInOptions?.external"
         :password-sign-in="signInOptions?.password"
+        :passkeys="passkeysOffered"
         :return-to="route.fullPath"
         :callback-error="callbackError"
         :email-verification="registration?.email_verification"
@@ -291,6 +396,7 @@ onMounted(async () => {
         @register="join"
         @resend="resend"
         @dismiss="dismissNotice"
+        @passkey="signInWithPasskey"
       />
     </main>
     <main v-else-if="user && deletion?.pending && deletion.purge_at">
@@ -332,7 +438,23 @@ onMounted(async () => {
             :current-org="currentOrg"
           />
         </template>
-        <RouterView />
+        <PynSecondFactor
+          v-if="freshPrompt"
+          :passkeys="freshPasskeys"
+          :busy="busy"
+          :error="error"
+          @submit="submitFresh"
+          @passkey="freshWithPasskey"
+          @cancel="cancelFresh"
+        />
+        <template v-else>
+          <PynTwoFactorNag
+            v-if="twoFactorDue && route.path !== SECURITY_PATH"
+            :required="twoFactorDue"
+            :href="SECURITY_PATH"
+          />
+          <RouterView />
+        </template>
         <template #footer>
           <PynVersionFooter
             :web-version="webVersion"

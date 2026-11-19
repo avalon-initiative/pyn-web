@@ -3,6 +3,7 @@ import type {
   AdminAccountStatus,
   DeleteAccountRequest,
 } from '@avalon-initiative/pyn-common-ui'
+import type { TwoFactorSetting } from '@avalon-initiative/pyn-common-ui'
 import type { Schemas } from './schema'
 import type { AccountMe, AdminSettings } from '../types/admin.types'
 import type { AuditPage } from '../types/repo.types'
@@ -54,3 +55,11 @@ export const fetchAccessMode = () => call<Schemas['SetupStatus']>(api.GET('/v1/s
 
 export const setAccessMode = (access_mode: Schemas['AccessMode']) =>
   call<Schemas['ServerAccess']>(api.PUT('/v1/admin/access', { body: { access_mode } }))
+
+export const getServerTwoFactor = () => call<TwoFactorSetting>(api.GET('/v1/admin/two-factor'))
+
+export const setServerTwoFactor = (required: boolean, grace_days: number) =>
+  call<TwoFactorSetting>(api.PUT('/v1/admin/two-factor', { body: { required, grace_days } }))
+
+export const resetTwoFactor = (user: string) =>
+  call<void>(api.POST('/v1/admin/users/{user}/two-factor/reset', path(user)))

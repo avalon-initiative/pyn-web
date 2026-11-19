@@ -11,8 +11,10 @@ import type {
   OrgInfo,
   OrgMember,
   OrgRole,
+  OrgSettings,
   RepoPolicy,
   RuleScope,
+  TwoFactorSetting,
 } from '@avalon-initiative/pyn-common-ui'
 import { api, call } from './http'
 
@@ -86,3 +88,22 @@ export const removeCreationRule = (org: string, r: RuleRef) =>
 
 export const getOwnerFreeze = (owner: string) =>
   call<OwnerFreeze>(api.GET('/v1/owners/{owner}/freeze', { params: { path: { owner } } }))
+
+export const getOrgTwoFactor = (org: string) =>
+  call<TwoFactorSetting>(api.GET('/v1/orgs/{org}/two-factor', org_(org)))
+
+export const setOrgTwoFactor = (org: string, required: boolean, grace_days: number) =>
+  call<TwoFactorSetting>(
+    api.PUT('/v1/orgs/{org}/two-factor', { ...org_(org), body: { required, grace_days } }),
+  )
+
+export const getOrgSettings = (org: string) =>
+  call<OrgSettings>(api.GET('/v1/orgs/{org}/settings', org_(org)))
+
+export const setOrgSettings = (org: string, s: OrgSettings) =>
+  call<OrgSettings>(
+    api.PUT('/v1/orgs/{org}/settings', {
+      ...org_(org),
+      body: { exclusive_read_only: s.exclusive_read_only ?? null },
+    }),
+  )

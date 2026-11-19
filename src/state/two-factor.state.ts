@@ -1,0 +1,24 @@
+import { ref } from 'vue'
+import { ApiError } from '../api/client'
+import type { TwoFactorRequired } from '../types/two-factor.types'
+
+export const ENROLMENT_REQUIRED = 'two_factor_enrolment_required'
+export const SECOND_FACTOR_REQUIRED = 'second_factor_required'
+export const SECURITY_PATH = '/_/settings/security'
+
+/** The requirement the account has not met yet; drives the nag and clears once a factor is on. */
+export const twoFactorDue = ref<TwoFactorRequired | null>(null)
+
+let listener: (() => void) | null = null
+
+/** Registers the one reaction to the server holding the account to enrolment. */
+export function onEnrolmentRequired(fn: (() => void) | null) {
+  listener = fn
+}
+
+export function reportEnrolmentRequired(code: string) {
+  if (code === ENROLMENT_REQUIRED) listener?.()
+}
+
+export const needsSecondFactor = (e: unknown) =>
+  e instanceof ApiError && e.status === 401 && e.code === SECOND_FACTOR_REQUIRED
