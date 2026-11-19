@@ -1,3 +1,14 @@
+import {
+  PynPeopleList,
+  PynSideNav,
+  PynSignIn,
+  PynTopBar,
+  PynViewNotice,
+} from '@avalon-initiative/pyn-common-ui'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createMemoryHistory } from 'vue-router'
+import { makeRouter } from '../src/router'
+import { activeNav, sideNavItems } from '../src/state/shell.state'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { usePeople } from '../src/state/people.state'
 
@@ -62,5 +73,72 @@ describe('people directory', () => {
     const p = usePeople()
     await p.search('x'.repeat(80))
     expect(p.query.value).toHaveLength(64)
+  })
+})
+
+describe('people page', () => {
+  const respond =
+    (signedIn: boolean, people: Response | null = null) =>
+    (url: string) => {
+      if (url.startsWith('/v1/users?')) return people ?? Response.json({ people: [entry('ada')] })
+      if (url === '/v1/me' || url === '/v1/session')
+        return signedIn
+          ? Response.json({ user: 'dave', admin: false, profile: {} })
+          : Response.json({ code: 'unauthenticated', message: 'x' }, { status: 401 })
+      if (url === '/v1/setup') return Response.json({ initialised: true })
+      return Response.json(signedIn ? [] : { code: 'unauthenticated', message: 'x' }, {
+        status: signedIn ? 200 : 401,
+      })
+    }
+
+  const open = async (path: string) => {
+    const router = makeRouter(createMemoryHistory())
+    await router.push(path)
+    await router.isReady()
+    const { default: App } = await import('../src/App.vue')
+    const w = mount(App, { global: { plugins: [router] } })
+    await flushPromises()
+    return { w, router }
+  }
+
+  it('is public and listed in the nav', () => {
+    expect(makeRouter(createMemoryHistory()).resolve('/_/people').meta.public).toBe(true)
+    expect(sideNavItems(false).find((i) => i.id === 'people')?.href).toBe('/_/people')
+    expect(activeNav('/_/people')).toBe('people')
+  })
+
+  it('shows the list signed out with a sign-in link, and sign-in elsewhere', async () => {
+    stub(respond(false))
+    const { w, router } = await open('/_/people')
+    expect(w.findComponent(PynPeopleList).props('people')).toHaveLength(1)
+    const bar = w.findComponent(PynTopBar)
+    expect(bar.props('signedOut')).toBe(true)
+    expect(bar.props('signInHref')).toBe('/')
+    expect(w.findComponent(PynSignIn).exists()).toBe(false)
+    await router.push('/')
+    await flushPromises()
+    expect(w.findComponent(PynSignIn).exists()).toBe(true)
+  })
+
+  it('shows a rate limit as a notice, not a failure', async () => {
+    stub(
+      respond(
+        false,
+        Response.json(
+          { code: 'too_many_attempts', message: 'x' },
+          { status: 429, headers: { 'Retry-After': '90' } },
+        ),
+      ),
+    )
+    const { w } = await open('/_/people')
+    expect(w.findComponent(PynViewNotice).text()).toMatch(/Too many attempts.*2 minutes/)
+  })
+
+  it('shows the same page signed in, inside the full shell', async () => {
+    stub(respond(true))
+    const { w } = await open('/_/people')
+    expect(w.findComponent(PynPeopleList).props('people')).toHaveLength(1)
+    expect(w.findComponent(PynTopBar).props('signedOut')).toBeFalsy()
+    expect(w.findComponent(PynSideNav).exists()).toBe(true)
   })
 })

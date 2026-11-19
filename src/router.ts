@@ -39,6 +39,7 @@ import OrgMembersView from './views/OrgMembersView.vue'
 import OrgSettingsView from './views/OrgSettingsView.vue'
 import OrgTeamsView from './views/OrgTeamsView.vue'
 import OrgTeamView from './views/OrgTeamView.vue'
+import PeopleView from './views/PeopleView.vue'
 import OrgsView from './views/OrgsView.vue'
 import OrgView from './views/OrgView.vue'
 import OwnerUsageView from './views/OwnerUsageView.vue'
@@ -59,6 +60,7 @@ const settingsRedirect =
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'repos', component: ReposView },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
+  { path: '/_/people', name: 'people', component: PeopleView, meta: { public: true } },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
   {
     path: '/_/admin',
