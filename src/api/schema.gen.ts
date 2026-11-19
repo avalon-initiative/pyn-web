@@ -212,6 +212,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/two-factor': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_server_requirement']
+    put: operations['set_server_requirement']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/users': {
     parameters: {
       query?: never
@@ -302,6 +318,22 @@ export interface paths {
     get?: never
     put?: never
     post: operations['enable']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/users/{user}/two-factor/reset': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['reset_two_factor']
     delete?: never
     options?: never
     head?: never
@@ -677,6 +709,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/notices': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['notices']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/notices/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['dismiss_notice']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/orgs': {
     parameters: {
       query?: never
@@ -720,6 +784,102 @@ export interface paths {
     put: operations['update_profile']
     post?: never
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/two-factor': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['two_factor_status']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/two-factor/recovery-codes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['recovery_codes']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/two-factor/totp': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['begin_totp']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/two-factor/totp/{id}/confirm': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['confirm_totp']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/two-factor/verify': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['verify_second_factor']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/two-factor/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['remove_factor']
     options?: never
     head?: never
     patch?: never
@@ -965,6 +1125,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/orgs/{org}/settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_org_settings']
+    put: operations['set_org_settings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/orgs/{org}/teams': {
     parameters: {
       query?: never
@@ -1008,6 +1184,22 @@ export interface paths {
     put: operations['add_team_member']
     post?: never
     delete: operations['remove_team_member']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/orgs/{org}/two-factor': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_org_requirement']
+    put: operations['set_org_requirement']
+    post?: never
+    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -2003,6 +2195,7 @@ export interface components {
       id: string
       /** @description The account's profile; the email address is never part of it. */
       profile?: components['schemas']['Profile']
+      two_factor_required?: components['schemas']['TwoFactorRequired'] | null
       user: string
     }
     /** @description `account.approved`. */
@@ -2250,6 +2443,15 @@ export interface components {
        */
       next_before: number | null
     }
+    BeginTotpRequest: {
+      /** @description A name for the app, such as `phone`. Defaults to `Authenticator app`. */
+      label?: string | null
+      /**
+       * @description The current password. Required to turn two-factor authentication on for an account that has a password; an
+       *     account that already has a factor needs a fresh check instead.
+       */
+      password?: string | null
+    }
     /** @description A branch: a name pointing at a commit. The default branch's `.pyn/pyn.toml` is the repository's policy. */
     Branch: {
       /** @description The commit the branch points at; null only for the default branch of a repository with no commits. */
@@ -2326,6 +2528,10 @@ export interface components {
        */
       branch?: string | null
       path: string
+    }
+    CodeRequest: {
+      /** @description Six digits from the authenticator app, or a recovery code where the route says so. */
+      code: string
     }
     /**
      * @description One atomic write: a single checkin or a whole changeset, recorded as a git commit on a branch. `id` is the git
@@ -2636,6 +2842,11 @@ export interface components {
       /** @description Shown to the owner's members: 1 to 512 bytes. */
       reason: string
     }
+    /** @description Until when the calling credential may do sensitive actions without another second-factor check. */
+    FreshCheck: {
+      /** Format: date-time */
+      fresh_until: string
+    }
     HistoryPage: {
       /** @description Pass as `before` to fetch the next page (the next newer one with `path`, the next older one without); null on the last page. */
       next_cursor: string | null
@@ -2752,6 +2963,11 @@ export interface components {
     /** @enum {string} */
     LockableDisagreementKind: 'lockable_shared' | 'exclusive_not_lockable'
     LoginRequest: {
+      /**
+       * @description The authenticator-app code (or a recovery code) of an account with a second factor. Without it such an
+       *     account gets `401 second_factor_required` after a right password.
+       */
+      code?: string | null
       password: string
       username: string
     }
@@ -2917,6 +3133,15 @@ export interface components {
       owner: string
       path: string
     }
+    /** @description A message for the account, shown by the web app until dismissed. */
+    Notice: {
+      /** Format: date-time */
+      created_at: string
+      detail: string
+      id: string
+      /** @description `two_factor_reset`: an administrator reset the account's second factors. */
+      kind: string
+    }
     /** @description Where to send the browser to link the provider to the signed-in account. */
     OidcLink: {
       url: string
@@ -2964,6 +3189,14 @@ export interface components {
      * @enum {string}
      */
     OrgRole: 'owner' | 'member'
+    /** @description An organization's repository defaults; a field that is absent or null is not set by the organization. */
+    OrgSettingsInfo: {
+      /**
+       * @description Whether the organization's repositories make exclusive files read-only until their lock is held, where a
+       *     repository's own `.pyn/pyn.toml` does not say; unset means the built-in default (on).
+       */
+      exclusive_read_only?: boolean | null
+    }
     /** @description `organization.created`. */
     OrganizationCreatedData: {
       actor: string
@@ -3204,6 +3437,15 @@ export interface components {
       /** @description The object's git blob id; for a chunk upload, the SHA-256 hex of its bytes. */
       content: string
     }
+    /**
+     * @description Where a repository's read-only default came from, most specific first.
+     * @enum {string}
+     */
+    ReadOnlySource: 'repository' | 'organization' | 'default'
+    /** @description New recovery codes, shown once. The old ones no longer work. */
+    RecoveryCodes: {
+      recovery_codes: string[]
+    }
     RegisterRequest: {
       /** @description Required when the server is open and verifies email addresses (`RegistrationInfo.email_verification`). */
       email?: string | null
@@ -3258,6 +3500,13 @@ export interface components {
     RepoInfo: {
       /** Format: date-time */
       created_at: string
+      /**
+       * @description Whether exclusive files are read-only in a work tree until their lock is held: the policy file's
+       *     `meta.exclusive_read_only`, else the owning organization's setting, else on.
+       */
+      exclusive_read_only?: boolean
+      /** @description Which of the three decided `exclusive_read_only`. */
+      exclusive_read_only_source?: components['schemas']['ReadOnlySource']
       /** @description Stable, never reused and unchanged by a rename; a deleted repository's id is never issued again. */
       id: string
       /**
@@ -3591,6 +3840,10 @@ export interface components {
     SetOrgRoleRequest: {
       role: components['schemas']['OrgRole']
     }
+    /** @description Replaces the organization's settings: a field left out or null is cleared. */
+    SetOrgSettingsRequest: {
+      exclusive_read_only?: boolean | null
+    }
     SetRepoPolicyRequest: {
       member_creation: components['schemas']['MemberCreation']
     }
@@ -3604,6 +3857,15 @@ export interface components {
     }
     SetTeamRoleRequest: {
       role: string
+    }
+    SetTwoFactorRequest: {
+      /**
+       * Format: int32
+       * @description 0 to 90 days, default 7. Setting the same requirement again changes nothing; a different grace period starts
+       *     the clock again.
+       */
+      grace_days?: number | null
+      required: boolean
     }
     SetupCompleted: {
       /** @description The first administrator, who can now sign in with the password. */
@@ -3760,6 +4022,22 @@ export interface components {
        */
       resource: string
     }
+    /** @description A factor that is now on. */
+    TotpConfirmed: {
+      factor: components['schemas']['TwoFactorFactor']
+      /** Format: date-time */
+      fresh_until: string
+      /** @description Ten single-use recovery codes, shown only now, and only with the account's first factor. */
+      recovery_codes?: string[] | null
+    }
+    /** @description A pending authenticator-app enrolment. The seed is shown once; the factor counts only after `confirm`. */
+    TotpEnrolment: {
+      id: string
+      /** @description The seed in base32, for typing into an app. */
+      secret: string
+      /** @description The `otpauth://` URI to show as a QR code. */
+      uri: string
+    }
     TreeEntry: {
       kind: components['schemas']['TreeEntryKind']
       last_change?: components['schemas']['Revision'] | null
@@ -3780,6 +4058,51 @@ export interface components {
     }
     /** @enum {string} */
     TreeMode: 'shared' | 'exclusive' | 'mixed'
+    /** @description A second factor the account has turned on. */
+    TwoFactorFactor: {
+      /** Format: date-time */
+      created_at: string
+      id: string
+      /** @description `totp` (an authenticator app). */
+      kind: string
+      label: string
+    }
+    /** @description A requirement that the account hold a second factor, and what happens at the deadline. */
+    TwoFactorRequired: {
+      /** @description `server` (an administrator requires it of everyone) or `organization`. */
+      by: string
+      /**
+       * Format: date-time
+       * @description From this moment the account can only set up a second factor (`403 two_factor_enrolment_required`).
+       */
+      deadline: string
+      /** @description True once the deadline has passed. */
+      enforced: boolean
+      /** @description The organization that requires it, when `by` is `organization`. */
+      organization?: string | null
+    }
+    /** @description Whether second factors are required, and the grace period. */
+    TwoFactorSetting: {
+      /**
+       * Format: int32
+       * @description Days an account without a factor keeps full access after `since` (or after it was created).
+       */
+      grace_days?: number | null
+      required: boolean
+      /**
+       * Format: date-time
+       * @description When the requirement was set; absent when none is.
+       */
+      since?: string | null
+    }
+    /** @description The caller's second-factor state. */
+    TwoFactorStatus: {
+      /** @description Whether the account has a confirmed factor, so sign-in asks for a code. */
+      enabled: boolean
+      factors: components['schemas']['TwoFactorFactor'][]
+      recovery_codes_left: number
+      required?: components['schemas']['TwoFactorRequired'] | null
+    }
     /** @description The new organization description; blank or left out clears it. */
     UpdateOrgProfileRequest: {
       description?: string | null
@@ -4052,6 +4375,15 @@ export interface operations {
       }
       /** @description unauthenticated: the password is wrong */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description fresh_check_required: the account has a second factor */
+      403: {
         headers: {
           [name: string]: unknown
         }
@@ -4627,6 +4959,77 @@ export interface operations {
       }
     }
   }
+  get_server_requirement: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description whether every account must hold a second factor */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TwoFactorSetting']
+        }
+      }
+      /** @description server_admin_required: also for any service credential */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  set_server_requirement: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetTwoFactorRequest']
+      }
+    }
+    responses: {
+      /** @description the requirement now in force; the same one again changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TwoFactorSetting']
+        }
+      }
+      /** @description invalid_request: a grace period over 90 days */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or fresh_check_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   list_accounts: {
     parameters: {
       query?: {
@@ -4965,6 +5368,54 @@ export interface operations {
         }
       }
       /** @description server_admin_required, or service_scope_required for a service credential without manage_accounts */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  reset_two_factor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the account's user name */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description every second factor and recovery code removed, the reset audited and a `two_factor_reset` notice left for the account */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description invalid_request: the account is an administrator, whose factors are reset on the host */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or fresh_check_required */
       403: {
         headers: {
           [name: string]: unknown
@@ -5584,7 +6035,7 @@ export interface operations {
           'application/json': components['schemas']['CreatedToken']
         }
       }
-      /** @description unauthenticated */
+      /** @description unauthenticated; or, after a right password, second_factor_required (the account has a second factor and no code was sent) or second_factor_invalid */
       401: {
         headers: {
           [name: string]: unknown
@@ -6161,6 +6612,56 @@ export interface operations {
       }
     }
   }
+  notices: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the account's notices, oldest first; also answers while a second factor is required and missing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Notice'][]
+        }
+      }
+    }
+  }
+  dismiss_notice: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the notice */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description dismissed */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description notice_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   my_orgs: {
     parameters: {
       query?: never
@@ -6226,6 +6727,15 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
+      /** @description fresh_check_required: the account has a second factor */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
       /** @description too_many_attempts; Retry-After says how many seconds to wait */
       429: {
         headers: {
@@ -6278,6 +6788,259 @@ export interface operations {
       }
       /** @description a token without the account grant */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  two_factor_status: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the confirmed factors and the recovery codes left */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TwoFactorStatus']
+        }
+      }
+    }
+  }
+  recovery_codes: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description ten new codes, shown once; the old ones stop working */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RecoveryCodes']
+        }
+      }
+      /** @description invalid_request: two-factor authentication is off */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description fresh_check_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  begin_totp: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BeginTotpRequest']
+      }
+    }
+    responses: {
+      /** @description a pending authenticator-app factor; it counts after `confirm`, and starting again replaces it */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TotpEnrolment']
+        }
+      }
+      /** @description unauthenticated: the password is wrong or missing */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description fresh_check_required: the account already has a factor */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  confirm_totp: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the pending factor */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CodeRequest']
+      }
+    }
+    responses: {
+      /** @description the factor is on; the account's first one also gets its recovery codes, shown only now */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TotpConfirmed']
+        }
+      }
+      /** @description second_factor_invalid */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description factor_not_found: no such pending factor */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts; Retry-After says how many seconds to wait */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  verify_second_factor: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CodeRequest']
+      }
+    }
+    responses: {
+      /** @description sensitive actions stay open on this credential until `fresh_until` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FreshCheck']
+        }
+      }
+      /** @description invalid_request: two-factor authentication is off */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description second_factor_invalid */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts; Retry-After says how many seconds to wait */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  remove_factor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description a factor, or a pending enrolment */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description removed; removing the last one turns two-factor authentication off and drops the recovery codes */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description fresh_check_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description factor_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -7501,6 +8264,91 @@ export interface operations {
       }
     }
   }
+  get_org_settings: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgSettingsInfo']
+        }
+      }
+      /** @description not_org_owner, or a token without the organization grant */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  set_org_settings: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetOrgSettingsRequest']
+      }
+    }
+    responses: {
+      /** @description the settings after the change */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OrgSettingsInfo']
+        }
+      }
+      /** @description not_org_owner, or a token without the organization grant */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   list_teams: {
     parameters: {
       query?: never
@@ -7828,6 +8676,100 @@ export interface operations {
         }
       }
       /** @description org_not_found, team_not_found or team_member_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_org_requirement: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TwoFactorSetting']
+        }
+      }
+      /** @description not_org_owner, or a token without the organization grant */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  set_org_requirement: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the organization's name */
+        org: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetTwoFactorRequest']
+      }
+    }
+    responses: {
+      /** @description the requirement now in force; the same one again changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TwoFactorSetting']
+        }
+      }
+      /** @description invalid_request: a grace period over 90 days */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description not_org_owner, a token without the organization grant, or fresh_check_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description org_not_found */
       404: {
         headers: {
           [name: string]: unknown
@@ -10588,7 +11530,7 @@ export interface operations {
           'application/json': components['schemas']['SessionInfo']
         }
       }
-      /** @description unauthenticated */
+      /** @description unauthenticated; or, after a right password, second_factor_required (the account has a second factor and no code was sent) or second_factor_invalid */
       401: {
         headers: {
           [name: string]: unknown
