@@ -5,6 +5,7 @@ import AdminAccessView from './views/AdminAccessView.vue'
 import AdminAuditView from './views/AdminAuditView.vue'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AdminWebhooksView from './views/AdminWebhooksView.vue'
+import AdminTwoFactorView from './views/AdminTwoFactorView.vue'
 import AdminView from './views/AdminView.vue'
 import AccountView from './views/AccountView.vue'
 import InvitationsView from './views/InvitationsView.vue'
@@ -66,6 +67,7 @@ export const routes: RouteRecordRaw[] = [
       { path: '', redirect: '/_/admin/accounts' },
       { path: 'accounts', name: 'admin-accounts', component: AdminAccountsView },
       { path: 'access', name: 'admin-access', component: AdminAccessView },
+      { path: 'two-factor', name: 'admin-two-factor', component: AdminTwoFactorView },
       { path: 'audit', name: 'admin-audit', component: AdminAuditView },
       { path: 'webhooks', name: 'admin-webhooks', component: AdminWebhooksView },
     ],

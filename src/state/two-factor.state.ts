@@ -22,19 +22,3 @@ export function reportEnrolmentRequired(code: string) {
 
 export const needsSecondFactor = (e: unknown) =>
   e instanceof ApiError && e.status === 401 && e.code === SECOND_FACTOR_REQUIRED
-
-export function nagText(due: TwoFactorRequired): string {
-  const who = due.by === 'organization' ? `The organization ${due.organization}` : 'This server'
-  const when = new Date(due.deadline).toISOString().slice(0, 10)
-  return due.enforced
-    ? `${who} requires two-factor authentication. Set up a second factor to keep using your account.`
-    : `${who} requires two-factor authentication from ${when}. Set up a second factor before then.`
-}
-
-const NOTICE_TEXT: Record<string, string> = {
-  two_factor_reset: 'An administrator reset your second factors. Set them up again.',
-  passkey_clone_suspected:
-    'A passkey was used with a signature counter that went backwards, which can mean it was copied. Remove it and register a new one.',
-}
-
-export const noticeText = (kind: string, detail: string) => NOTICE_TEXT[kind] ?? detail

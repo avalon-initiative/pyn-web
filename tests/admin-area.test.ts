@@ -86,6 +86,7 @@ describe('admin area', () => {
       'access',
       'audit',
       'webhooks',
+      'two-factor',
     ])
   })
 

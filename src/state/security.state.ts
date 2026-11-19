@@ -14,6 +14,7 @@ import {
   renamePasskey,
 } from '../api/two-factor'
 import type { Notice, TwoFactorStatus } from '../types/two-factor.types'
+import { fetchMe } from '../api/admin'
 import { useAction } from './action.state'
 import { twoFactorDue } from './two-factor.state'
 import { createPasskey, passkeyBrowserError, passkeysSupported } from './webauthn.state'
@@ -24,7 +25,9 @@ export function useSecurity() {
   const notices = ref<Notice[]>([])
   const enrolment = ref<TotpEnrolment | null>(null)
   const codes = ref<string[] | null>(null)
-  const { busy, error, attempt } = useAction()
+  const { busy, error, attempt } = useAction(false)
+  const hasPassword = ref(true)
+  const askPassword = ref(false)
 
   async function refresh() {
     status.value = await fetchTwoFactor()
@@ -35,6 +38,7 @@ export function useSecurity() {
     attempt(async () => {
       await refresh()
       notices.value = await listNotices().catch(() => [])
+      hasPassword.value = (await fetchMe().catch(() => null))?.has_password !== false
     })
 
   /** Keeps the one-time recovery codes the server sent with an account's first factor. */
@@ -74,7 +78,16 @@ export function useSecurity() {
       await refresh()
     })
 
-  const addPasskey = (password?: string) =>
+  /** Registers a passkey; an account with a password but no factor yet is asked for it first. */
+  async function addPasskey(password?: string) {
+    if (password === undefined && hasPassword.value && !status.value?.enabled) {
+      askPassword.value = true
+      return
+    }
+    if (await registerPasskey(password)) askPassword.value = false
+  }
+
+  const registerPasskey = (password?: string) =>
     attempt(async () => {
       try {
         const begun = await beginPasskeyRegistration(password)
@@ -112,6 +125,8 @@ export function useSecurity() {
     notices,
     enrolment,
     codes,
+    hasPassword,
+    askPassword,
     busy,
     error,
     passkeysOffered: () => !!status.value?.passkeys_available && passkeysSupported(),
@@ -125,6 +140,7 @@ export function useSecurity() {
     rename,
     removeKey,
     dismiss,
+    cancelPassword: () => ((askPassword.value = false), (error.value = '')),
     acknowledgeCodes: () => (codes.value = null),
   }
 }

@@ -3,6 +3,8 @@ import {
   PynPageNotFound,
   PynOrgDelete,
   PynOrgRepoPolicy,
+  PynOrgSettings,
+  PynTwoFactorRequirement,
   isOrgOwner,
   type RuleRef,
   PynViewError,
@@ -12,21 +14,35 @@ import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   deleteOrg,
+  getOrgSettings,
+  getOrgTwoFactor,
   getRepoPolicy,
   listOrgMembers,
   removeCreationRule,
   setCreationRule,
+  setOrgSettings,
+  setOrgTwoFactor,
   setMemberCreation,
 } from '../api/orgs'
 import { listTeams } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
-import type { MemberCreation, RepoPolicy, RuleScope } from '@avalon-initiative/pyn-common-ui'
+import type {
+  MemberCreation,
+  OrgSettings,
+  RepoPolicy,
+  RuleScope,
+  TwoFactorRequirementChange,
+  TwoFactorSetting,
+} from '@avalon-initiative/pyn-common-ui'
 
 const { name, org, frozen } = inject(orgKey)!
 const router = useRouter()
 const removing = useAction()
 const policing = useAction()
+const settings = ref<OrgSettings | null>(null)
+const requirement = ref<TwoFactorSetting | null>(null)
+const configuring = useAction()
 const policy = ref<RepoPolicy | null>(null)
 const teams = ref<string[]>([])
 const members = ref<string[]>([])
@@ -41,6 +57,24 @@ const load = async () => {
   teams.value = t.map((x) => x.slug)
   members.value = m.map((x) => x.user)
 }
+
+const loadSettings = () =>
+  configuring.attempt(async () => {
+    ;[settings.value, requirement.value] = await Promise.all([
+      getOrgSettings(name.value),
+      getOrgTwoFactor(name.value),
+    ])
+  })
+
+const saveSettings = (s: OrgSettings) =>
+  configuring.attempt(async () => {
+    settings.value = await setOrgSettings(name.value, s)
+  })
+
+const changeRequirement = (c: TwoFactorRequirementChange) =>
+  configuring.attempt(async () => {
+    requirement.value = await setOrgTwoFactor(name.value, c.required, c.grace_days)
+  })
 
 const base = (v: MemberCreation) =>
   policing.attempt(async () => {
@@ -68,7 +102,9 @@ const remove = () =>
 const owner = computed(() => isOrgOwner(org.value))
 
 onMounted(() => {
-  if (owner.value) void policing.attempt(load)
+  if (!owner.value) return
+  void policing.attempt(load)
+  void loadSettings()
 })
 </script>
 
@@ -89,6 +125,22 @@ onMounted(() => {
     <PynViewError v-else-if="policing.error.value">
       {{ policing.error.value }}
     </PynViewError>
+    <PynOrgSettings
+      v-if="settings"
+      :settings="settings"
+      :readonly="frozen"
+      :busy="configuring.busy.value"
+      :error="configuring.error.value"
+      @save="saveSettings"
+    />
+    <PynTwoFactorRequirement
+      v-if="requirement"
+      :setting="requirement"
+      :readonly="frozen"
+      :busy="configuring.busy.value"
+      :error="configuring.error.value"
+      @change="changeRequirement"
+    />
     <PynOrgDelete
       :name="name"
       :readonly="frozen"

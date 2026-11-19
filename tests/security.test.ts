@@ -1,11 +1,15 @@
 import {
+  PynNotices,
   PynPasskeys,
+  PynPasswordPrompt,
   PynRecoveryCodes,
   PynTotpEnrolment,
-  PynViewNotice,
+  PynTwoFactor,
+  PynTwoFactorNag,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fetchMe } from '../src/api/admin'
 import { ApiError } from '../src/api/client'
 import * as api from '../src/api/two-factor'
 import { freshPrompt, withFreshCheck } from '../src/state/fresh.state'
@@ -13,6 +17,7 @@ import { twoFactorDue } from '../src/state/two-factor.state'
 import SecurityView from '../src/views/SecurityView.vue'
 
 vi.mock('../src/api/two-factor')
+vi.mock('../src/api/admin')
 vi.mock('../src/state/webauthn.state', async (orig) => ({
   ...(await orig<object>()),
   passkeysSupported: () => true,
@@ -22,17 +27,19 @@ vi.mock('../src/state/webauthn.state', async (orig) => ({
 const off = { enabled: false, factors: [], recovery_codes_left: 0, passkeys_available: true }
 const on = {
   enabled: true,
-  factors: [{ id: 'f1', kind: 'totp', label: 'phone', created_at: 'x' }],
+  factors: [{ id: 'f1', kind: 'totp', label: 'phone', created_at: '2026-11-19T00:00:00Z' }],
   passkeys: [],
   passkeys_available: true,
   recovery_codes_left: 9,
 }
+const due = { by: 'organization', organization: 'acme', deadline: '2026-12-01T00:00:00Z' }
 
 beforeEach(() => {
   vi.resetAllMocks()
   twoFactorDue.value = null
   vi.mocked(api.fetchTwoFactor).mockResolvedValue(off as never)
   vi.mocked(api.listNotices).mockResolvedValue([])
+  vi.mocked(fetchMe).mockResolvedValue({ has_password: true } as never)
 })
 afterEach(() => (twoFactorDue.value = null))
 
@@ -43,7 +50,7 @@ const mountView = async () => {
 }
 
 describe('SecurityView', () => {
-  it('enrols an authenticator app and shows the recovery codes once', async () => {
+  it('enrols an authenticator app with the password and shows the recovery codes once', async () => {
     vi.mocked(api.beginTotp).mockResolvedValue({ id: 'e1', secret: 'S', uri: 'otpauth://x' })
     vi.mocked(api.confirmTotp).mockResolvedValue({
       factor: on.factors[0],
@@ -51,12 +58,10 @@ describe('SecurityView', () => {
       recovery_codes: ['aaaa-bbbb'],
     } as never)
     const w = await mountView()
-    await w
-      .findAll('button')
-      .find((b) => b.text().includes('Add an authenticator'))!
-      .trigger('click')
+    expect(w.findComponent(PynTwoFactor).props('hasPassword')).toBe(true)
+    w.findComponent(PynTwoFactor).vm.$emit('add-totp', 'phone', 'pw')
     await flushPromises()
-    expect(api.beginTotp).toHaveBeenCalledWith('', undefined)
+    expect(api.beginTotp).toHaveBeenCalledWith('phone', 'pw')
     vi.mocked(api.fetchTwoFactor).mockResolvedValue(on as never)
     w.findComponent(PynTotpEnrolment).vm.$emit('confirm', '123456')
     await flushPromises()
@@ -67,57 +72,101 @@ describe('SecurityView', () => {
     expect(w.findComponent(PynRecoveryCodes).exists()).toBe(false)
   })
 
+  it('does not end the session on a wrong password or code', async () => {
+    vi.mocked(api.beginTotp).mockRejectedValue(new ApiError(401, 'unauthenticated', 'wrong'))
+    const w = await mountView()
+    w.findComponent(PynTwoFactor).vm.$emit('add-totp', 'phone', 'bad')
+    await flushPromises()
+    expect(w.findComponent(PynTwoFactor).props('error')).toBe('wrong')
+  })
+
+  it('removes a factor and regenerates recovery codes', async () => {
+    vi.mocked(api.fetchTwoFactor).mockResolvedValue(on as never)
+    vi.mocked(api.regenerateRecoveryCodes).mockResolvedValue(['n1', 'n2'])
+    const w = await mountView()
+    w.findComponent(PynTwoFactor).vm.$emit('remove', 'f1')
+    await flushPromises()
+    expect(api.removeFactor).toHaveBeenCalledWith('f1')
+    w.findComponent(PynTwoFactor).vm.$emit('regenerate-codes')
+    await flushPromises()
+    expect(w.findComponent(PynRecoveryCodes).props('codes')).toEqual(['n1', 'n2'])
+  })
+
   it('clears the nag once a factor is on', async () => {
-    twoFactorDue.value = { by: 'server', deadline: '2026-12-01T00:00:00Z', enforced: false }
+    twoFactorDue.value = { ...due, enforced: false }
     vi.mocked(api.fetchTwoFactor).mockResolvedValue(on as never)
     const w = await mountView()
     expect(twoFactorDue.value).toBeNull()
-    expect(w.text()).toContain('9 recovery codes left')
+    expect(w.findComponent(PynTwoFactorNag).exists()).toBe(false)
   })
 
   it('shows the nag from the status and the notices, and dismisses a notice', async () => {
     vi.mocked(api.fetchTwoFactor).mockResolvedValue({
       ...off,
-      required: {
-        by: 'organization',
-        organization: 'acme',
-        deadline: '2026-12-01T00:00:00Z',
-        enforced: true,
-      },
+      required: { ...due, enforced: true },
     } as never)
-    vi.mocked(api.listNotices).mockResolvedValue([
-      { id: 'n1', kind: 'passkey_clone_suspected', detail: 'd', created_at: 'x' },
-    ])
-    vi.mocked(api.dismissNotice).mockResolvedValue(undefined)
+    const notice = {
+      id: 'n1',
+      kind: 'passkey_clone_suspected',
+      detail: 'd',
+      created_at: '2026-11-19T00:00:00Z',
+    }
+    vi.mocked(api.listNotices).mockResolvedValue([notice])
     const w = await mountView()
-    const text = w.findAllComponents(PynViewNotice).map((n) => n.text())
-    expect(text[0]).toContain('The organization acme requires two-factor authentication')
-    expect(text[1]).toContain('copied')
-    await w
-      .findAll('button')
-      .find((b) => b.text() === 'Dismiss')!
-      .trigger('click')
+    expect(w.findComponent(PynTwoFactorNag).props('required')).toMatchObject({ enforced: true })
+    expect(w.findComponent(PynNotices).props('notices')).toEqual([notice])
+    w.findComponent(PynNotices).vm.$emit('dismiss', 'n1')
     await flushPromises()
     expect(api.dismissNotice).toHaveBeenCalledWith('n1')
-    expect(w.text()).not.toContain('copied')
+    expect(w.findComponent(PynNotices).props('notices')).toEqual([])
   })
 
-  it('registers a passkey and keeps the recovery codes of a first factor', async () => {
-    vi.mocked(api.beginPasskeyRegistration).mockResolvedValue({
-      ceremony: 'c1',
-      public_key: {},
-      expires_at: 'x',
-    } as never)
-    vi.mocked(api.finishPasskeyRegistration).mockResolvedValue({
-      passkey: {},
-      fresh_until: 'x',
-      recovery_codes: ['r1'],
-    } as never)
+  const begun = { ceremony: 'c1', public_key: {}, expires_at: 'x' }
+  const registered = { passkey: {}, fresh_until: 'x', recovery_codes: ['r1'] }
+
+  it('asks for the password before a first passkey, and keeps the prompt on a wrong one', async () => {
+    vi.mocked(api.beginPasskeyRegistration)
+      .mockRejectedValueOnce(new ApiError(401, 'unauthenticated', 'wrong'))
+      .mockResolvedValueOnce(begun as never)
+    vi.mocked(api.finishPasskeyRegistration).mockResolvedValue(registered as never)
     const w = await mountView()
     w.findComponent(PynPasskeys).vm.$emit('add')
     await flushPromises()
+    expect(api.beginPasskeyRegistration).not.toHaveBeenCalled()
+    w.findComponent(PynPasswordPrompt).vm.$emit('submit', 'bad')
+    await flushPromises()
+    expect(w.findComponent(PynPasswordPrompt).props('error')).toBe('wrong')
+    w.findComponent(PynPasswordPrompt).vm.$emit('submit', 'pw')
+    await flushPromises()
+    expect(api.beginPasskeyRegistration).toHaveBeenLastCalledWith('pw')
     expect(api.finishPasskeyRegistration).toHaveBeenCalledWith('c1', { id: 'c', response: {} })
+    expect(w.findComponent(PynPasswordPrompt).exists()).toBe(false)
     expect(w.findComponent(PynRecoveryCodes).props('codes')).toEqual(['r1'])
+  })
+
+  it('cancels the password prompt', async () => {
+    const w = await mountView()
+    w.findComponent(PynPasskeys).vm.$emit('add')
+    await flushPromises()
+    w.findComponent(PynPasswordPrompt).vm.$emit('cancel')
+    await flushPromises()
+    expect(w.findComponent(PynPasswordPrompt).exists()).toBe(false)
+  })
+
+  it('skips the prompt for an account that has a factor or no password', async () => {
+    vi.mocked(api.beginPasskeyRegistration).mockResolvedValue(begun as never)
+    vi.mocked(api.finishPasskeyRegistration).mockResolvedValue({ ...registered } as never)
+    vi.mocked(api.fetchTwoFactor).mockResolvedValue(on as never)
+    let w = await mountView()
+    w.findComponent(PynPasskeys).vm.$emit('add')
+    await flushPromises()
+    expect(api.beginPasskeyRegistration).toHaveBeenLastCalledWith(undefined)
+    vi.mocked(api.fetchTwoFactor).mockResolvedValue(off as never)
+    vi.mocked(fetchMe).mockResolvedValue({ has_password: false } as never)
+    w = await mountView()
+    w.findComponent(PynPasskeys).vm.$emit('add')
+    await flushPromises()
+    expect(api.beginPasskeyRegistration).toHaveBeenCalledTimes(2)
   })
 
   it('hides passkey registration when the server cannot', async () => {
@@ -133,18 +182,6 @@ describe('SecurityView', () => {
     await flushPromises()
     expect(api.renamePasskey).toHaveBeenCalledWith('p1', 'laptop')
     expect(api.removePasskey).toHaveBeenCalledWith('p1')
-  })
-
-  it('regenerates recovery codes and shows them', async () => {
-    vi.mocked(api.fetchTwoFactor).mockResolvedValue(on as never)
-    vi.mocked(api.regenerateRecoveryCodes).mockResolvedValue(['n1', 'n2'])
-    const w = await mountView()
-    await w
-      .findAll('button')
-      .find((b) => b.text().includes('Generate new'))!
-      .trigger('click')
-    await flushPromises()
-    expect(w.findComponent(PynRecoveryCodes).props('codes')).toEqual(['n1', 'n2'])
   })
 })
 

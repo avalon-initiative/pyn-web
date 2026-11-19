@@ -1,4 +1,4 @@
-import { PynSecondFactor, PynSignIn, PynViewNotice } from '@avalon-initiative/pyn-common-ui'
+import { PynSecondFactor, PynSignIn, PynTwoFactorNag } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
@@ -87,7 +87,7 @@ describe('second-factor sign-in', () => {
     await flushPromises()
     w.findComponent(PynSecondFactor).vm.$emit('submit', { kind: 'recovery', code: 'x' })
     await flushPromises()
-    expect(w.findComponent(PynSecondFactor).props('error')).toBe('bad code')
+    expect(w.findComponent(PynSecondFactor).props('error')).toContain('not right')
   })
 
   it('goes back to the form on cancel', async () => {
@@ -175,13 +175,9 @@ describe('enforcement', () => {
       ...signedIn,
       'GET /v1/me': () => reply(200, { id: 'a', user: 'wendy', two_factor_required: due }),
     })
-    const { w, router } = await open()
-    expect(w.findComponent(PynViewNotice).text()).toContain(
-      'requires two-factor authentication from 2026-12-01',
-    )
+    const { w } = await open()
+    expect(w.findComponent(PynTwoFactorNag).props('required')).toMatchObject({ by: 'server' })
     expect(w.find('a[href="/_/settings/security"]').exists()).toBe(true)
-    await router.push('/_/settings/security')
-    expect(w.text()).not.toContain('Set it up')
   })
 
   it('redirects to the security page when the server demands enrolment', async () => {

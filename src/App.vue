@@ -34,7 +34,6 @@ import { sessionKey } from './state/context.state'
 import { freshPrompt } from './state/fresh.state'
 import {
   SECURITY_PATH,
-  nagText,
   needsSecondFactor,
   onEnrolmentRequired,
   twoFactorDue,
@@ -57,7 +56,7 @@ import {
   PynSideNav,
   PynTopBar,
   PynVersionFooter,
-  PynViewNotice,
+  PynTwoFactorNag,
   applyTheme,
   loadTheme,
   repoSlug,
@@ -449,14 +448,11 @@ onMounted(async () => {
           @cancel="cancelFresh"
         />
         <template v-else>
-          <PynViewNotice
+          <PynTwoFactorNag
             v-if="twoFactorDue && route.path !== SECURITY_PATH"
-            tone="warning"
-            title="Two-factor authentication required"
-          >
-            {{ nagText(twoFactorDue) }}
-            <RouterLink :to="SECURITY_PATH">Set it up</RouterLink>
-          </PynViewNotice>
+            :required="twoFactorDue"
+            :href="SECURITY_PATH"
+          />
           <RouterView />
         </template>
         <template #footer>
