@@ -1,6 +1,7 @@
 import createClient from 'openapi-fetch'
 import { csrfHeaders } from '../state/csrf.state'
 import { reportPendingDeletion } from '../state/pending.state'
+import { reportEnrolmentRequired } from '../state/two-factor.state'
 import { ApiError } from './client'
 import type { paths } from './schema.gen'
 
@@ -13,6 +14,7 @@ export async function failure(res: Response): Promise<ApiError> {
   const b = err.blockers
   const blockers = b ? { repos: b.repositories ?? [], orgs: b.organizations ?? [] } : undefined
   reportPendingDeletion(err.code)
+  reportEnrolmentRequired(err.code)
   return new ApiError(
     res.status,
     err.code,

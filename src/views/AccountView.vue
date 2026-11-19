@@ -14,6 +14,7 @@ const items = computed(() => [
   { id: 'emails', label: 'Email addresses', href: '/_/settings/emails' },
   { id: 'username', label: 'Username', href: '/_/settings/username' },
   ...accountNavItems(hasProvider.value),
+  { id: 'security', label: 'Security', href: '/_/settings/security' },
   { id: 'delete-account', label: 'Delete account', href: '/_/settings/delete' },
 ])
 const current = computed(() => String(route.name ?? ''))

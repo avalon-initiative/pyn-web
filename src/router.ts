@@ -17,6 +17,7 @@ import ProfileSettingsView from './views/ProfileSettingsView.vue'
 import UsernameView from './views/UsernameView.vue'
 import DeleteAccountView from './views/DeleteAccountView.vue'
 import PasswordView from './views/PasswordView.vue'
+import SecurityView from './views/SecurityView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
@@ -82,6 +83,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'emails', name: 'emails', component: EmailAddressesView },
       { path: 'username', name: 'username', component: UsernameView },
       { path: 'password', name: 'password', component: PasswordView },
+      { path: 'security', name: 'security', component: SecurityView },
       { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
       { path: 'tokens', name: 'tokens', component: TokensView, alias: '/_/tokens' },
       { path: 'identities', name: 'identities', component: IdentitiesView },

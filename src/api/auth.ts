@@ -6,14 +6,34 @@ import type {
   SignInForm,
 } from '@avalon-initiative/pyn-common-ui'
 import type { Registered, RegistrationInfo, Session, SignInOptions } from '../types/auth.types'
+import type { PasskeyRequest } from '../types/two-factor.types'
 import { ApiError } from './client'
 import { api, call } from './http'
+import type { Schemas } from './schema'
 
 export const fetchRegistration = () => call<RegistrationInfo>(api.GET('/v1/registration'))
 
 /** The server sets the HttpOnly session cookie; the page only keeps the CSRF token. */
-export async function signIn(form: SignInForm): Promise<Session> {
-  const session = await call<Session>(api.POST('/v1/session', { body: form }))
+export async function signIn(form: SignInForm, code?: string): Promise<Session> {
+  const session = await call<Session>(
+    api.POST('/v1/session', { body: { ...form, code: code ?? null } }),
+  )
+  setCsrfToken(session.csrf_token)
+  return session
+}
+
+export const beginPasskeySignIn = (username?: string) =>
+  call<PasskeyRequest>(
+    api.POST('/v1/session/passkey/begin', { body: { username: username || null } }),
+  )
+
+export async function finishPasskeySignIn(
+  ceremony: string,
+  credential: Schemas['PasskeyAssertionCredential'],
+): Promise<Session> {
+  const session = await call<Session>(
+    api.POST('/v1/session/passkey/finish', { body: { ceremony, credential } }),
+  )
   setCsrfToken(session.csrf_token)
   return session
 }

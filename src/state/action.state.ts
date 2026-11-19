@@ -1,6 +1,7 @@
 import { inject, ref } from 'vue'
 import { ApiError, describeError } from '../api/client'
 import { sessionKey } from './context.state'
+import { withFreshCheck } from './fresh.state'
 
 /** Busy flag and error text around a user-triggered request. */
 export function useAction() {
@@ -12,7 +13,7 @@ export function useAction() {
     busy.value = true
     error.value = ''
     try {
-      await action()
+      await withFreshCheck(action)
       return true
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) session?.expire()
