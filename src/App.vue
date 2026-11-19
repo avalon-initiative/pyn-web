@@ -25,6 +25,7 @@ import { fetchDeletionStatus, restoreAccount } from './api/account-deletion'
 import type { AccountDeletionStatus } from './api/account-deletion'
 import { fetchServerBuild } from './api/server'
 import { webRevision, webVersion } from './state/version.state'
+import { minServerVersion, serverTooOld } from './state/server-compat.state'
 import type { ServerBuild } from './types/version.types'
 import { describeError } from './api/client'
 import { blockedStatus } from './state/account.state'
@@ -57,6 +58,7 @@ import {
   PynTopBar,
   PynVersionFooter,
   PynTwoFactorNag,
+  PynViewNotice,
   applyTheme,
   loadTheme,
   repoSlug,
@@ -87,6 +89,7 @@ const user = ref('')
 const admin = ref(false)
 const error = ref('')
 const serverBuild = ref<ServerBuild | null>(null)
+const serverOutdated = computed(() => serverTooOld(serverBuild.value?.version))
 const { nameMessage, checkName } = useNameCheck()
 const busy = ref(false)
 const registration = ref<RegistrationInfo | null>(null)
@@ -455,6 +458,10 @@ onMounted(async () => {
           @cancel="cancelFresh"
         />
         <template v-else>
+          <PynViewNotice v-if="serverOutdated" tone="warning" title="Server update recommended">
+            This app needs pyn server {{ minServerVersion }} or newer; this server is
+            {{ serverBuild?.version }}. Some pages may not work until it is updated.
+          </PynViewNotice>
           <PynTwoFactorNag
             v-if="twoFactorDue && route.path !== SECURITY_PATH"
             :required="twoFactorDue"

@@ -5,6 +5,25 @@ names the release and changes no flag. Pushing the tag runs `.github/workflows/r
 the app, publishes the container image `ghcr.io/avalon-initiative/pyn-web` and creates a GitHub Release with the tarball.
 pyn-web is an application, so nothing is published to a package registry. There is no `latest` tag.
 
+The web release is versioned independently of the server: its tag need not match any `pyn` server tag, and no release
+requires a specific server version. What the app needs is stated as `min_server`, below.
+
+## The minimum server version
+
+`min-server.json` holds `min_server`, the oldest `pyn` server release this app needs. It is used three ways:
+
+- at load the app compares it with `version` from `GET /v1/capabilities` and shows a non-blocking warning when the server
+  is older. A newer server never triggers it, nor does a server that reports no version, nor a pre-release of an equal or
+  newer `X.Y.Z` (only `X.Y.Z` is compared, numerically; `src/state/server-compat.state.ts`);
+- the release notes state it (`scripts/release-body.sh`);
+- the release job takes the OpenAPI document from the `pyn` release named by it, or from `main` when no such release
+  exists yet (`scripts/release-openapi.sh`).
+
+Bump `min_server` in the same pull request that starts using an API an older server lacks (a new endpoint or field the
+app depends on), setting it to the first server release that has it, or to the next planned one while that is unreleased.
+Leave it alone otherwise: a UI-only change needs no bump, and a server that is ahead is always fine because the API only
+grows within `/v1`.
+
 ## Cut a release
 
 `main` is protected, so the version bump lands by PR and the tag goes on the merged commit.
@@ -75,8 +94,8 @@ exists, locally or on origin.
 ## What the workflow does
 
 1. Checks the tagged commit is on `main` and the tag matches `package.json`.
-2. Picks the OpenAPI document: `docs/generated/openapi.json` of the `pyn` release with the same tag if it exists, else
-   `pyn` `main` (as CI does).
+2. Picks the OpenAPI document: `docs/generated/openapi.json` of the `pyn` release named by `min_server` if it exists, else
+   `pyn` `main` (as CI does). It never looks for a `pyn` tag equal to the web tag.
 3. Runs `scripts/release-checks.sh`, which includes `npm run build`.
 4. Packs `dist/` as `pyn-web-<tag>.tar.gz` and writes `SHA256SUMS`; both, and `dist/` itself, are handed to the later jobs.
 5. Builds the image from that same `dist/` for linux/amd64 and linux/arm64 and pushes `ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>`.

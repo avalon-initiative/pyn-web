@@ -54,17 +54,14 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}
 
-      # The pyn release with the same tag when it exists, else pyn main (as CI does).
+      # The pyn release named by min_server (min-server.json) when it exists, else pyn main.
       - name: Select OpenAPI document
         run: |
-          base=https://raw.githubusercontent.com/avalon-initiative/pyn
-          if curl -fsI "$base/${GITHUB_REF_NAME}/docs/generated/openapi.json" >/dev/null; then
-            ref="${GITHUB_REF_NAME}"
-          else
-            ref=main
-          fi
+          ref="$(bash scripts/release-openapi.sh)"
           echo "Using the OpenAPI document from pyn@${ref}"
-          echo "PYN_OPENAPI=$base/$ref/docs/generated/openapi.json" >> "$GITHUB_ENV"
+          echo "PYN_OPENAPI=https://raw.githubusercontent.com/avalon-initiative/pyn/$ref/docs/generated/openapi.json" >> "$GITHUB_ENV"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # format, lint, typecheck, test, build, api drift and the public boundary.
       - name: Checks
@@ -135,7 +132,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          sparse-checkout: scripts
+          sparse-checkout: |
+            /scripts/
+            /min-server.json
+          sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v8
         with:
           name: release-files
