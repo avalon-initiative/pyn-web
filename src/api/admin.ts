@@ -5,7 +5,7 @@ import type {
 } from '@avalon-initiative/pyn-common-ui'
 import type { TwoFactorSetting } from '@avalon-initiative/pyn-common-ui'
 import type { Schemas } from './schema'
-import type { AccountMe, AdminSettings } from '../types/admin.types'
+import type { AccountMe, AdminSettings, UpdateStatus } from '../types/admin.types'
 import type { AuditPage } from '../types/repo.types'
 import { api, call } from './http'
 
@@ -50,6 +50,8 @@ export const deleteAccount = (r: DeleteAccountRequest) =>
   )
 
 export const fetchAdminSettings = () => call<AdminSettings>(api.GET('/v1/admin/settings'))
+
+export const fetchUpdateStatus = () => call<UpdateStatus>(api.GET('/v1/admin/update'))
 
 export const fetchAccessMode = () => call<Schemas['SetupStatus']>(api.GET('/v1/setup'))
 
