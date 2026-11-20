@@ -42,6 +42,7 @@ import {
 import { getPasskey, passkeyBrowserError, passkeysSupported } from './state/webauthn.state'
 import { onPendingDeletion } from './state/pending.state'
 import { ownProfile } from './state/own-profile.state'
+import { ownAccessSessions, refreshOwnAccessSessions } from './state/access-session.state'
 import { pendingInvitations } from './state/invitations.state'
 import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
@@ -50,6 +51,7 @@ import { activeNav, sideNavItems } from './state/shell.state'
 import { selectAccountItem } from './state/extension.state'
 import type { AccountMenuItem } from './types/extension.types'
 import {
+  PynAccessSessionBanner,
   PynAccountPendingDeletion,
   PynShell,
   PynSecondFactor,
@@ -127,7 +129,11 @@ function setTheme(choice: ThemeChoice) {
 watch(
   () => [user.value, route.name],
   async () => {
-    if (!user.value) return ((repos.value = []), (orgs.value = []), (pendingInvitations.value = 0))
+    if (!user.value) {
+      ownAccessSessions.value = []
+      return ((repos.value = []), (orgs.value = []), (pendingInvitations.value = 0))
+    }
+    void refreshOwnAccessSessions()
     listMyInvitations()
       .then((list) => (pendingInvitations.value = list.length))
       .catch(() => (pendingInvitations.value = 0))
@@ -462,6 +468,7 @@ onMounted(async () => {
             This app needs pyn server {{ minServerVersion }} or newer; this server is
             {{ serverBuild?.version }}. Some pages may not work until it is updated.
           </PynViewNotice>
+          <PynAccessSessionBanner :sessions="ownAccessSessions" />
           <PynTwoFactorNag
             v-if="twoFactorDue && route.path !== SECURITY_PATH"
             :required="twoFactorDue"

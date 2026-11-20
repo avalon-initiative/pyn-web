@@ -68,6 +68,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/access-sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_access_sessions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/access-sessions/{id}/end': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['end_access_session']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/audit': {
     parameters: {
       query?: never
@@ -254,6 +286,22 @@ export interface paths {
     get: operations['list_accounts']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/users/{user}/access-sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['start_access_session']
     delete?: never
     options?: never
     head?: never
@@ -541,6 +589,22 @@ export interface paths {
       cookie?: never
     }
     get: operations['me']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/access-sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['my_access_sessions']
     put?: never
     post?: never
     delete?: never
@@ -2342,6 +2406,57 @@ export interface components {
      * @enum {string}
      */
     AccessMode: 'private' | 'public'
+    /** @description An access session, as the administrator and the account both see it. */
+    AccessSessionInfo: {
+      /** @description The administrator, by the name written when the session started. */
+      admin: string
+      /**
+       * Format: date-time
+       * @description When it stopped, once it has.
+       */
+      ended_at: string | null
+      /**
+       * Format: date-time
+       * @description The session stops working at this instant; it is never extended.
+       */
+      expires_at: string
+      id: string
+      notes?: string | null
+      /**
+       * @description The routes it called, in the order first reached; at most 200 distinct ones are listed, the rest are counted
+       *     under one `(further routes)` row.
+       */
+      reached: components['schemas']['AccessSessionReach'][]
+      reason: components['schemas']['AccessSessionReason']
+      /** Format: date-time */
+      started_at: string
+      /** @description `active`, `ended` (by an administrator) or `expired`. */
+      state: string
+      /** @description The account acted as, by the name written when the session started. */
+      user: string
+    }
+    /** @description A route a session called, counted. Never a body. */
+    AccessSessionReach: {
+      /** Format: int64 */
+      count: number
+      /** Format: date-time */
+      first_at: string
+      /** Format: date-time */
+      last_at: string
+      method: string
+      /** @description The route is not open to an access session, and the request was refused. */
+      refused: boolean
+      /** @description The route template, such as `/v1/repos/{owner}/{name}/files`. */
+      route: string
+      /** @description `owner/name` for a repository route, else empty. */
+      target: string
+    }
+    /**
+     * @description Why an administrator acts as an account.
+     * @enum {string}
+     */
+    AccessSessionReason:
+      'abuse_report' | 'security_incident' | 'support_request' | 'legal_request' | 'other'
     /** @description The signed-in account, independent of any repository. */
     Account: {
       /** @description Runs the server: may approve and disable accounts under `/v1/admin`. */
@@ -4316,6 +4431,19 @@ export interface components {
       title: string
       user: string
     }
+    /** @description Starts an access session on the account named in the path. */
+    StartAccessSessionRequest: {
+      /** @description Required for `other`, at most 500 characters. The account sees them. */
+      notes?: string | null
+      /** @description One of `abuse_report`, `security_incident`, `support_request`, `legal_request` or `other`; chosen for each session. */
+      reason: components['schemas']['AccessSessionReason']
+    }
+    /** @description A started session. The secret is the credential the administrator presents as a bearer token. */
+    StartedAccessSession: {
+      info: components['schemas']['AccessSessionInfo']
+      /** @description Shown once and never stored. */
+      secret: string
+    }
     /**
      * @description A shared version a branch holds of a path that became exclusive on the default branch (decision #38). It stays in
      *     history but can no longer merge into the path's single line.
@@ -4887,6 +5015,90 @@ export interface operations {
       }
       /** @description server_admin_required: also for any service credential */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_access_sessions: {
+    parameters: {
+      query?: {
+        /** @description only sessions on this account */
+        user?: string
+        /** @description default 50, max 200 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description newest first, with the routes each called */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccessSessionInfo'][]
+        }
+      }
+      /** @description server_admin_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  end_access_session: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the session id */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description stops working at once; ending a session that already stopped changes nothing. Any administrator may end any session */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccessSessionInfo']
+        }
+      }
+      /** @description server_admin_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description access_session_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5489,6 +5701,60 @@ export interface operations {
       }
       /** @description server_admin_required, or service_scope_required for a service credential without manage_accounts */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  start_access_session: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the account to act as */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StartAccessSessionRequest']
+      }
+    }
+    responses: {
+      /** @description the secret is shown once; present it as a bearer token. The session ends by itself after an hour and is never extended */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StartedAccessSession']
+        }
+      }
+      /** @description invalid_request: an unknown reason, `other` without notes, notes over 500 characters, or the administrator's own account */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or access_session_not_allowed for an access session; account_inactive for an account that is not active */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -6517,6 +6783,38 @@ export interface operations {
         }
       }
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  my_access_sessions: {
+    parameters: {
+      query?: {
+        /** @description default 50, max 200 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description every administrator access session on the signed-in account, newest first: the notification that one started. It cannot be turned off or dismissed */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccessSessionInfo'][]
+        }
+      }
+      /** @description forbidden for a token that is not full scope; access_session_not_allowed for an access session */
+      403: {
         headers: {
           [name: string]: unknown
         }
