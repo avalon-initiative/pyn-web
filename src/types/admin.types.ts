@@ -8,3 +8,6 @@ export type AdminSettings = Schemas['AdminSettings']
 
 /** `GET /v1/setup`, the one place the access mode and the public address are read. */
 export type ServerSetup = Schemas['SetupStatus']
+
+/** `GET /v1/admin/update`: whether a newer server release exists. */
+export type UpdateStatus = Schemas['UpdateStatus']

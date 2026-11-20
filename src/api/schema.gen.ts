@@ -228,6 +228,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/update': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['update_status']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/users': {
     parameters: {
       query?: never
@@ -2770,8 +2786,23 @@ export interface components {
       visibility?: components['schemas']['Visibility'] | null
     }
     CreateServiceCredentialRequest: {
+      /**
+       * @description Addresses or CIDR blocks (`192.0.2.7`, `10.0.0.0/8`, `2001:db8::/32`) the credential may be used from, at most 64.
+       *     Omit or leave empty to allow any address.
+       */
+      allowed_sources?: string[]
+      /**
+       * Format: date-time
+       * @description The credential is refused from this instant on; it must be in the future. Omit for no expiry.
+       */
+      expires_at?: string | null
       /** @description 1 to 64 lowercase letters, digits, `-` or `_`; unique, and never reused after revocation. */
       name: string
+      /**
+       * Format: int32
+       * @description Requests per minute this credential may make, at least 1. Omit to use the server default.
+       */
+      rate_limit_per_minute?: number | null
       /** @description At least one of `manage_accounts`, `manage_organizations`, `manage_limits`, `manage_webhooks`, `manage_freeze`. */
       scopes: string[]
     }
@@ -4134,13 +4165,27 @@ export interface components {
       version: string
     }
     ServiceCredentialInfo: {
+      /** @description Empty means any address. */
+      allowed_sources?: string[]
       /** Format: date-time */
       created_at: string
       /** @description The server administrator who created it. */
       created_by: string
+      /**
+       * Format: date-time
+       * @description When set and not in the future, the credential is expired: refused, but still listed.
+       */
+      expires_at?: string | null
       /** Format: date-time */
       last_used_at?: string | null
+      /** @description The address of the last accepted request; absent when the server could not tell. */
+      last_used_from?: string | null
       name: string
+      /**
+       * Format: int32
+       * @description The credential's own limit in requests per minute; absent means the server default.
+       */
+      rate_limit_per_minute?: number | null
       /** Format: date-time */
       revoked_at?: string | null
       scopes: string[]
@@ -4469,6 +4514,24 @@ export interface components {
       max_locks_per_user?: number | null
       name?: string | null
       visibility?: components['schemas']['Visibility'] | null
+    }
+    /** @description Whether a newer pyn release exists, as this server last learned it (`GET /v1/admin/update`). */
+    UpdateStatus: {
+      /**
+       * Format: date-time
+       * @description When the last successful lookup finished; absent while none has. With `latest` absent, present means up to date.
+       */
+      checked_at?: string | null
+      /** @description The running server's version. */
+      current: string
+      /** @description The server runs the check (`PYN_UPDATE_CHECK=on`). When false, every other field but `current` is absent. */
+      enabled: boolean
+      /** @description The newest release on this server's channel; absent when the server is up to date or has not learned it yet. */
+      latest?: string | null
+      /** @description Whether `latest` is a pre-release; present with `latest`. */
+      prerelease?: boolean | null
+      /** @description The release notes page for `latest`. */
+      url?: string | null
     }
     /** @description Fields left out stay as they are. */
     UpdateTeamRequest: {
@@ -5204,7 +5267,7 @@ export interface operations {
           'application/json': components['schemas']['CreatedServiceCredential']
         }
       }
-      /** @description invalid_request: bad name, no scope or an unknown scope */
+      /** @description invalid_request: bad name, no scope, an unknown scope, an expiry not in the future, a malformed source range or a rate limit below 1 */
       400: {
         headers: {
           [name: string]: unknown
@@ -5362,6 +5425,35 @@ export interface operations {
         }
       }
       /** @description server_admin_required, or fresh_check_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  update_status: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description whether a newer release exists, from the server's cached lookup; `enabled` is false unless the operator set PYN_UPDATE_CHECK=on */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['UpdateStatus']
+        }
+      }
+      /** @description server_admin_required */
       403: {
         headers: {
           [name: string]: unknown
@@ -8112,7 +8204,7 @@ export interface operations {
   get_org_avatar: {
     parameters: {
       query?: {
-        /** @description the version from `avatar_url`; when it is the current one the image is cached for a year */
+        /** @description the version from `avatar_url`; it only keeps caches of different images apart, and every response must be revalidated */
         v?: string
       }
       header?: never
@@ -12596,7 +12688,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description the same public entries signed out or with any valid user credential: active user accounts by name; never an email address, a hidden field, or an account that is disabled, not yet approved, scheduled for deletion or an organization */
+      /** @description the same public entries signed out or with a full-scope credential: active user accounts by name; never an email address, a hidden field, or an account that is disabled, not yet approved, scheduled for deletion or an organization */
       200: {
         headers: {
           [name: string]: unknown
@@ -12623,7 +12715,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description service_credential_not_allowed for a service credential */
+      /** @description service_credential_not_allowed for a service credential; forbidden for a token that is not full-scope */
       403: {
         headers: {
           [name: string]: unknown
@@ -12687,7 +12779,7 @@ export interface operations {
   get_avatar: {
     parameters: {
       query?: {
-        /** @description the version from `avatar_url`; when it is the current one the image is cached for a year */
+        /** @description the version from `avatar_url`; it only keeps caches of different images apart, and every response must be revalidated */
         v?: string
       }
       header?: never
