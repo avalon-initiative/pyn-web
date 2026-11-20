@@ -1715,6 +1715,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/locks/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Lock changes of the repository after a cursor, oldest first. Waits up to `wait` seconds for one when there is none. */
+    get: operations['lock_events']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/me': {
     parameters: {
       query?: never
@@ -3093,6 +3110,22 @@ export interface components {
       reason: string | null
       repo: string
       repo_id: string
+    }
+    /** @description One lock change in a repository's stream. */
+    LockStreamEvent: {
+      /** @description Resume after this event by passing it as `after`. */
+      cursor: string
+      /** @description The same envelope a webhook delivers: `lock.acquired`, `lock.released`, `lock.expired` or `lock.forced`. */
+      event: components['schemas']['Event']
+    }
+    /** @description A page of a repository's lock changes, oldest first. */
+    LockStreamPage: {
+      /**
+       * @description Pass it as `after` to get what follows this page. It is the position of the last event returned, or of the
+       *     request when none was; without `after` it is the position of now and `events` is empty.
+       */
+      cursor: string
+      events: components['schemas']['LockStreamEvent'][]
     }
     /** @description A path whose `lockable` attribute and policy mode disagree. */
     LockableDisagreement: {
@@ -10802,6 +10835,46 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Lock'][]
+        }
+      }
+    }
+  }
+  lock_events: {
+    parameters: {
+      query?: {
+        /** @description cursor of the last event seen; without it the stream starts now and returns no events */
+        after?: string
+        /** @description seconds to hold the request open when nothing is new, default 0, at most 25 */
+        wait?: number
+        /** @description most events returned, default 100, at most 500 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['LockStreamPage']
+        }
+      }
+      /** @description invalid_request: the cursor is not one this server issued */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
