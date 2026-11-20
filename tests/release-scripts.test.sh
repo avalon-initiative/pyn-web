@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Exercises scripts/release.sh, ci-green-for-tree.sh, release-meta.sh, release-latest.sh, release-body.sh and verify-release-version.sh in a throwaway repo
+# Exercises scripts/release.sh, ci-green-for-tree.sh, release-meta.sh, release-latest.sh, release-body.sh, release-openapi.sh, min-server.sh and verify-release-version.sh in a throwaway repo
 # with a bare origin and a stub gh. No network, nothing real is pushed.
 set -uo pipefail
 unset YES VER TITLE SKIP_CHECKS FORCE_CHECKS GH_API_FAIL GH_REPO GITHUB_REPOSITORY GITHUB_SHA
@@ -52,10 +52,11 @@ setup() { # fresh work repo + bare origin, on main with version 0.1.0
   git config commit.gpgSign false
   git switch -q -c main 2>/dev/null || true
   mkdir scripts
-  cp "$src"/scripts/{release.sh,release-meta.sh,release-latest.sh,release-body.sh,verify-release-version.sh,ci-green-for-tree.sh} scripts/
+  cp "$src"/scripts/{release.sh,release-meta.sh,release-latest.sh,release-body.sh,release-openapi.sh,min-server.sh,verify-release-version.sh,ci-green-for-tree.sh} scripts/
   printf '#!/usr/bin/env bash\necho gate-ran >>"$GATE_LOG"\n[[ "${GATE_FAIL:-}" != 1 ]]\n' >scripts/release-checks.sh
   printf '{\n  "name": "x",\n  "version": "0.1.0",\n  "lockfileVersion": 3,\n  "packages": {\n    "": { "name": "x", "version": "0.1.0" }\n  }\n}\n' >package-lock.json
   printf '{\n  "name": "x",\n  "version": "0.1.0"\n}\n' >package.json
+  printf '{\n  "min_server": "0.1.5"\n}\n' >min-server.json
   git add -A && git commit -q -m init && git push -q -u origin main
   : >"$GH_LOG"
   : >"$tmp/gate.log"
@@ -231,17 +232,38 @@ body() { GITHUB_REPOSITORY=o/r GITHUB_SHA=abc bash scripts/release-body.sh v0.2.
 printf '%s\n' '{"body":"## What'"'"'s Changed\n* a by @x in #1\n"}' >"$GH_FIX/notes.json"
 notes="$(jq -r .body "$GH_FIX/notes.json")"
 printf '%s\n' '[{"number":7,"body":"Intro\n\n## TLDR\n\nFirst line.\n\nSecond line.\n\n\n## Other\nignored"}]' >"$GH_FIX/pulls.json"
-[[ "$(body)" == "$(printf 'First line.\n\nSecond line.\n\n%s' "$notes")" ]]; expect "body: TLDR, blank line, notes" $?
+min='**Minimum pyn server:** 0.1.5 (the app needs this server release or newer).'
+[[ "$(body)" == "$(printf 'First line.\n\nSecond line.\n\n%s\n\n%s' "$min" "$notes")" ]]; expect "body: TLDR, blank line, notes" $?
 printf '%s\n' '[{"number":7,"body":"## TLDR\r\nCRLF text\r\n"}]' >"$GH_FIX/pulls.json"
-[[ "$(body)" == "$(printf 'CRLF text\n\n%s' "$notes")" ]]; expect "body: TLDR to the end of the description, CRLF" $?
+[[ "$(body)" == "$(printf 'CRLF text\n\n%s\n\n%s' "$min" "$notes")" ]]; expect "body: TLDR to the end of the description, CRLF" $?
 printf '%s\n' '[{"number":7,"body":"x\n## TLDR\n\n   \n## Next\ny"}]' >"$GH_FIX/pulls.json"
-[[ "$(body)" == "$notes" ]]; expect "body: empty TLDR gives the notes alone" $?
+[[ "$(body)" == "$(printf '%s\n\n%s' "$min" "$notes")" ]]; expect "body: empty TLDR gives the minimum server and the notes" $?
 printf '%s\n' '[{"number":7,"body":"no section here"}]' >"$GH_FIX/pulls.json"
-[[ "$(body)" == "$notes" ]]; expect "body: no TLDR gives the notes alone" $?
+[[ "$(body)" == "$(printf '%s\n\n%s' "$min" "$notes")" ]]; expect "body: no TLDR gives the minimum server and the notes" $?
 printf '%s\n' '[{"number":7,"body":null}]' >"$GH_FIX/pulls.json"
-[[ "$(body)" == "$notes" ]]; expect "body: null description gives the notes alone" $?
+[[ "$(body)" == "$(printf '%s\n\n%s' "$min" "$notes")" ]]; expect "body: null description gives the minimum server and the notes" $?
 printf '[]\n' >"$GH_FIX/pulls.json"
-[[ "$(body)" == "$notes" ]]; expect "body: no pull request gives the notes alone" $?
+[[ "$(body)" == "$(printf '%s\n\n%s' "$min" "$notes")" ]]; expect "body: no pull request gives the minimum server and the notes" $?
+
+printf '{"min_server": "0.2.0"}\n' >min-server.json
+[[ "$(body)" == "$(printf '**Minimum pyn server:** 0.2.0 (the app needs this server release or newer).\n\n%s' "$notes")" ]]; expect "body: follows min-server.json" $?
+printf '{"min_server": "0.1.5"}\n' >min-server.json
+
+# min-server and release-openapi: the OpenAPI source is the pyn release named by min_server, else main
+[[ "$(bash scripts/min-server.sh)" == "0.1.5" ]]; expect "min-server reads the file" $?
+printf '{"min_server": "oops"}\n' >min-server.json
+bash scripts/min-server.sh >/dev/null 2>&1; expect "min-server rejects a non X.Y.Z value" $([[ $? -ne 0 ]] && echo 0 || echo 1)
+printf '{"min_server": "0.1.5"}\n' >min-server.json
+openapi() { bash scripts/release-openapi.sh "$@" 2>/dev/null; }
+printf '%s\n' '[{"tag_name":"v0.1.50"},{"tag_name":"v0.1.5-first-cut"},{"tag_name":"v0.1.4"}]' >"$GH_FIX/releases.json"
+[[ "$(openapi)" == "v0.1.5-first-cut" ]]; expect "openapi: a titled release of min_server is used" $?
+printf '%s\n' '[{"tag_name":"v0.1.5"},{"tag_name":"v0.1.5-first-cut"}]' >"$GH_FIX/releases.json"
+[[ "$(openapi 0.1.5)" == "v0.1.5" ]]; expect "openapi: an explicit version wins over the file" $?
+printf '%s\n' '[{"tag_name":"v0.1.50"},{"tag_name":"v0.1.4"},{"tag_name":"v10.1.5"}]' >"$GH_FIX/releases.json"
+[[ "$(openapi)" == "main" ]]; expect "openapi: no release of min_server gives main (no prefix or dot lookalikes)" $?
+printf '[]\n' >"$GH_FIX/releases.json"
+[[ "$(openapi)" == "main" ]]; expect "openapi: no releases at all gives main" $?
+GH_API_FAIL=1 bash scripts/release-openapi.sh >/dev/null 2>&1; expect "openapi: fails on an API error" $([[ $? -ne 0 ]] && echo 0 || echo 1)
 
 # verify-release-version
 verify() { bash scripts/verify-release-version.sh "$1" >/dev/null 2>&1; }
