@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  PynAccessSessionHistory,
   PynNotices,
   PynPasskeys,
   PynPasswordPrompt,
@@ -11,11 +12,13 @@ import {
   PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
 import { onMounted } from 'vue'
+import { useOwnAccessHistory } from '../state/access-history.state'
 import { useSecurity } from '../state/security.state'
 import { SECURITY_PATH, twoFactorDue } from '../state/two-factor.state'
 
 const s = useSecurity()
 onMounted(s.load)
+const history = useOwnAccessHistory()
 </script>
 
 <template>
@@ -59,5 +62,7 @@ onMounted(s.load)
       />
     </template>
     <PynViewError v-else-if="s.error.value">{{ s.error.value }}</PynViewError>
+    <PynViewError v-if="history.error.value">{{ history.error.value }}</PynViewError>
+    <PynAccessSessionHistory v-else-if="history.loaded.value" :sessions="history.sessions.value" />
   </PynViewStack>
 </template>

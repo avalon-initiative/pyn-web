@@ -19,6 +19,7 @@ const { notice, dismiss } = useUpdateNotice(() =>
 const items = [
   ...adminNavItems(),
   { id: 'two-factor', label: 'Two-factor', href: '/_/admin/two-factor' },
+  { id: 'access-sessions', label: 'Access sessions', href: '/_/admin/access-sessions' },
 ]
 const current = computed(() => String(route.name ?? '').replace(/^admin-/, ''))
 </script>

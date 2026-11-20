@@ -56,6 +56,10 @@ const FRIENDLY: Record<string, string> = {
   fresh_check_required: 'Confirm with a second factor first, then try again.',
   two_factor_enrolment_required:
     'Set up a second factor under Account settings, Security, before doing anything else.',
+  access_session_not_allowed:
+    'An access session cannot do that: this route is not open to administrators acting as an account.',
+  access_session_not_found: 'That access session does not exist.',
+  account_inactive: 'That account is not active, so no access session can start on it.',
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
 }
 
