@@ -5,6 +5,7 @@ import type {
   StartedAccessSession,
 } from '@avalon-initiative/pyn-common-ui'
 import { endAccessSession, listAccessSessions, startAccessSession } from '../api/access-sessions'
+import { refreshOwnAccessSessions } from './access-session.state'
 import { useAction } from './action.state'
 
 /** The administrator's session list and start/end actions; the secret is held until dismissed. */
@@ -25,11 +26,13 @@ export function useAccessSessions() {
     start: (user: string, r: AccessSessionStart) =>
       attempt(async () => {
         started.value = await startAccessSession(user, r)
+        void refreshOwnAccessSessions()
         await refresh()
       }),
     end: (id: string) =>
       attempt(async () => {
         await endAccessSession(id)
+        void refreshOwnAccessSessions()
         await refresh()
       }),
     dismiss: () => (started.value = null),

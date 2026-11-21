@@ -29,8 +29,6 @@ import { minServerVersion, serverTooOld } from './state/server-compat.state'
 import type { ServerBuild } from './types/version.types'
 import { describeError } from './api/client'
 import { blockedStatus } from './state/account.state'
-import { listMyInvitations, listMyOrgs } from './api/orgs'
-import { listRepos } from './api/repos'
 import { sessionKey } from './state/context.state'
 import { freshPrompt } from './state/fresh.state'
 import {
@@ -42,11 +40,16 @@ import {
 import { getPasskey, passkeyBrowserError, passkeysSupported } from './state/webauthn.state'
 import { onPendingDeletion } from './state/pending.state'
 import { ownProfile } from './state/own-profile.state'
-import { ownAccessSessions, refreshOwnAccessSessions } from './state/access-session.state'
+import { ownAccessSessions } from './state/access-session.state'
 import { pendingInvitations } from './state/invitations.state'
 import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
-import { sortRepos } from './state/repo.state'
+import {
+  clearSessionData,
+  sessionOrgs,
+  sessionRepos,
+  startSessionRefresh,
+} from './state/session-data.state'
 import { activeNav, sideNavItems } from './state/shell.state'
 import { selectAccountItem } from './state/extension.state'
 import type { AccountMenuItem } from './types/extension.types'
@@ -65,12 +68,9 @@ import {
   loadTheme,
   repoSlug,
   saveTheme,
-  sortOrgs,
   PynSetup,
 } from '@avalon-initiative/pyn-common-ui'
 import type { NavItem, ThemeChoice } from '@avalon-initiative/pyn-common-ui'
-import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
-import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 import type {
   BlockedStatus,
   RegisterForm,
@@ -102,14 +102,12 @@ const resent = ref(false)
 const ready = ref(false)
 const deletion = ref<AccountDeletionStatus | null>(null)
 const recoveryDays = ref<number | undefined>()
-const repos = ref<RepoInfo[]>([])
-const orgs = ref<OrgInfo[]>([])
 const theme = ref<ThemeChoice>(loadTheme())
 applyTheme(theme.value)
 
 const publicPage = computed(() => route.matched.some((r) => r.meta.public === true))
 const bare = computed(() => route.matched.some((r) => r.meta.bare === true))
-const slugs = computed(() => repos.value.map(repoSlug))
+const slugs = computed(() => sessionRepos.value.map(repoSlug))
 const currentRepo = computed(() =>
   route.params.owner && route.params.name
     ? `${String(route.params.owner)}/${String(route.params.name)}`
@@ -125,22 +123,16 @@ function setTheme(choice: ThemeChoice) {
   saveTheme(choice)
 }
 
-// The sidebar lists follow creation and deletion, which both change the route.
-watch(
-  () => [user.value, route.name],
-  async () => {
-    if (!user.value) {
-      ownAccessSessions.value = []
-      return ((repos.value = []), (orgs.value = []), (pendingInvitations.value = 0))
-    }
-    void refreshOwnAccessSessions()
-    listMyInvitations()
-      .then((list) => (pendingInvitations.value = list.length))
-      .catch(() => (pendingInvitations.value = 0))
-    repos.value = sortRepos(await listRepos().catch(() => repos.value))
-    orgs.value = sortOrgs(await listMyOrgs().catch(() => orgs.value))
-  },
-)
+let stopRefresh = () => {}
+watch(user, (name) => {
+  stopRefresh()
+  if (name) stopRefresh = startSessionRefresh()
+  else {
+    stopRefresh = () => {}
+    clearSessionData()
+  }
+})
+onUnmounted(() => stopRefresh())
 
 const expire = () => {
   twoFactorDue.value = null
@@ -448,9 +440,9 @@ onMounted(async () => {
             :avatar-url="ownProfile.avatar_url"
             :items="sideNavItems(admin, navItems, pendingInvitations)"
             :current="activeNav(route.path, navItems)"
-            :repos="repos"
+            :repos="sessionRepos"
             :current-repo="currentRepo"
-            :orgs="orgs"
+            :orgs="sessionOrgs"
             :current-org="currentOrg"
           />
         </template>

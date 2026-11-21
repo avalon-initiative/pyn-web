@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router'
 import { deleteRepo, updateRepo } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { refreshRepos } from '../state/session-data.state'
 import { isRepoOwner } from '../state/repo-access.state'
 
 const { repo, target, reload, org, frozen } = inject(repoKey)!
@@ -24,6 +25,7 @@ const isOwner = computed(() => isRepoOwner(target.value.owner, user.value, org.v
 const save = (s: RepoSettings) =>
   saving.attempt(async () => {
     const updated = await updateRepo(target.value, s)
+    void refreshRepos()
     if (updated.name !== target.value.name) await router.replace(repoPath(updated, 'settings'))
     else await reload()
   })
@@ -31,6 +33,7 @@ const save = (s: RepoSettings) =>
 const remove = () =>
   removing.attempt(async () => {
     await deleteRepo(target.value)
+    void refreshRepos()
     await router.push('/')
   })
 </script>
