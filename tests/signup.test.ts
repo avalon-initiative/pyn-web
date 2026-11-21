@@ -203,3 +203,83 @@ describe('name messages', () => {
     expect(w.text()).toContain('is not a valid name.')
   })
 })
+
+describe('verification email guidance', () => {
+  const guidance = 'check your spam folder'
+  const server = (emailVerification: boolean, calls: string[] = []) =>
+    vi.fn((url: string, init?: RequestInit) => {
+      calls.push(`${init?.method ?? 'GET'} ${url}`)
+      if (url === '/v1/registration')
+        return Promise.resolve(
+          reply(200, { registration: 'open', email_verification: emailVerification }),
+        )
+      if (url === '/v1/register')
+        return Promise.resolve(reply(201, { user: 'wendy', status: 'pending_verification' }))
+      if (url === '/v1/register/resend') return Promise.resolve(reply(202, null))
+      if (url === '/v1/register/verify')
+        return Promise.resolve(reply(400, { code: 'invalid_verification', message: 'x' }))
+      return Promise.resolve(reply(401, { code: 'unauthenticated', message: 'x' }))
+    })
+
+  const open = async (url: string) => {
+    const router = makeRouter(createMemoryHistory())
+    await router.push(url)
+    await router.isReady()
+    const { default: App } = await import('../src/App.vue')
+    const w = mount(App, { global: { plugins: [router] } })
+    await flushPromises()
+    return w
+  }
+
+  const signUp = async (emailVerification: boolean) => {
+    vi.stubGlobal('fetch', server(emailVerification))
+    const w = await open('/')
+    await w
+      .findAll('button')
+      .find((b) => /create|register|sign up/i.test(b.text()))
+      ?.trigger('click')
+    await w.find('input[autocomplete=username]').setValue('wendy')
+    for (const p of w.findAll('input[type=password]')) await p.setValue('a-long-password')
+    if (emailVerification) await w.find('input[type=email]').setValue('w@example.com')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    return w
+  }
+
+  it('says what to do after sign-up when verification is required', async () => {
+    const w = await signUp(true)
+    expect(w.text()).toContain('Check your email')
+    expect(w.text().toLowerCase()).toContain(guidance)
+    expect(w.text()).toContain('few minutes')
+    expect(w.text()).toContain('ask a server administrator')
+    expect(w.text()).toContain('Follow the link')
+  })
+
+  it('shows no waiting text after sign-up when no verification is required', async () => {
+    const w = await signUp(false)
+    expect(w.text()).toContain('Check your email')
+    expect(w.text().toLowerCase()).not.toContain(guidance)
+    expect(w.text()).not.toContain('few minutes')
+    expect(w.text()).not.toContain('Follow the link')
+  })
+
+  it('shows the guidance on the resend page and keeps the resend request unchanged', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', server(true, calls))
+    const w = await open('/verify-email?token=old')
+    expect(w.text()).toContain('Link not valid')
+    expect(w.text().toLowerCase()).toContain(guidance)
+    await w.find('input[type=email]').setValue('w@example.com')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    expect(calls.filter((c) => c.includes('/resend'))).toEqual(['POST /v1/register/resend'])
+    expect(w.text().toLowerCase()).toContain(guidance)
+  })
+
+  it('shows no waiting text on the resend page when no verification is required', async () => {
+    vi.stubGlobal('fetch', server(false))
+    const w = await open('/verify-email?token=old')
+    expect(w.text()).toContain('Link not valid')
+    expect(w.text().toLowerCase()).not.toContain(guidance)
+  })
+})
