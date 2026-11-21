@@ -150,8 +150,8 @@ describe('PynSignIn', () => {
       .findAll('button')
       .find((b) => b.text() === 'I have an invitation')!
       .trigger('click')
-    expect(invite.findAll('input')).toHaveLength(3)
-    await fill(invite, ['wendy', 'a long password', 'pyni_x'])
+    expect(invite.findAll('input')).toHaveLength(4)
+    await fill(invite, ['wendy', 'a long password', 'a long password', 'pyni_x'])
     await invite.find('form').trigger('submit')
     expect(invite.emitted('register')?.[0]).toEqual([
       { username: 'wendy', password: 'a long password', invite: 'pyni_x' },
@@ -162,7 +162,7 @@ describe('PynSignIn', () => {
       .findAll('button')
       .find((b) => b.text() === 'Create an account')!
       .trigger('click')
-    expect(open.findAll('input')).toHaveLength(2)
+    expect(open.findAll('input')).toHaveLength(3)
   })
 
   it('hides registration on closed servers and offers no token entry', () => {
@@ -193,8 +193,8 @@ describe('sign-up and account states', () => {
       .findAll('button')
       .find((b) => b.text() === 'Create an account')!
       .trigger('click')
-    expect(w.findAll('input')).toHaveLength(3)
-    await fillAll(w, ['wendy', 'a long password', 'w@example.com'])
+    expect(w.findAll('input')).toHaveLength(4)
+    await fillAll(w, ['wendy', 'a long password', 'a long password', 'w@example.com'])
     await w.find('form').trigger('submit')
     expect(w.emitted('register')?.[0]).toEqual([
       { username: 'wendy', password: 'a long password', email: 'w@example.com', invite: undefined },
