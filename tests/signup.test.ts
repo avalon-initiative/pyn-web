@@ -158,6 +158,7 @@ describe('name messages', () => {
     const e = new ApiError(400, 'reserved_name', '"admin" is reserved and cannot be used as a name')
     expect(describeError(e)).toContain('"admin" is reserved.')
     expect(describeError(e)).toContain(rules)
+    expect(describeError(e)).toContain('first part of a repository address')
   })
 
   it('still words a reserved name when the server text has no name', () => {
