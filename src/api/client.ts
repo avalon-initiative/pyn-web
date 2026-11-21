@@ -1,5 +1,5 @@
 import { formatWait } from '@avalon-initiative/pyn-common-ui'
-import { NAME_RULES } from '../types/name.types'
+import { reservedMessage } from '../types/name.types'
 
 export class ApiError extends Error {
   constructor(
@@ -66,7 +66,7 @@ const FRIENDLY: Record<string, string> = {
 /** The server words it `"admin" is reserved and ...`; falls back to a generic subject. */
 function reservedName(e: ApiError): string {
   const name = /^"(.*)" is reserved/.exec(e.message)?.[1]
-  return `${name === undefined ? 'That name' : `"${name}"`} is reserved. ${NAME_RULES}`
+  return reservedMessage(name === undefined ? 'That name' : `"${name}"`)
 }
 
 export function describeError(e: unknown): string {
