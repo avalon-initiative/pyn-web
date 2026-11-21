@@ -2,7 +2,7 @@ import type { FileRow, LockInfo, MyLock } from '@avalon-initiative/pyn-common-ui
 import type { FileEntry, FilePage, Me } from '../types/lock.types'
 import type { CheckinBody, CheckinResult, PolicyPreview } from '../types/policy.types'
 import type { InviteInfo, Member, RepoInfo, RoleGrant } from '@avalon-initiative/pyn-common-ui'
-import type { AuditPage, HistoryPage, HistoryQuery } from '../types/repo.types'
+import type { AuditPage, BranchComparison, HistoryPage, HistoryQuery } from '../types/repo.types'
 import {
   type AuditFilter,
   type FetchedContent,
@@ -62,9 +62,16 @@ export const fetchTree = (r: Repo, path = '', branch?: string) =>
     }),
   )
 
-export const fetchSummary = (r: Repo, activity = 6) =>
+export const fetchSummary = (r: Repo, activity = 6, branch?: string) =>
   call<RepoSummary>(
-    api.GET('/v1/repos/{owner}/{name}/summary', { params: { path: r, query: { activity } } }),
+    api.GET('/v1/repos/{owner}/{name}/summary', {
+      params: { path: r, query: { activity, branch: blank(branch) } },
+    }),
+  )
+
+export const compareBranch = (r: Repo, head: string) =>
+  call<BranchComparison>(
+    api.GET('/v1/repos/{owner}/{name}/compare', { params: { path: r, query: { head } } }),
   )
 
 /** Reads at most `limit` bytes of a file's head content, then stops the download. */
