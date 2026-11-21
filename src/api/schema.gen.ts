@@ -1662,6 +1662,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/compare': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Readable without credentials when the repository is public; otherwise 404 unless the caller has a role.
+     *     How far `head` is from `base`: commits ahead and behind, and the paths it changes since their merge base.
+     */
+    get: operations['compare']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/content': {
     parameters: {
       query?: never
@@ -2748,6 +2768,48 @@ export interface components {
       created_by: string
       default: boolean
       name: string
+      /**
+       * Format: date-time
+       * @description The committed time of the head commit; absent for a branch with no commits.
+       */
+      updated_at?: string | null
+    }
+    /**
+     * @description How far a head is from a base. Commits are counted as git does: the head's ahead are those reachable from it and
+     *     not from the base, the behind the reverse.
+     */
+    BranchComparison: {
+      /**
+       * Format: int32
+       * @description Commits in the head and not in the base, at most `max_commits`.
+       */
+      ahead: number
+      /** @description The base as named in the request (the default branch when none was given). */
+      base: string
+      base_commit: string
+      /**
+       * Format: int32
+       * @description Commits in the base and not in the head, at most `max_commits`.
+       */
+      behind: number
+      /** @description Paths the head adds, modifies or deletes relative to the merge base, by path, at most `max_changes`. */
+      changes: components['schemas']['CompareChange'][]
+      /** @description Either count reached `max_commits`: the real number is larger and `changes` covers only the oldest commits. */
+      counts_capped: boolean
+      head: string
+      head_commit: string
+      /** Format: int32 */
+      max_changes: number
+      /**
+       * Format: int32
+       * @description The limit on `ahead`, `behind` and the commits whose paths are examined.
+       */
+      max_commits: number
+      /** @description The first (by id) of the lowest common ancestors; `changes` are measured from it. Absent for unrelated histories. */
+      merge_base: string | null
+      status: components['schemas']['CompareStatus']
+      /** @description `changes` is incomplete: more paths changed than listed, or more commits than `max_commits`. */
+      truncated: boolean
     }
     ChangePasswordRequest: {
       /** @description Required when the account already has a password. */
@@ -2863,6 +2925,15 @@ export interface components {
       /** @description Pass as `before` to fetch the next, older page; null on the last page. */
       next_before: string | null
     }
+    /** @description A path the head changes relative to the merge base. */
+    CompareChange: {
+      kind: components['schemas']['CompareChangeKind']
+      path: string
+    }
+    /** @enum {string} */
+    CompareChangeKind: 'added' | 'modified' | 'deleted'
+    /** @enum {string} */
+    CompareStatus: 'identical' | 'ahead' | 'behind' | 'diverged'
     CreateBranchRequest: {
       /** @description Git ref rules apply: no spaces, none of `~ ^ : ? * [ \`, no `..`. */
       name: string
@@ -10870,6 +10941,53 @@ export interface operations {
       }
     }
   }
+  compare: {
+    parameters: {
+      query: {
+        /** @description a branch, or a commit id or abbreviation; the default branch if omitted */
+        base?: string
+        /** @description a branch, or a commit id or abbreviation */
+        head: string
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BranchComparison']
+        }
+      }
+      /** @description invalid_request for a branch with no commits or a history too long to walk, ambiguous_commit */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description commit_not_found: neither a branch nor a commit */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   get_content: {
     parameters: {
       query: {
@@ -12162,6 +12280,8 @@ export interface operations {
       query?: {
         /** @description recent activity entries, default 10, max 100 */
         activity?: number
+        /** @description the branch the file counts and time describe; the default branch if omitted */
+        branch?: string
       }
       header?: never
       path: {
@@ -12180,6 +12300,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['RepoSummary']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
