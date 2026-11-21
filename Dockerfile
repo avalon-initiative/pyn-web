@@ -1,9 +1,20 @@
 # syntax=docker/dockerfile:1.7
-# Serves a built dist/ (npm run build). The release workflow builds it once, packs the tarball from it, and copies the
-# same files here, so the image holds no Node toolchain and needs no registry token.
-ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.31.7-alpine3.24@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
+# Serves a built dist/ (npm run build) with Caddy. The release workflow builds dist/ once, packs the tarball from it, and
+# copies the same files here, so the image holds no Node toolchain and needs no registry token.
+# Only the builder stage runs commands (on the build machine); the final stage is COPY-only, so no platform is emulated.
+ARG CADDY_VERSION=2.11.9
+ARG CADDY_BUILDER_IMAGE=caddy:2.11.9-builder-alpine@sha256:646fee578e680989ca5c7fd1ce6f1de574d19fd71ef2221810cc0510a9f40c86
+ARG ALPINE_IMAGE=alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 
-FROM ${NGINX_IMAGE}
+FROM --platform=$BUILDPLATFORM ${CADDY_BUILDER_IMAGE} AS builder
+ARG CADDY_VERSION
+ARG TARGETOS
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    xcaddy build "v${CADDY_VERSION}" --with github.com/caddy-dns/cloudflare@v0.2.4 --output /out/usr/bin/caddy \
+    && mkdir -p /out/data
+
+FROM ${ALPINE_IMAGE}
 ARG VERSION=dev
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="pyn-web" \
@@ -11,13 +22,22 @@ LABEL org.opencontainers.image.title="pyn-web" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
-# The base entrypoint renders templates/*.template with these variables only, so nginx's own $variables are untouched
+# PYN_TLS and PYN_SITE are unset: plain HTTP on 8080, as before. /data holds certificates and the internal root; /tmp is Caddy's config dir.
 ENV PYN_API_URL=http://pyn-core:7878 \
-    NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 \
-    NGINX_ENVSUBST_FILTER="^(PYN_API_URL|NGINX_LOCAL_RESOLVERS)"
-COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
-COPY docker/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
-COPY dist /usr/share/nginx/html
-EXPOSE 8080
+    XDG_DATA_HOME=/data \
+    XDG_CONFIG_HOME=/tmp
+COPY --from=builder --chmod=0755 /out/usr/bin/caddy /usr/bin/caddy
+COPY --from=builder --chown=65532:65532 /out/data /data
+COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
+COPY docker/caddy/tls /etc/caddy/tls
+COPY docker/caddy/log /etc/caddy/log
+COPY --chmod=0755 docker/caddy/entrypoint.sh /usr/local/bin/pyn-web-entrypoint
+COPY dist /srv
+USER 65532:65532
+VOLUME /data
+EXPOSE 80 443 443/udp 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget -q -O /dev/null http://127.0.0.1:8080/nginx-health || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1:8082/health || exit 1
+# Caddy shuts down gracefully on SIGTERM, within grace_period.
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["/usr/local/bin/pyn-web-entrypoint"]
