@@ -10,6 +10,7 @@ import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { listMyOrgs } from '../api/orgs'
 import { createRepo } from '../api/repos'
+import { refreshRepos } from '../state/session-data.state'
 import { useAction } from '../state/action.state'
 import { sessionKey } from '../state/context.state'
 import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
@@ -32,6 +33,7 @@ onMounted(() =>
 const create = (settings: RepoSettings) =>
   attempt(async () => {
     const repo = await createRepo(owner.value, settings)
+    void refreshRepos()
     await router.push(repoPath(repo))
   })
 </script>

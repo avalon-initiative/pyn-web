@@ -27,6 +27,7 @@ import {
 import { listTeams } from '../api/teams'
 import { useAction } from '../state/action.state'
 import { orgKey } from '../state/context.state'
+import { refreshOrgs } from '../state/session-data.state'
 import type {
   MemberCreation,
   OrgSettings,
@@ -96,6 +97,7 @@ const removeRule = (rule: RuleRef) =>
 const remove = () =>
   removing.attempt(async () => {
     await deleteOrg(name.value)
+    void refreshOrgs()
     await router.push('/_/orgs')
   })
 

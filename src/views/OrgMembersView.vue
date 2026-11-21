@@ -19,6 +19,7 @@ import {
 import { useAction } from '../state/action.state'
 import { orgKey, sessionKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
+import { refreshOrgs } from '../state/session-data.state'
 import type { OrgInvitation, OrgMember, OrgRole } from '@avalon-initiative/pyn-common-ui'
 
 const { name, org, frozen, reload } = inject(orgKey)!
@@ -66,6 +67,7 @@ const remove = (target: string) =>
   attempt(async () => {
     await removeOrgMember(name.value, target)
     if (target === user.value) {
+      void refreshOrgs()
       await reload()
       await router.push(orgPath(name.value))
     } else await load()

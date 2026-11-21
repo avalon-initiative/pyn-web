@@ -2,6 +2,7 @@
 import { PynOrgForm, orgPath, PynViewHeader } from '@avalon-initiative/pyn-common-ui'
 import { useRouter } from 'vue-router'
 import { createOrg } from '../api/orgs'
+import { refreshOrgs } from '../state/session-data.state'
 import { useAction } from '../state/action.state'
 import { useNameCheck } from '../state/name.state'
 
@@ -12,6 +13,7 @@ const { nameMessage, checkName } = useNameCheck()
 const create = (name: string) =>
   attempt(async () => {
     const org = await createOrg(name)
+    void refreshOrgs()
     await router.push(orgPath(org.name))
   })
 </script>

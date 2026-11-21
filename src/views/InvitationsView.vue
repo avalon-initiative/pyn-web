@@ -10,6 +10,7 @@ import { useRouter } from 'vue-router'
 import { acceptInvitation, declineInvitation, listMyInvitations } from '../api/orgs'
 import { useAction } from '../state/action.state'
 import { pendingInvitations } from '../state/invitations.state'
+import { refreshInvitations, refreshOrgs, refreshRepos } from '../state/session-data.state'
 import type { OrgInvitation } from '@avalon-initiative/pyn-common-ui'
 
 const router = useRouter()
@@ -23,6 +24,8 @@ const load = async () => {
   pendingInvitations.value = invitations.value.length
 }
 
+const refreshAcceptance = () => Promise.all([refreshInvitations(), refreshOrgs(), refreshRepos()])
+
 // A failed answer (limit reached, gone, frozen) leaves the list as the server now has it.
 async function answer(org: string, action: () => Promise<void>) {
   busyOrg.value = org
@@ -33,12 +36,14 @@ async function answer(org: string, action: () => Promise<void>) {
 const accept = (org: string) =>
   answer(org, async () => {
     await acceptInvitation(org)
+    void refreshAcceptance()
     await router.push(orgPath(org))
   })
 
 const decline = (org: string) =>
   answer(org, async () => {
     await declineInvitation(org)
+    void refreshInvitations()
     await load()
   })
 
