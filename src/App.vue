@@ -160,6 +160,7 @@ async function begin(name: string) {
   twoFactorDue.value = me?.two_factor_required ?? null
   ownProfile.value = me?.profile ?? {}
   user.value = name
+  setupUsername.value = ''
 }
 
 async function attempt(action: () => Promise<void>) {
@@ -187,26 +188,23 @@ function refuseName(name: string): boolean {
   return error.value !== ''
 }
 const setup = ref<SetupStatus | null>(null)
-const setupDone = ref<SetupForm | null>(null)
+const setupDone = ref(false)
+const setupUsername = ref('')
 
 const finishSetup = (form: SetupForm) =>
   attempt(async () => {
     if (refuseName(form.username)) return
     await completeSetup(form)
-    setupDone.value = form
+    setupUsername.value = form.username
+    setupDone.value = true
   })
 
-const enterAfterSetup = (to?: string) =>
-  attempt(async () => {
-    if (!setupDone.value) return
-    const { username, password } = setupDone.value
-    await begin((await signIn({ username, password })).user)
-    setup.value = null
-    setupDone.value = null
-    if (to) await router.push(to)
-  })
-
-const manageAdmins = () => enterAfterSetup('/_/admin/accounts')
+// Setup creates no session: leaving the wizard lands on the normal sign-in page, at `to` once signed in.
+const leaveSetup = async (to?: string) => {
+  setup.value = null
+  setupDone.value = false
+  if (to) await router.push(to)
+}
 
 const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
@@ -357,15 +355,15 @@ onMounted(async () => {
         :server-name="setup.server_name ?? undefined"
         :public-url="setup.public_url"
         :registration="setup.registration"
-        :done="!!setupDone"
+        :done="setupDone"
         :busy="busy"
         :error="error"
         :name-message="nameMessage"
         suggest-second-admin
         @name-input="checkName"
         @finish="finishSetup"
-        @sign-in="enterAfterSetup()"
-        @manage-admins="manageAdmins"
+        @sign-in="leaveSetup()"
+        @manage-admins="leaveSetup('/_/admin/accounts')"
       />
     </main>
     <PynShell v-else-if="ready && !user && publicPage" bare>
@@ -392,6 +390,7 @@ onMounted(async () => {
         :password-sign-in="signInOptions?.password"
         :passkeys="passkeysOffered"
         :return-to="route.fullPath"
+        :initial-username="setupUsername || undefined"
         :callback-error="callbackError"
         :email-verification="registration?.email_verification"
         :notice="notice"
