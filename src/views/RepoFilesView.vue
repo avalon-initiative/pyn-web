@@ -27,6 +27,12 @@ const path = computed(() => folderParam(route.params.path))
 const branch = useBranch()
 const listing = ref<TreeListing | null>(null)
 const summary = ref<RepoSummary | null>(null)
+// The branch bar names summary.default_branch; on a branch it names that branch instead.
+const barSummary = computed(() =>
+  summary.value && branch.value
+    ? { ...summary.value, default_branch: branch.value }
+    : summary.value,
+)
 const missing = ref(false)
 const readme = ref<ReadmeDoc | null>(null)
 const now = ref(new Date())
@@ -65,7 +71,7 @@ async function refresh() {
     try {
       const [tree, sum] = await Promise.all([
         fetchTree(target.value, p, b),
-        fetchSummary(target.value),
+        fetchSummary(target.value, undefined, b),
       ])
       if (p !== path.value || b !== branch.value) return
       listing.value = tree
@@ -78,7 +84,7 @@ async function refresh() {
       readme.value = null
       readmeRevision = null
       missing.value = true
-      summary.value = await fetchSummary(target.value)
+      summary.value = await fetchSummary(target.value, undefined, b)
     }
   })
 }
@@ -107,7 +113,7 @@ onUnmounted(() => clearInterval(timer))
     :path="path"
     :branch="branch"
     :listing="listing"
-    :summary="summary"
+    :summary="barSummary"
     :readme="readme"
     :missing="missing"
     :me="user"

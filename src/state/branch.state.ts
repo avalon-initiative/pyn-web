@@ -35,7 +35,7 @@ export function useBranches(
   const defaultName = computed(() => branches.value.find((b) => b.default)?.name ?? '')
   const current = computed(() => branch.value ?? defaultName.value)
   const options = computed<BranchOption[]>(() =>
-    branches.value.map((b) => ({ name: b.name, isDefault: b.default })),
+    branches.value.map((b) => ({ name: b.name, isDefault: b.default, updatedAt: b.updated_at })),
   )
   const unknown = computed(
     () => loaded.value && !!branch.value && !branches.value.some((b) => b.name === branch.value),
@@ -78,5 +78,16 @@ export function useBranches(
   const timer = setInterval(load, REFRESH_MS)
   onUnmounted(() => clearInterval(timer))
 
-  return { branches, options, current, unknown, pending, loading, error, select }
+  return {
+    branches,
+    options,
+    current,
+    defaultName,
+    loaded,
+    unknown,
+    pending,
+    loading,
+    error,
+    select,
+  }
 }
