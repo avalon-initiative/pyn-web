@@ -2,7 +2,7 @@
 import { PynVerifyEmail } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { resendVerification, verifyEmail } from '../api/auth'
+import { fetchRegistration, resendVerification, verifyEmail } from '../api/auth'
 import { useAction } from '../state/action.state'
 import type { VerifyOutcome } from '@avalon-initiative/pyn-common-ui'
 import type { Registered } from '../types/auth.types'
@@ -11,10 +11,14 @@ const route = useRoute()
 const outcome = ref<VerifyOutcome>('verifying')
 const result = ref<Registered | null>(null)
 const sent = ref(false)
+const emailVerification = ref<boolean | undefined>()
 const verify = useAction()
 const resend = useAction()
 
 onMounted(async () => {
+  void fetchRegistration()
+    .then((r) => (emailVerification.value = !!r.email_verification))
+    .catch(() => {})
   const token = [route.query.token].flat()[0]
   if (!token) {
     outcome.value = 'invalid'
@@ -43,6 +47,7 @@ const again = (email: string) =>
     :resend-error="resend.error.value"
     :busy="resend.busy.value"
     :sent="sent"
+    :email-verification="emailVerification"
     @resend="again"
   />
 </template>
