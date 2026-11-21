@@ -5,6 +5,7 @@ import { ApiError } from '../api/client'
 import { fetchContent, fetchSummary, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { useBranch } from '../state/branch.state'
 import { useHashScroll } from '../state/hash.state'
 import {
   fileBody,
@@ -23,6 +24,7 @@ const { target, repo } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const route = useRoute()
 const path = computed(() => folderParam(route.params.path))
+const branch = useBranch()
 const listing = ref<TreeListing | null>(null)
 const summary = ref<RepoSummary | null>(null)
 const missing = ref(false)
@@ -34,6 +36,7 @@ let timer: ReturnType<typeof setInterval> | undefined
 
 /** Reloads the README only when its revision changed; one that is not text shows nothing. */
 async function loadReadme(entries: TreeEntry[], p: string) {
+  const b = branch.value
   const found = readmeEntry(entries)
   const revision = found?.last_change?.id ?? null
   if (!found || revision === null) {
@@ -42,8 +45,11 @@ async function loadReadme(entries: TreeEntry[], p: string) {
     return
   }
   if (revision === readmeRevision) return
-  const body = fileBody(found.path, await fetchContent(target.value, found.path, VIEW_LIMIT))
-  if (p !== path.value) return
+  const body = fileBody(
+    found.path,
+    await fetchContent(target.value, found.path, VIEW_LIMIT, undefined, b),
+  )
+  if (p !== path.value || b !== branch.value) return
   readme.value =
     body.kind === 'markdown' || body.kind === 'code'
       ? { name: found.name, path: found.path, text: body.text }
@@ -54,13 +60,14 @@ async function loadReadme(entries: TreeEntry[], p: string) {
 async function refresh() {
   now.value = new Date()
   const p = path.value
+  const b = branch.value
   await attempt(async () => {
     try {
       const [tree, sum] = await Promise.all([
-        fetchTree(target.value, p),
+        fetchTree(target.value, p, b),
         fetchSummary(target.value),
       ])
-      if (p !== path.value) return
+      if (p !== path.value || b !== branch.value) return
       listing.value = tree
       summary.value = sum
       missing.value = false
@@ -76,7 +83,7 @@ async function refresh() {
   })
 }
 
-watch(path, () => {
+watch([path, branch], () => {
   listing.value = null
   readme.value = null
   readmeRevision = null

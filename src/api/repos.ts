@@ -11,6 +11,7 @@ import {
   type RepoSummary,
   type TreeListing,
 } from '@avalon-initiative/pyn-common-ui'
+import type { Branch } from '../types/repo.types'
 import type { Registered } from '../types/auth.types'
 import { api, binaryBody, call } from './http'
 
@@ -38,6 +39,9 @@ export const deleteRepo = (r: Repo) => call<void>(api.DELETE('/v1/repos/{owner}/
 
 export const repoMe = (r: Repo) => call<Me>(api.GET('/v1/repos/{owner}/{name}/me', at(r)))
 
+export const listBranches = (r: Repo) =>
+  call<Branch[]>(api.GET('/v1/repos/{owner}/{name}/branches', at(r)))
+
 export async function fetchFiles(r: Repo): Promise<FileRow[]> {
   const rows: FileRow[] = []
   let after: string | undefined
@@ -51,10 +55,10 @@ export async function fetchFiles(r: Repo): Promise<FileRow[]> {
   return rows
 }
 
-export const fetchTree = (r: Repo, path = '') =>
+export const fetchTree = (r: Repo, path = '', branch?: string) =>
   call<TreeListing>(
     api.GET('/v1/repos/{owner}/{name}/tree', {
-      params: { path: r, query: { path: blank(path) } },
+      params: { path: r, query: { path: blank(path), branch: blank(branch) } },
     }),
   )
 
@@ -69,9 +73,10 @@ export async function fetchContent(
   path: string,
   limit: number,
   revision?: number,
+  branch?: string,
 ): Promise<FetchedContent> {
   const { data } = await api.GET('/v1/repos/{owner}/{name}/content', {
-    params: { path: r, query: { path, revision } },
+    params: { path: r, query: { path, revision, branch: blank(branch) } },
     parseAs: 'stream',
   })
   const reader = data?.getReader()
@@ -155,6 +160,7 @@ export const fetchHistory = (r: Repo, q: HistoryQuery = {}) =>
           path: blank(q.path),
           filter: blank(q.filter),
           before: blank(q.before),
+          branch: blank(q.branch),
           limit: q.limit,
         },
       },

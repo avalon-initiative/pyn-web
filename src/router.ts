@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized, RouteRecordRaw, RouterHistory } from 'vue-router'
+import { branchParam } from './state/branch.state'
 import { scrollToHash } from './state/hash.state'
 import AdminAccessView from './views/AdminAccessView.vue'
 import AdminAccessSessionsView from './views/AdminAccessSessionsView.vue'
@@ -145,14 +146,28 @@ export const routes: RouteRecordRaw[] = [
   },
 ]
 
+const BRANCH_PAGES = new Set(['files', 'tree', 'blob', 'history'])
+
+/** Moving between repository pages keeps the open branch unless the address names one. */
+export function carryBranch(to: RouteLocationNormalized, from: RouteLocationNormalized) {
+  const branch = branchParam(from.query)
+  const sameRepo = to.params.owner === from.params.owner && to.params.name === from.params.name
+  if (!branch || branchParam(to.query) || !sameRepo || to.path === from.path) return true
+  if (!BRANCH_PAGES.has(String(to.name)) || !BRANCH_PAGES.has(String(from.name))) return true
+  return { ...to, query: { ...to.query, branch } }
+}
+
 export const makeRouter = (
   history: RouterHistory = createWebHistory(),
   extraRoutes: RouteRecordRaw[] = [],
-) =>
-  createRouter({
+) => {
+  const router = createRouter({
     history,
     routes: [...routes, ...extraRoutes],
     scrollBehavior(to) {
       if (to.hash) scrollToHash(to.hash)
     },
   })
+  router.beforeEach(carryBranch)
+  return router
+}
