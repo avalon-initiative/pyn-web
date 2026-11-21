@@ -5,6 +5,7 @@ import { ApiError } from '../api/client'
 import { fetchContent, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { useBranch } from '../state/branch.state'
 import { useHashScroll } from '../state/hash.state'
 import {
   PynFileView,
@@ -29,6 +30,7 @@ const user = inject(sessionKey)!.user
 const route = useRoute()
 const router = useRouter()
 const path = computed(() => folderParam(route.params.path))
+const branch = useBranch()
 const entry = ref<TreeEntry | null>(null)
 const body = ref<FileBody | null>(null)
 const missing = ref(false)
@@ -38,42 +40,47 @@ const { error, attempt } = useAction()
 let loadedRevision: number | null = null
 let timer: ReturnType<typeof setInterval> | undefined
 
-async function bodyFor(p: string, e: TreeEntry): Promise<FileBody> {
+async function bodyFor(p: string, e: TreeEntry, b?: string): Promise<FileBody> {
   if (!e.last_change) return { kind: 'none' }
-  if (fileKind(p) === 'image') return { kind: 'image', src: contentUrl(target.value, p) }
-  return fileBody(p, await fetchContent(target.value, p, VIEW_LIMIT))
+  if (fileKind(p) === 'image') {
+    const src = contentUrl(target.value, p)
+    return { kind: 'image', src: b ? `${src}&branch=${encodeURIComponent(b)}` : src }
+  }
+  return fileBody(p, await fetchContent(target.value, p, VIEW_LIMIT, undefined, b))
 }
 
 async function refresh() {
   now.value = new Date()
   const p = path.value
+  const b = branch.value
   await attempt(async () => {
     let found: TreeEntry | undefined
     try {
-      const tree = await fetchTree(target.value, parentOf(p))
+      const tree = await fetchTree(target.value, parentOf(p), b)
       const hit = entryAt(tree.entries, p)
       if (hit?.kind === 'folder') {
-        if (p === path.value) await router.replace(treePath(target.value, p))
+        if (p === path.value)
+          await router.replace({ path: treePath(target.value, p), query: route.query })
         return
       }
       found = hit ?? undefined
     } catch (e) {
       if (!(e instanceof ApiError && e.code === 'path_not_found')) throw e
     }
-    if (p !== path.value) return
+    if (p !== path.value || b !== branch.value) return
     missing.value = !found
     entry.value = found ?? null
     if (!found) return
     const revision = found.last_change?.id ?? null
     if (body.value && revision === loadedRevision) return
-    const next = await bodyFor(p, found)
-    if (p !== path.value) return
+    const next = await bodyFor(p, found, b)
+    if (p !== path.value || b !== branch.value) return
     body.value = next
     loadedRevision = revision
   })
 }
 
-watch(path, () => {
+watch([path, branch], () => {
   entry.value = null
   body.value = null
   missing.value = false

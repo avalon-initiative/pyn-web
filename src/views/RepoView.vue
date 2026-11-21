@@ -7,13 +7,16 @@ import {
   repoShellTabs,
   PynViewError,
   PynViewSummary,
+  PynViewAction,
+  PynBranchPicker,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
 import { getOrg, getOwnerFreeze } from '../api/orgs'
-import { getRepo, repoMe } from '../api/repos'
+import { getRepo, listBranches, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
+import { useBranches } from '../state/branch.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import { isRepoOwner } from '../state/repo-access.state'
@@ -36,6 +39,7 @@ const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
 const notFound = ref(false)
 const { error, attempt } = useAction()
+const picker = useBranches(target, listBranches)
 
 async function load() {
   const t = target.value
@@ -101,11 +105,24 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
         <span data-lease>{{ repo.lease_hours }}h leases</span>
         <span v-if="repo.role" data-role>your role: {{ repo.role }}</span>
         <span v-if="org" data-org>organization</span>
+        <PynBranchPicker
+          v-if="permissions.includes('read')"
+          :branches="picker.options.value"
+          :current="picker.current.value"
+          :loading="picker.loading.value"
+          :error="picker.error.value || undefined"
+          @select="picker.select"
+        />
       </template>
       <PynViewSummary v-if="!permissions.includes('read')">
         You have no role in this repository. Ask an admin to add you or send an invitation.
       </PynViewSummary>
-      <RouterView v-else />
+      <PynViewSummary v-else-if="picker.unknown.value" data-unknown-branch>
+        This repository has no branch named {{ route.query.branch }}. It may have been deleted or
+        renamed.
+        <PynViewAction :href="route.path" primary>Back to the default branch</PynViewAction>
+      </PynViewSummary>
+      <RouterView v-else-if="!picker.pending.value" />
     </PynRepoShell>
   </template>
 </template>

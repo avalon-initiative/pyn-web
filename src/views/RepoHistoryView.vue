@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { inject, onMounted, ref } from 'vue'
+import { inject, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchHistory } from '../api/repos'
 import { useAction } from '../state/action.state'
+import { useBranch } from '../state/branch.state'
 import { repoKey } from '../state/context.state'
 import type { Revision } from '@avalon-initiative/pyn-common-ui'
 import { PynHistory, historyQuery } from '@avalon-initiative/pyn-common-ui'
@@ -10,6 +11,7 @@ import { PynHistory, historyQuery } from '@avalon-initiative/pyn-common-ui'
 const { target } = inject(repoKey)!
 const route = useRoute()
 const router = useRouter()
+const branch = useBranch()
 const path = ref(String(route.query.path ?? ''))
 const filter = ref(path.value ? '' : String(route.query.filter ?? ''))
 const revisions = ref<Revision[]>([])
@@ -23,6 +25,7 @@ async function load(more = false) {
   const ok = await attempt(async () => {
     const page = await fetchHistory(target.value, {
       path: path.value,
+      branch: branch.value,
       filter: filter.value,
       before: more ? cursor.value : null,
     })
@@ -42,9 +45,14 @@ async function apply(nextPath: string, nextFilter: string) {
   path.value = nextPath
   filter.value = nextFilter
   loading.value = true
-  await router.replace({ query: historyQuery(nextPath, nextFilter) })
+  await router.replace({ query: { ...historyQuery(nextPath, nextFilter), branch: branch.value } })
   await load()
 }
+
+watch(branch, () => {
+  loading.value = true
+  load()
+})
 
 onMounted(() => load())
 </script>
