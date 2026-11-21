@@ -43,8 +43,7 @@ let timer: ReturnType<typeof setInterval> | undefined
 async function bodyFor(p: string, e: TreeEntry, b?: string): Promise<FileBody> {
   if (!e.last_change) return { kind: 'none' }
   if (fileKind(p) === 'image') {
-    const src = contentUrl(target.value, p)
-    return { kind: 'image', src: b ? `${src}&branch=${encodeURIComponent(b)}` : src }
+    return { kind: 'image', src: contentUrl(target.value, p, undefined, b) }
   }
   return fileBody(p, await fetchContent(target.value, p, VIEW_LIMIT, undefined, b))
 }
@@ -59,8 +58,7 @@ async function refresh() {
       const tree = await fetchTree(target.value, parentOf(p), b)
       const hit = entryAt(tree.entries, p)
       if (hit?.kind === 'folder') {
-        if (p === path.value)
-          await router.replace({ path: treePath(target.value, p), query: route.query })
+        if (p === path.value) await router.replace(treePath(target.value, p, b))
         return
       }
       found = hit ?? undefined
@@ -104,6 +102,7 @@ onUnmounted(() => clearInterval(timer))
     :owner="target.owner"
     :name="target.name"
     :path="path"
+    :branch="branch"
     :entry="entry"
     :body="body"
     :missing="missing"
