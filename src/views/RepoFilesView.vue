@@ -105,6 +105,7 @@ onUnmounted(() => clearInterval(timer))
     v-if="repo"
     :repo="repo"
     :path="path"
+    :branch="branch"
     :listing="listing"
     :summary="summary"
     :readme="readme"

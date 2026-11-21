@@ -16,7 +16,7 @@ import { ApiError } from '../api/client'
 import { getOrg, getOwnerFreeze } from '../api/orgs'
 import { getRepo, listBranches, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
-import { useBranches } from '../state/branch.state'
+import { useBranch, useBranches } from '../state/branch.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import { isRepoOwner } from '../state/repo-access.state'
@@ -39,6 +39,7 @@ const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
 const notFound = ref(false)
 const { error, attempt } = useAction()
+const branch = useBranch()
 const picker = useBranches(target, listBranches)
 
 async function load() {
@@ -99,6 +100,7 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :visibility="repo.visibility"
       :tabs="permissions.includes('read') ? tabs : undefined"
       :current="section"
+      :branch="branch"
       :owner-href="ownerHref"
     >
       <template #actions>

@@ -1,10 +1,10 @@
 import { PynBranchPicker, PynViewSummary } from '@avalon-initiative/pyn-common-ui'
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { fetchContent, fetchHistory, fetchTree } from '../src/api/repos'
 import { makeRouter } from '../src/router'
-import { repo as repoInfo, rootListing, summary } from './fixtures/landing-data'
+import { repo as repoInfo, rootEntries, rootListing, summary } from './fixtures/landing-data'
 
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }))
@@ -34,7 +34,15 @@ function stubServer(calls: string[]) {
       if (path === '/v1/repos/acme/game/me') return json({ permissions: ['read', 'lock'] })
       if (path === '/v1/repos/acme/game/branches')
         return json([branch('main', true), branch('feature')])
-      if (path === '/v1/repos/acme/game/tree') return json(rootListing)
+      if (path === '/v1/repos/acme/game/tree')
+        return json(
+          url.includes('path=dir')
+            ? {
+                path: 'dir',
+                entries: [{ ...rootEntries[3], name: 'pic.png', path: 'dir/pic.png' }],
+              }
+            : rootListing,
+        )
       if (path === '/v1/repos/acme/game/summary') return json(summary)
       if (path === '/v1/repos/acme/game/history') return json({ revisions: [], next_cursor: null })
       if (path === '/v1/orgs/acme') return json({ code: 'org_not_found' }, 404)
@@ -92,20 +100,17 @@ describe('branch picker', () => {
     expect(router.currentRoute.value.query).toEqual({})
   })
 
-  it('opens a linked branch and keeps it across file and history pages', async () => {
+  it('opens a linked branch and reads it on every page', async () => {
     const { router, calls } = await open('/acme/game?branch=feature')
     expect(
       ofPath(calls, '/v1/repos/acme/game/tree').every((u) => u.includes('branch=feature')),
     ).toBe(true)
-    await router.push('/acme/game/history')
+    await router.push('/acme/game/history?branch=feature')
     await flushPromises()
-    expect(router.currentRoute.value.query).toEqual({ branch: 'feature' })
     expect(ofPath(calls, '/v1/repos/acme/game/history').pop()).toContain('branch=feature')
-    await router.push('/acme/game/blob/a.txt')
+    await router.push('/acme/game/blob/a.txt?branch=feature')
     await flushPromises()
-    expect(router.currentRoute.value.query).toEqual({ branch: 'feature' })
-    const entries = ofPath(calls, '/v1/repos/acme/game/tree')
-    expect(entries.pop()).toContain('branch=feature')
+    expect(ofPath(calls, '/v1/repos/acme/game/tree').pop()).toContain('branch=feature')
   })
 
   it('shows a message and a way back for an unknown branch', async () => {
@@ -120,6 +125,61 @@ describe('branch picker', () => {
     const { router } = await open('/acme/game?branch=feature')
     await router.push('/acme/game/settings/policy')
     expect(router.currentRoute.value.query).toEqual({})
+  })
+})
+
+const hrefs = (w: VueWrapper) => w.findAll('a').map((a) => a.attributes('href') ?? '')
+
+describe('branch-aware links', () => {
+  it('carry the chosen branch on tree rows, tabs and the history link', async () => {
+    const { w } = await open('/acme/game?branch=feature')
+    const links = hrefs(w)
+    expect(links).toContain('/acme/game?branch=feature')
+    expect(links).toContain('/acme/game/history?branch=feature')
+    const rows = links.filter((h) => h.startsWith('/acme/game/blob/') || h.includes('/tree/'))
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((h) => h.includes('branch=feature'))).toBe(true)
+  })
+
+  it('carry no branch on the default branch', async () => {
+    const { w } = await open('/acme/game')
+    const links = hrefs(w).filter((h) => h.startsWith('/acme/game'))
+    expect(links.length).toBeGreaterThan(0)
+    expect(links.some((h) => h.includes('branch='))).toBe(false)
+  })
+
+  it('leave the Locks and other tabs without a branch', async () => {
+    const { w } = await open('/acme/game?branch=feature')
+    const others = hrefs(w).filter(
+      (h) => h.startsWith('/acme/game/') && !/\/(history|blob|tree)(\/|\?|$)/.test(h),
+    )
+    expect(others.length).toBeGreaterThan(0)
+    expect(others.some((h) => h.includes('branch='))).toBe(false)
+  })
+
+  it('keep the branch when the same path is clicked again', async () => {
+    const { w, router } = await open('/acme/game?branch=feature')
+    await w.find('a[href="/acme/game?branch=feature"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toEqual({ branch: 'feature' })
+  })
+})
+
+describe('branch-aware file page', () => {
+  it('puts the branch on the breadcrumbs, history link and image address', async () => {
+    const { w } = await open('/acme/game/blob/dir/pic.png?branch=feature')
+    const links = hrefs(w)
+    expect(links).toContain('/acme/game/tree/dir?branch=feature')
+    expect(
+      links.some((h) => h.startsWith('/acme/game/history') && h.includes('branch=feature')),
+    ).toBe(true)
+    expect(w.find('img[src*="/content"]').attributes('src')).toContain('branch=feature')
+  })
+
+  it('leaves them without a branch on the default branch', async () => {
+    const { w } = await open('/acme/game/blob/dir/pic.png')
+    expect(hrefs(w).some((h) => h.includes('branch='))).toBe(false)
+    expect(w.find('img[src*="/content"]').attributes('src')).not.toContain('branch=')
   })
 })
 
