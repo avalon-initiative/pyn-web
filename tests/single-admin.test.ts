@@ -1,4 +1,4 @@
-import { PynAccounts, PynSetup, PynViewNotice } from '@avalon-initiative/pyn-common-ui'
+import { PynAccounts, PynSetup, PynSignIn, PynViewNotice } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -110,9 +110,11 @@ describe('setup suggestion', () => {
       public_url: '',
       registration: 'closed',
     }
+    const posts: string[] = []
     vi.stubGlobal(
       'fetch',
       vi.fn((url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') posts.push(url)
         if (url === '/v1/setup' && init?.method === 'POST') return reply(200, {})
         if (url === '/v1/session' && init?.method === 'POST') {
           signedIn = true
@@ -123,8 +125,45 @@ describe('setup suggestion', () => {
     )
     setup.vm.$emit('finish', form)
     await flushPromises()
+    expect(posts).toEqual(['/v1/setup'])
+    expect(setup.props('done')).toBe(true)
+    expect(w.findComponent(PynSignIn).exists()).toBe(false)
     w.findComponent(PynSetup).vm.$emit('manageAdmins')
     await flushPromises()
     expect(router.currentRoute.value.name).toBe('admin-accounts')
+    expect(w.findComponent(PynSetup).exists()).toBe(false)
+    expect(posts).toEqual(['/v1/setup'])
+    const page = w.findComponent(PynSignIn)
+    expect(page.props('initialUsername')).toBe(form.username)
+    expect(JSON.stringify(page.props())).not.toContain(form.password)
+    expect((page.find('input[type=password]').element as HTMLInputElement).value).toBe('')
+    expect((page.find('input[autocomplete=username]').element as HTMLInputElement)?.value).toBe(
+      'root',
+    )
+    page.vm.$emit('signIn', { username: 'root', password: 'chosen' })
+    await flushPromises()
+    expect(posts).toEqual(['/v1/setup', '/v1/session'])
+    expect(router.currentRoute.value.name).toBe('admin-accounts')
+    expect(w.findComponent(PynSignIn).exists()).toBe(false)
+  })
+
+  it('shows the sign-in page after the plain sign-in step', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => {
+        if (url === '/v1/setup')
+          return reply(200, { initialised: false, registration: 'closed', public_url: 'http://x' })
+        return reply(401, { code: 'unauthenticated', message: 'x' })
+      }),
+    )
+    const router = makeRouter(createMemoryHistory())
+    await router.push('/')
+    const { default: App } = await import('../src/App.vue')
+    const w = mount(App, { global: { plugins: [router] } })
+    await flushPromises()
+    w.findComponent(PynSetup).vm.$emit('signIn')
+    await flushPromises()
+    expect(w.findComponent(PynSignIn).exists()).toBe(true)
+    expect(router.currentRoute.value.path).toBe('/')
   })
 })
