@@ -20,6 +20,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/readyz': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 200 when the metadata store answers and the object store's last probe passed; 503 otherwise, and 503 `draining` during shutdown. */
+    get: operations['readyz']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/account/deletion': {
     parameters: {
       query?: never
@@ -1822,7 +1839,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Lock changes of the repository after a cursor, oldest first. Waits up to `wait` seconds for one when there is none. */
+    /** Lock changes of the repository after a cursor, oldest first. Waits up to `wait` seconds for one when there is none, or less when the server starts shutting down. */
     get: operations['lock_events']
     put?: never
     post?: never
@@ -2696,6 +2713,7 @@ export interface components {
     AdminSettings: {
       account_deletion: components['schemas']['AccountDeletionSettings']
       administrators: components['schemas']['AdministratorSummary']
+      storage: components['schemas']['StorageSettings']
     }
     /** @description How many active server administrators exist. */
     AdministratorSummary: {
@@ -3978,6 +3996,23 @@ export interface components {
      * @enum {string}
      */
     ReadOnlySource: 'repository' | 'organization' | 'default'
+    ReadinessCheck: {
+      /** @description Why the check failed; absent when it passed. */
+      detail?: string | null
+      /** @description `metadata_store` or `object_store`. */
+      name: string
+      status: components['schemas']['ReadinessCheckStatus']
+    }
+    /** @enum {string} */
+    ReadinessCheckStatus: 'ok' | 'failing'
+    /** @description Whether this server copy should receive traffic. Carries no secrets: check names and short fixed details only. */
+    ReadinessReport: {
+      /** @description Every check that ran; empty while `draining`. */
+      checks: components['schemas']['ReadinessCheck'][]
+      status: components['schemas']['ReadinessStatus']
+    }
+    /** @enum {string} */
+    ReadinessStatus: 'ok' | 'unavailable' | 'draining'
     /** @description New recovery codes, shown once. The old ones no longer work. */
     RecoveryCodes: {
       recovery_codes: string[]
@@ -4515,6 +4550,18 @@ export interface components {
       /** @description Shown once and never stored. */
       secret: string
     }
+    /** @enum {string} */
+    StorageKind: 'memory' | 'filesystem' | 's3'
+    /** @description Where file content is kept (`PYN_S3_BUCKET`, `PYN_DATA_DIR` or neither) and whether it answered the last check. */
+    StorageSettings: {
+      /** @description The bucket name for `s3`; null otherwise. The endpoint and the credentials are never reported. */
+      bucket?: string | null
+      kind: components['schemas']['StorageKind']
+      /** @description `degraded` when the store failed its last probe (an S3 store is probed about every 30 seconds). */
+      status: components['schemas']['StorageStatus']
+    }
+    /** @enum {string} */
+    StorageStatus: 'ok' | 'degraded'
     /**
      * @description A shared version a branch holds of a path that became exclusive on the default branch (decision #38). It stays in
      *     history but can no longer merge into the path's single line.
@@ -4904,6 +4951,35 @@ export interface operations {
         }
         content: {
           'text/plain': string
+        }
+      }
+    }
+  }
+  readyz: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description ready for traffic */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ReadinessReport']
+        }
+      }
+      /** @description a check failed, or the server is draining */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ReadinessReport']
         }
       }
     }
