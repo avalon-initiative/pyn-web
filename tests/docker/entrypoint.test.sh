@@ -74,5 +74,14 @@ touch "$tmp/custom"
 run PYN_CADDYFILE_CUSTOM="$tmp/custom" PYN_TLS=bogus PYN_API_URL=
 if [[ $rc -eq 0 && "$out" == *"run: $tmp/custom "* ]]; then ok "a custom Caddyfile skips validation"; else bad "a custom Caddyfile skips validation"; fi
 
+# The default TLS server name must never be empty (Caddy rejects an empty default_sni), whatever the mode.
+mkdir -p "$tmp/fakebin"
+printf '#!/bin/sh\necho "sni=$PYN_DEFAULT_SNI"\n' >"$tmp/fakebin/caddy"
+chmod +x "$tmp/fakebin/caddy"
+sni_of() { env -i PATH="$tmp/fakebin:/usr/bin:/bin" PYN_API_URL=http://x:1 "$@" sh "$src" 2>&1 | grep '^sni=' || true; }
+[[ "$(sni_of)" == "sni=localhost" ]] && ok "off mode names a non-empty default server name" || bad "off mode names a non-empty default server name"
+[[ "$(sni_of PYN_SITE=192.168.7.239)" == "sni=192.168.7.239" ]] && ok "an IP site is the default server name" || bad "an IP site is the default server name"
+[[ "$(sni_of PYN_SITE=pyn.example.com PYN_TLS=auto)" == "sni=pyn.example.com" ]] && ok "a host name is the default server name" || bad "a host name is the default server name"
+
 echo
 if [[ $fails -eq 0 ]]; then echo "all entrypoint tests passed"; else echo "$fails failed"; exit 1; fi
