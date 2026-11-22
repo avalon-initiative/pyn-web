@@ -101,7 +101,7 @@ jobs:
           grep -qi '^cache-control: no-store' <<<"$up"
           ! grep -q '<div id="app">' <<<"$up"
           docker exec pyn-core touch /tmp/unready
-          unup=$(curl -sS -D - http://127.0.0.1:8080/readyz)
+          down=$(curl -sS -D - http://127.0.0.1:8080/readyz)
           grep -q '^HTTP/1.1 503' <<<"$down"
           grep -qi '^x-stub: 1' <<<"$down"
           ! grep -q '<div id="app">' <<<"$down"
