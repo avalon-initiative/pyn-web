@@ -10,7 +10,8 @@ FROM --platform=$BUILDPLATFORM ${CADDY_BUILDER_IMAGE} AS builder
 ARG CADDY_VERSION
 ARG TARGETOS
 ARG TARGETARCH
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+# The builder image sets XCADDY_SETCAP=1, a file capability that makes exec fail once capabilities are dropped; low ports use the sysctl.
+RUN XCADDY_SETCAP=0 CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     xcaddy build "v${CADDY_VERSION}" --with github.com/caddy-dns/cloudflare@v0.2.4 --output /out/usr/bin/caddy \
     && mkdir -p /out/data
 
