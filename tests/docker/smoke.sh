@@ -79,7 +79,7 @@ validate unset-site-default
 validate auto -e PYN_SITE=pyn.example.com -e PYN_TLS=auto
 validate internal -e PYN_SITE=192.168.1.10 -e PYN_TLS=internal
 validate files -e PYN_SITE=127.0.0.1 -e PYN_TLS=files
-validate dns-cloudflare -e PYN_SITE=pyn.example.com -e PYN_TLS=dns-cloudflare -e CF_API_TOKEN=x
+validate dns-cloudflare -e PYN_SITE=pyn.example.com -e PYN_TLS=dns-cloudflare -e CF_API_TOKEN=abcdefghijklmnopqrstuvwxyz0123456789ABCD
 validate access-log -e PYN_ACCESS_LOG=on
 validate trusted-proxies -e PYN_TRUSTED_PROXY_RANGES="10.0.0.1/32 172.18.0.0/16"
 has dns.providers.cloudflare docker run --rm --entrypoint caddy "$IMAGE" list-modules || die "cloudflare module missing"
