@@ -108,7 +108,7 @@ validate off -e PYN_TLS=off
 for mode in "off:-e PYN_TLS=off" "auto:-e PYN_SITE=pyn.example.com -e PYN_TLS=auto" "internal:-e PYN_SITE=192.168.1.10" \
   "files:-e PYN_SITE=127.0.0.1 -e PYN_TLS=files"; do
   # shellcheck disable=SC2086
-  validate "several servers, ${mode%%:*}" -e PYN_API_URL="http://pyn-core:8080 http://pyn-core2:8080,http://[::1]:8080" ${mode#*:}
+  validate "several servers, ${mode%%:*}" -e PYN_LB=multi -e PYN_API_URL="http://pyn-core:8080 http://pyn-core2:8080 http://[::1]:8080" ${mode#*:}
 done
 validate unset-site-default
 validate auto -e PYN_SITE=pyn.example.com -e PYN_TLS=auto
