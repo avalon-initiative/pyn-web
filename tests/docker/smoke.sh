@@ -156,7 +156,7 @@ for _ in $(seq 30); do
 done
 test -s "$work/root.crt" || die "root certificate was not created"
 eq "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' http://127.0.0.1/some/route)" "308 https://127.0.0.1/some/route" "http redirect"
-has '<div id="app">' curl -fsS --cacert "$work/root.crt" https://127.0.0.1/some/route || die "https SPA with the exported root"
+has '<div id="app">' curl -fsSv --cacert "$work/root.crt" https://127.0.0.1/some/route || { curl -sv --cacert "$work/root.crt" https://127.0.0.1/some/route 2>&1 | head -40; docker logs web 2>&1 | tail -15; die "https SPA with the exported root"; }
 if curl -fsS https://127.0.0.1/ >/dev/null 2>&1; then die "certificate verified without the exported root"; fi
 xff=$(seen --cacert "$work/root.crt" -H 'X-Forwarded-For: 6.6.6.6' https://127.0.0.1/v1/ping)
 [[ $xff =~ ^[0-9.]+\ https$ && $xff != 6.6.6.6* ]] || die "want one real client address and https, got: $xff"
