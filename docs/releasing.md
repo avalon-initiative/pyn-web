@@ -108,29 +108,13 @@ If a run fails after the image push, fix forward with a new patch version rather
 org owner must set the `pyn-web` package on ghcr.io to public (GitHub Packages settings); it starts private.
 
 `docker-build` in `ci.yml` (manual `workflow_dispatch` only, never on pull requests) builds the image from a fresh build and
-smoke-tests it read-only against a stub API; run it before a release that touches `Dockerfile` or `docker/`.
+smoke-tests it read-only against a stub API (`tests/docker/smoke.sh`) and cross-builds arm64; run it before a release that
+touches `Dockerfile` or `docker/`.
 
 ## Running the image
 
-```bash
-docker run --detach --publish 127.0.0.1:8080:8080 \
-  --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d:uid=101,gid=101 --cap-drop ALL \
-  --env PYN_API_URL=http://pyn-core:7878 \
-  ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>
-```
-
-The container is nginx (unprivileged, port 8080, non-root). It serves the app with the `index.html` fallback for client
-routes, caches the hashed files under `/assets/` for a year and never caches `index.html`, sets a content security policy
-and the usual hardening headers, and proxies `/v1` and `/healthz` to the API, so the browser sees one origin.
-
-| Variable      | Default                | Meaning                                                                                                                       |
-| ------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `PYN_API_URL` | `http://pyn-core:7878` | Address of `pyn-core` (`scheme://host:port`, no path). Resolved per request, so recreating the API container needs no restart |
-
-The proxy passes `Host` unchanged and sends `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Host` (values already
-set by a TLS-terminating proxy in front are kept). Set the server's `PYN_PUBLIC_URL` to the public `https://` address, and
-`PYN_TRUST_FORWARDED_FOR=true` so rate limits see client addresses. No `PYN_ALLOWED_ORIGINS` entry is needed: the app and
-the API share one origin. `/nginx-health` answers from the container itself and backs its `HEALTHCHECK`.
+The image is Caddy serving the app and proxying the API; the settings, the HTTPS modes and the overrides are in
+[image.md](image.md).
 
 ## Deploying the tarball
 

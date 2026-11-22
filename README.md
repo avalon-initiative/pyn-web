@@ -36,12 +36,14 @@ Tag-driven: `make release` opens a version-bump PR, `make release-publish` tags 
 
 ## Deployment
 
-Run the image next to `pyn-core`; it serves the app and proxies `/v1` and `/healthz` to the API at `PYN_API_URL` (default `http://pyn-core:7878`):
+Run the image next to `pyn-core`; it serves the app and proxies `/v1` and `/healthz` to the API at `PYN_API_URL` (default `http://pyn-core:7878`). With nothing else set it speaks plain HTTP on 8080, for use behind your own proxy; set `PYN_SITE` for built-in HTTPS:
 
 ```bash
-docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d:uid=101,gid=101 \
+docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
   -e PYN_API_URL=http://pyn-core:7878 ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>
 ```
+
+HTTPS modes (`PYN_TLS`: `auto`, `internal`, `files`, `dns-cloudflare`, `off`), trusted proxies, the `/data` volume and replacing the Caddy configuration are described in [docs/image.md](docs/image.md).
 
 The release also carries `pyn-web-<tag>.tar.gz` and `SHA256SUMS` for hosts that serve static files themselves. Details: [docs/releasing.md](docs/releasing.md).
 
