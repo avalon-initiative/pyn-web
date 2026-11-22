@@ -62,7 +62,8 @@ sleep 2
 step "config validates in every mode"
 openssl req -x509 -newkey rsa:2048 -nodes -keyout "$work/tls.key" -out "$work/tls.crt" -days 2 -subj /CN=127.0.0.1 \
   -addext subjectAltName=IP:127.0.0.1 2>/dev/null
-chmod 0644 "$work/tls.key"
+chmod 0755 "$work"
+chmod 0644 "$work/tls.key" "$work/tls.crt"
 validate() { # validate <name> <env...>
   local name=$1 out
   shift
