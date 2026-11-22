@@ -1,1 +1,0 @@
-# one server: proxied as is, so an unready copy answers with its own 503 instead of a gateway error

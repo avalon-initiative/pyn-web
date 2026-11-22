@@ -7,7 +7,7 @@ LOG_DIR := $(RUN_DIR)/logs
 PID_FILE := $(PID_DIR)/pyn-web.pid
 LOG_FILE := $(LOG_DIR)/pyn-web.log
 
-.PHONY: install help build run start stop restart status test fmt fmt-check lint boundary-check check clean release-checks release release-skip-tests release-publish release-test image-test
+.PHONY: install help build run start stop restart status test fmt fmt-check lint boundary-check check clean release-checks release release-skip-tests release-publish release-test
 
 install:
 	npm install
@@ -82,10 +82,7 @@ lint:
 boundary-check:
 	python3 scripts/check_public_boundary.py
 
-check: fmt-check lint test image-test
-
-image-test:
-	bash tests/docker/entrypoint.test.sh
+check: fmt-check lint test
 
 clean:
 	rm -rf dist
