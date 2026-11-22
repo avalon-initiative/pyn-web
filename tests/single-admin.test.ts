@@ -18,6 +18,7 @@ const provide = {
 const settings = (active: number) => ({
   account_deletion: { window_days: 30, disabled_retention_days: 0 },
   storage: { kind: 'memory' as const, status: 'ok' as const },
+  certificate: { state: 'unchecked' as const, names: [] },
   administrators: { active, single: active === 1 },
 })
 
