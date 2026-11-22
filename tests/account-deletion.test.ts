@@ -106,6 +106,7 @@ describe('failure', () => {
 describe('AdminAccountsView deletion', () => {
   const settings = {
     account_deletion: { window_days: 30, disabled_retention_days: 0 },
+    storage: { kind: 'memory' as const, status: 'ok' as const },
     administrators: { active: 2, single: false },
   }
 
@@ -138,6 +139,7 @@ describe('AdminAccountsView deletion', () => {
     expect(
       retentionNote({
         account_deletion: { window_days: 30, disabled_retention_days: 90 },
+        storage: { kind: 'memory' as const, status: 'ok' as const },
         administrators: { active: 2, single: false },
       }),
     ).toContain('deleted automatically after 90 days')
