@@ -2713,6 +2713,7 @@ export interface components {
     AdminSettings: {
       account_deletion: components['schemas']['AccountDeletionSettings']
       administrators: components['schemas']['AdministratorSummary']
+      certificate: components['schemas']['CertificateSettings']
       storage: components['schemas']['StorageSettings']
     }
     /** @description How many active server administrators exist. */
@@ -2829,6 +2830,39 @@ export interface components {
       /** @description `changes` is incomplete: more paths changed than listed, or more commits than `max_commits`. */
       truncated: boolean
     }
+    /**
+     * @description What the server's periodic TLS handshake against its own public address (`PYN_PUBLIC_URL`) saw.
+     *     Only public certificate facts and the configured host are reported.
+     */
+    CertificateSettings: {
+      /**
+       * Format: int64
+       * @description Whole days until `not_after`, rounded down; negative once expired. Null until a certificate was read.
+       */
+      days_left?: number | null
+      /** @description The host the handshake targets; null while `unchecked`. */
+      host?: string | null
+      /** @description The issuer's common name, when it has one. */
+      issuer?: string | null
+      /** Format: date-time */
+      last_checked?: string | null
+      /** @description Why the last check failed (null when it succeeded); `state` is `unreachable` then, and the certificate fields keep the last good read. */
+      last_error?: string | null
+      /** @description The DNS and IP names in the certificate (its subject name when it has none). */
+      names: string[]
+      /** Format: date-time */
+      not_after?: string | null
+      /** Format: date-time */
+      not_before?: string | null
+      state: components['schemas']['CertificateState']
+      /**
+       * @description Whether the chain verified against the system roots for `host`; null until a certificate was read.
+       *     An untrusted certificate (a private authority) still has its expiry reported.
+       */
+      trusted?: boolean | null
+    }
+    /** @enum {string} */
+    CertificateState: 'ok' | 'expiring' | 'expired' | 'unreachable' | 'unchecked'
     ChangePasswordRequest: {
       /** @description Required when the account already has a password. */
       current?: string | null
