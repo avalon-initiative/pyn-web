@@ -2732,6 +2732,8 @@ export interface components {
       chunks: string[]
     }
     AuditEntry: {
+      /** @description The administrator who acted as `actor` in an access session; absent for an ordinary request. Covered by `hash`. */
+      acting_admin?: string | null
       action: string
       /** @description The name the event was recorded with; the log never rewrites it. */
       actor: string
@@ -3333,6 +3335,8 @@ export interface components {
     }
     /** @description `lock.acquired`: a path was locked, including when a lapsed lease was taken over. A renewal raises nothing. */
     LockAcquiredData: {
+      /** @description The administrator who acted as `holder` in an access session; absent otherwise. */
+      acting_admin?: string | null
       /** Format: date-time */
       expires_at: string
       holder: string
@@ -3359,6 +3363,8 @@ export interface components {
     }
     /** @description `lock.forced`: a live lock was removed without its holder, by a forced unlock or a policy change. */
     LockForcedData: {
+      /** @description The administrator who acted as `actor` in an access session; absent otherwise. */
+      acting_admin?: string | null
       actor: string
       /** @description Whose lock was removed. */
       holder: string
@@ -3371,6 +3377,8 @@ export interface components {
     }
     /** @description `lock.released`: the holder released the lock, or a check-in consumed it. */
     LockReleasedData: {
+      /** @description The administrator who acted as `holder` in an access session; absent otherwise. */
+      acting_admin?: string | null
       holder: string
       owner: string
       owner_id: string
