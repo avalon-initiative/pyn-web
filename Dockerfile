@@ -32,6 +32,7 @@ COPY --from=builder --chown=65532:65532 /out/data /data
 COPY docker/caddy/Caddyfile /etc/caddy/Caddyfile
 COPY docker/caddy/tls /etc/caddy/tls
 COPY docker/caddy/log /etc/caddy/log
+COPY docker/caddy/lb /etc/caddy/lb
 COPY --chmod=0755 docker/caddy/entrypoint.sh /usr/local/bin/pyn-web-entrypoint
 COPY dist /srv
 USER 65532:65532

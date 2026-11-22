@@ -36,7 +36,7 @@ Tag-driven: `make release` opens a version-bump PR, `make release-publish` tags 
 
 ## Deployment
 
-Run the image next to `pyn-core`; it serves the app and proxies `/v1` and `/healthz` to the API at `PYN_API_URL` (default `http://pyn-core:7878`). With nothing else set it speaks plain HTTP on 8080, for use behind your own proxy; set `PYN_SITE` for built-in HTTPS:
+Run the image next to `pyn-core`; it serves the app and proxies `/v1`, `/healthz` and `/readyz` to the API at `PYN_API_URL` (default `http://pyn-core:7878`; several addresses separated by spaces are balanced, see [docs/image.md](docs/image.md)). With nothing else set it speaks plain HTTP on 8080, for use behind your own proxy; set `PYN_SITE` for built-in HTTPS:
 
 ```bash
 docker run -d -p 127.0.0.1:8080:8080 --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \

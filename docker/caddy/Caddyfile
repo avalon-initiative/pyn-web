@@ -30,12 +30,16 @@
 	}
 
 	# X-Forwarded-Proto and -Host are kept from a trusted proxy in front and set from the request otherwise.
-	@api path /v1/* /healthz
+	# The probes are answered by the server (through one copy when several are listed) and never cached.
+	@api path /v1/* /healthz /readyz
+	@probe path /healthz /readyz
 	handle @api {
+		header @probe >Cache-Control no-store
 		reverse_proxy {$PYN_API_URL} {
 			flush_interval -1
 			request_buffers 0
 			header_up X-Forwarded-For {client_ip}
+			import lb/{$PYN_LB:single}.caddy
 			transport http {
 				dial_timeout 10s
 				read_timeout 300s

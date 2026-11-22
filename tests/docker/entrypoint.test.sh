@@ -63,6 +63,25 @@ fails_with "trusted range 0.0.0.0/0" "would trust every client" PYN_TRUSTED_PROX
 run PYN_API_URL=http://pyn-core:7878/// PYN_TRUSTED_PROXY_RANGES=10.0.0.1/32,172.18.0.5
 if [[ "$out" == *"PYN_API_URL=http://pyn-core:7878 PYN_TRUSTED_PROXY_RANGES=10.0.0.1/32 172.18.0.5"* ]]; then ok "normalises API url and ranges"; else bad "normalises API url and ranges"; fi
 
+# Several servers: space or comma separated, normalised to spaces, PYN_LB tells the Caddyfile which snippet to import.
+api_of() { run PYN_API_URL="$1"; echo "$out" | sed -n 's/.* PYN_API_URL=\(.*\) PYN_TRUSTED_PROXY_RANGES=.* PYN_LB=\(.*\)$/\1|\2/p'; }
+[[ "$(api_of 'http://a:1')" == "http://a:1|single" ]] && ok "one server is single" || bad "one server is single"
+[[ "$(api_of 'http://a:1 http://b:2')" == "http://a:1 http://b:2|multi" ]] && ok "two servers separated by a space" || bad "two servers separated by a space"
+[[ "$(api_of 'http://a:1,http://b:2/, http://[::1]:3')" == "http://a:1 http://b:2 http://[::1]:3|multi" ]] && ok "commas, trailing slashes and IPv6 are normalised" || bad "commas, trailing slashes and IPv6 are normalised"
+[[ "$(api_of 'https://a https://b:8443')" == "https://a https://b:8443|multi" ]] && ok "https servers with and without a port" || bad "https servers with and without a port"
+fails_with "duplicate server" "same server twice" PYN_API_URL="http://a:1 http://A:1/"
+fails_with "second entry without a scheme" "must start with http" PYN_API_URL="http://a:1 b:2"
+fails_with "mixed schemes" "same scheme" PYN_API_URL="http://a:1 https://b:2"
+fails_with "entry with a path" "no path" PYN_API_URL="http://a:1 http://b:2/v1"
+fails_with "entry with credentials" "no path, query or credentials" PYN_API_URL="http://u:p@a:1"
+fails_with "entry with a query" "no path, query or credentials" PYN_API_URL="http://a:1?x=1"
+fails_with "entry with a bad port" "invalid port" PYN_API_URL="http://a:99999"
+fails_with "entry with a non-numeric port" "invalid port" PYN_API_URL="http://a:x"
+fails_with "entry with port zero" "invalid port" PYN_API_URL="http://a:1 http://b:0"
+fails_with "entry without a host" "no host" PYN_API_URL="http://:7878"
+fails_with "unbracketed IPv6" "bracket an IPv6" PYN_API_URL="http://::1:7878"
+fails_with "only separators" "PYN_API_URL" PYN_API_URL=" , "
+
 run PYN_TLS=dns-cloudflare PYN_SITE=a.example.com CF_API_TOKEN_FILE="$tmp/token"
 if [[ $rc -eq 0 && "$out" != *secret-token-value* ]]; then ok "token from a file is accepted and never printed"; else bad "token from a file"; fi
 fails_with "unreadable token file" "not a readable file" CF_API_TOKEN_FILE="$tmp/nope"

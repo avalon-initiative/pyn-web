@@ -21,7 +21,7 @@ fi
 
 run() {
 	if [ "${PYN_ENTRYPOINT_DRY_RUN:-}" = 1 ]; then
-		echo "run: $1 PYN_SITE=${PYN_SITE:-} PYN_TLS=${PYN_TLS:-} PYN_API_URL=${PYN_API_URL:-} PYN_TRUSTED_PROXY_RANGES=${PYN_TRUSTED_PROXY_RANGES:-}"
+		echo "run: $1 PYN_SITE=${PYN_SITE:-} PYN_TLS=${PYN_TLS:-} PYN_API_URL=${PYN_API_URL:-} PYN_TRUSTED_PROXY_RANGES=${PYN_TRUSTED_PROXY_RANGES:-} PYN_LB=${PYN_LB:-}"
 		exit 0
 	fi
 	exec caddy run --config "$1" --adapter caddyfile
@@ -33,12 +33,52 @@ if [ -f "$CUSTOM" ]; then
 fi
 
 [ -n "${PYN_API_URL:-}" ] || fail "PYN_API_URL is not set (the server address, for example http://pyn-core:7878)"
-PYN_API_URL=${PYN_API_URL%"${PYN_API_URL##*[!/]}"}
-case $PYN_API_URL in
-http://* | https://*) ;;
-*) fail "PYN_API_URL must start with http:// or https://: $PYN_API_URL" ;;
-esac
+
+# One address or several, separated by spaces or commas; each is scheme://host[:port] with no path.
+upstreams=
+count=0
+first_scheme=
+for u in $(printf '%s' "$PYN_API_URL" | tr ',' ' '); do
+	u=${u%"${u##*[!/]}"}
+	case $u in
+	http://* | https://*) ;;
+	*) fail "PYN_API_URL entries must start with http:// or https://: $u" ;;
+	esac
+	scheme=${u%%://*}
+	[ -z "$first_scheme" ] || [ "$scheme" = "$first_scheme" ] ||
+		fail "PYN_API_URL entries must all use the same scheme (Caddy shares one transport): $u"
+	first_scheme=$scheme
+	hostport=${u#*://}
+	case $hostport in
+	*/* | *\?* | *@* | *\#*) fail "PYN_API_URL entries are scheme://host[:port] with no path, query or credentials: $u" ;;
+	esac
+	case $hostport in
+	\[*\]) host=$hostport port= ;;
+	\[*\]:*) host=${hostport%%]*}] port=${hostport##*]:} ;;
+	*:*:*) fail "PYN_API_URL: bracket an IPv6 address, as http://[::1]:7878: $u" ;;
+	*:*) host=${hostport%%:*} port=${hostport#*:} ;;
+	*) host=$hostport port= ;;
+	esac
+	[ -n "$host" ] && [ "$host" != "[]" ] || fail "PYN_API_URL entry has no host: $u"
+	case $port in
+	*[!0-9]*) fail "PYN_API_URL entry has an invalid port: $u" ;;
+	esac
+	if [ -n "$port" ] && { [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; }; then
+		fail "PYN_API_URL entry has an invalid port: $u"
+	fi
+	key=$(printf '%s' "$u" | tr 'A-Z' 'a-z')
+	for seen in $upstreams; do
+		[ "$(printf '%s' "$seen" | tr 'A-Z' 'a-z')" != "$key" ] || fail "PYN_API_URL lists the same server twice: $u"
+	done
+	upstreams="${upstreams:+$upstreams }$u"
+	count=$((count + 1))
+done
+[ "$count" -gt 0 ] || fail "PYN_API_URL is not set (the server address, for example http://pyn-core:7878)"
+PYN_API_URL=$upstreams
 export PYN_API_URL
+# One server is proxied as is; several are balanced and health checked (docker/caddy/lb).
+if [ "$count" -gt 1 ]; then PYN_LB=multi; else PYN_LB=single; fi
+export PYN_LB
 
 # Space separated; commas are accepted too.
 ranges=$(printf '%s' "${PYN_TRUSTED_PROXY_RANGES:-}" | tr ',' ' ')

@@ -3,8 +3,8 @@
 `ghcr.io/avalon-initiative/pyn-web` is [Caddy](https://caddyserver.com) (with the Cloudflare DNS module) serving the built app.
 It runs as a non-root user, needs no capability and works with a read-only root filesystem. It serves the app with the
 `index.html` fallback for client routes, caches the hashed files under `/assets/` for a year and never caches `index.html`,
-sets a content security policy and the usual hardening headers, and proxies `/v1` and `/healthz` to the API, so the browser
-sees one origin. Request bodies are not limited or buffered, responses are streamed, and the timeouts are 300 seconds.
+sets a content security policy and the usual hardening headers, and proxies `/v1`, `/healthz` and `/readyz` to the API, so the
+browser sees one origin. Request bodies are not limited or buffered, responses are streamed, and the timeouts are 300 seconds.
 
 ## Quick start
 
@@ -36,15 +36,15 @@ must trust again) and can hit public authorities' rate limits.
 
 ## Settings
 
-| Variable                   | Default                | Meaning                                                                                                                                                                      |
-| -------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PYN_API_URL`              | `http://pyn-core:7878` | Address of the server (`http://` or `https://`, host and port, no path). Resolved on each new connection, so recreating the API container needs no restart.                  |
-| `PYN_SITE`                 | unset                  | The host name or IP address people use, without scheme or port. Unset means plain HTTP on 8080.                                                                              |
-| `PYN_TLS`                  | see below              | `off`, `auto`, `internal`, `files` or `dns-cloudflare`.                                                                                                                      |
-| `PYN_TRUSTED_PROXY_RANGES` | empty                  | Addresses or ranges (space or comma separated) of proxies in front of this container. Never a private-range wildcard; `private_ranges`, `0.0.0.0/0` and `::/0` are rejected. |
-| `CF_API_TOKEN`             | unset                  | Cloudflare API token limited to the zone, for `dns-cloudflare`.                                                                                                              |
-| `CF_API_TOKEN_FILE`        | unset                  | A file holding that token (a Docker secret), used when `CF_API_TOKEN` is not set. The token is never printed.                                                                |
-| `PYN_ACCESS_LOG`           | `off`                  | `on` writes one JSON line per request to stderr. The log is JSON on stderr either way.                                                                                       |
+| Variable                   | Default                | Meaning                                                                                                                                                                                                                                                  |
+| -------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PYN_API_URL`              | `http://pyn-core:7878` | Address of the server (`http://` or `https://`, host and optional port, no path), or several separated by spaces or commas (see [Several servers](#several-servers)). Resolved on each new connection, so recreating the API container needs no restart. |
+| `PYN_SITE`                 | unset                  | The host name or IP address people use, without scheme or port. Unset means plain HTTP on 8080.                                                                                                                                                          |
+| `PYN_TLS`                  | see below              | `off`, `auto`, `internal`, `files` or `dns-cloudflare`.                                                                                                                                                                                                  |
+| `PYN_TRUSTED_PROXY_RANGES` | empty                  | Addresses or ranges (space or comma separated) of proxies in front of this container. Never a private-range wildcard; `private_ranges`, `0.0.0.0/0` and `::/0` are rejected.                                                                             |
+| `CF_API_TOKEN`             | unset                  | Cloudflare API token limited to the zone, for `dns-cloudflare`.                                                                                                                                                                                          |
+| `CF_API_TOKEN_FILE`        | unset                  | A file holding that token (a Docker secret), used when `CF_API_TOKEN` is not set. The token is never printed.                                                                                                                                            |
+| `PYN_ACCESS_LOG`           | `off`                  | `on` writes one JSON line per request to stderr. The log is JSON on stderr either way.                                                                                                                                                                   |
 
 The mode when `PYN_TLS` is unset:
 
@@ -63,7 +63,7 @@ The mode when `PYN_TLS` is unset:
 | `dns-cloudflare` | Public certificates through the DNS challenge, so ports 80 and 443 need not be reachable from the internet and nothing else must be exposed.                                                                                 | `PYN_SITE` (a name), `CF_API_TOKEN` or file |
 
 The entrypoint validates the combination and refuses to start with a clear message when it does not fit (an unknown mode,
-missing certificate files or token, a TLS mode without `PYN_SITE`, an unusable `PYN_API_URL`).
+missing certificate files or token, a TLS mode without `PYN_SITE`, an unusable or duplicated `PYN_API_URL` entry).
 
 Fetch the internal root certificate from a running container:
 
@@ -74,6 +74,38 @@ docker cp <container>:/data/caddy/pki/authorities/local/root.crt ./pyn-root.crt
 Limits to know about: the http-to-https redirect omits the port, so the real 443 must be published (otherwise use `off` and
 your own proxy). Passkeys need a host name over https; an IP address is not allowed by the web standard. Public authorities
 are not relied on for IP addresses, use `internal`.
+
+## Several servers
+
+List more than one server and one web container spreads `/v1` over them, so a load balancer needs one pairing of web
+container and server no longer:
+
+```bash
+--env PYN_API_URL="http://10.0.0.11:7878 http://10.0.0.12:7878"
+```
+
+- Each entry is `scheme://host[:port]` with no path, query or credentials. The entrypoint refuses to start on a duplicate,
+  a bad port, an entry that is not an address, or a mix of `http` and `https` (the proxy uses one transport for all).
+- Requests go to the server with the fewest open connections (`least_conn`). Plain round robin ignores that a push, a
+  download or a stream holds its connection for minutes, so it would pile long transfers on one copy; counting open
+  connections keeps them level. There are no sticky sessions: the servers share their state, so any copy can answer any
+  request.
+- Each server's `/readyz` is checked every 5 seconds (2 second timeout, `200` expected, over `https` too when the upstreams
+  are `https`). A copy answering `503` (draining, or its database or bucket is down) or not answering stops receiving
+  traffic within one interval and returns when `/readyz` is `200` again. A refused or failed connection also counts
+  against a server (3 failures in 10 seconds take it out for 10 seconds). When none is ready the web container answers `503`
+  itself.
+- A request is retried on another server only when the connection could not be made, so nothing was sent. A request that
+  failed after the server received part of it, including a push or an upload that is streamed (the body is not buffered),
+  is never replayed: the client gets a `502` and decides. Streaming, the missing body limit and the 300 second timeouts are
+  the same as with one server.
+- `/readyz` and `/healthz` through the web container are answered by one of the servers, chosen by the balancer, so with
+  several servers they reflect that copy and not all of them. Neither is cached.
+- With one server there are no health checks and no balancing: the container proxies as before, so an unready server
+  answers with its own `503` rather than a gateway error, and `/v1` keeps reaching it.
+- A name that resolves to several addresses is not expanded: Caddy would use one of the addresses per connection without
+  health checking each. List every server explicitly.
+- The container's own loopback `/health` (the image `HEALTHCHECK`) never depends on the servers.
 
 ## Behind a proxy, a tunnel or Cloudflare
 
@@ -95,6 +127,7 @@ Mount a Caddyfile at `/etc/caddy/Caddyfile.custom` and it replaces the generated
 ## Checks
 
 `tests/docker/smoke.sh` (the `docker-build` job in `ci.yml`, manual dispatch only) runs the built image read-only with no
-capabilities against a stub API: the app and headers, streaming, a large upload, and the `off`, `internal` and `files`
-modes, and `caddy validate` of every mode. `tests/docker/entrypoint.test.sh` (part of `make check`) tests the entrypoint's
+capabilities against stub APIs: the app and headers, `/readyz`, streaming, a large upload, the `off`, `internal` and `files`
+modes, `caddy validate` of every mode, and two servers (spread, an unready or stopped server leaving rotation, no replay
+of an interrupted upload). `tests/docker/entrypoint.test.sh` (part of `make check`) tests the entrypoint's
 validation and mode detection without Docker.

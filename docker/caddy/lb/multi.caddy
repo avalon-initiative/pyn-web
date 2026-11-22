@@ -1,0 +1,11 @@
+# several servers: fewest open connections (streams and uploads are long), no sticky sessions (the servers share state)
+lb_policy least_conn
+# retried only when the connection could not be made, never after a request was sent
+lb_try_duration 3s
+lb_try_interval 250ms
+health_uri /readyz
+health_interval 5s
+health_timeout 2s
+health_status 200
+fail_duration 10s
+max_fails 3
