@@ -53,6 +53,15 @@ start_web() {
 # seen <curl args...>: the X-Forwarded-For and X-Forwarded-Proto the stub saw for a /v1/ request.
 seen() { curl -fsS "$@" | jq -r '.headers["X-Forwarded-For"] + " " + .headers["X-Forwarded-Proto"]'; }
 
+# wait_tls <curl args...>: the first handshake can land before Caddy has issued the certificate at start-up, so retry briefly.
+wait_tls() {
+  for _ in $(seq 20); do
+    curl -fsS -o /dev/null "$@" 2>/dev/null && return 0
+    sleep 0.5
+  done
+  return 1
+}
+
 step "stub API"
 docker network create smoke >/dev/null
 docker volume create smoke-data >/dev/null
@@ -155,6 +164,7 @@ for _ in $(seq 30); do
   sleep 1
 done
 test -s "$work/root.crt" || die "root certificate was not created"
+wait_tls --cacert "$work/root.crt" https://127.0.0.1/ || true
 eq "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' http://127.0.0.1/some/route)" "308 https://127.0.0.1/some/route" "http redirect"
 has '<div id="app">' curl -fsSv --cacert "$work/root.crt" https://127.0.0.1/some/route || { curl -sv --cacert "$work/root.crt" https://127.0.0.1/some/route 2>&1 | head -40; docker logs web 2>&1 | tail -15; die "https SPA with the exported root"; }
 if curl -fsS https://127.0.0.1/ >/dev/null 2>&1; then die "certificate verified without the exported root"; fi
@@ -169,6 +179,7 @@ eq "$(openssl x509 -in "$work/root2.crt" -noout -fingerprint -sha256)" "$fp" "ro
 step "files mode: the certificate from the mount"
 start_web -e PYN_SITE=127.0.0.1 -e PYN_TLS=files -v "$work/tls.crt:/certs/tls.crt:ro" -v "$work/tls.key:/certs/tls.key:ro" \
   -p 127.0.0.1:80:80 -p 127.0.0.1:443:443
+wait_tls --cacert "$work/tls.crt" https://127.0.0.1/ || true
 has '<div id="app">' curl -fsS --cacert "$work/tls.crt" https://127.0.0.1/some/route || die "https with the mounted certificate"
 eq "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/)" 308 "http redirect in files mode"
 eq "$(curl -fsS --cacert "$work/tls.crt" https://127.0.0.1/v1/ping | jq -r .path)" /v1/ping "/v1 over https"
