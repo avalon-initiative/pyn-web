@@ -126,6 +126,9 @@ esac
 
 export PYN_TLS="$mode"
 export PYN_SITE="${site:-http://:8080}"
+# A client that connects to an IP sends no server name; behind Docker the address it reached is the container's, so name the certificate to use.
+sni=${site#[}
+export PYN_DEFAULT_SNI="${sni%]}"
 
 case $mode in
 off) echo "pyn-web: TLS off, plain HTTP on :8080 (terminate TLS in front of this container)" ;;

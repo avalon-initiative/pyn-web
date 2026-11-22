@@ -2,6 +2,7 @@
 	admin off
 	skip_install_trust
 	grace_period 10s
+	default_sni {$PYN_DEFAULT_SNI:localhost}
 	log {
 		output stderr
 		format json
