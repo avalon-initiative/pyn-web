@@ -108,13 +108,12 @@ If a run fails after the image push, fix forward with a new patch version rather
 org owner must set the `pyn-web` package on ghcr.io to public (GitHub Packages settings); it starts private.
 
 `docker-build` in `ci.yml` (manual `workflow_dispatch` only, never on pull requests) builds the image from a fresh build and
-smoke-tests it read-only against a stub API (`tests/docker/smoke.sh`) and cross-builds arm64; run it before a release that
-touches `Dockerfile` or `docker/`.
+smoke-tests it read-only against a stub API (`tests/docker/stub-api.py`), including `/readyz` through the proxy; run it before a release that touches `Dockerfile` or `docker/`.
 
 ## Running the image
 
-The image is Caddy serving the app and proxying the API; the settings, the HTTPS modes and the overrides are in
-[image.md](image.md).
+The container is nginx (unprivileged, plain HTTP on port 8080, non-root). The run command, the one setting and the
+proxy notes are in [image.md](image.md).
 
 ## Deploying the tarball
 

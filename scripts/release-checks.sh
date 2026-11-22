@@ -16,8 +16,6 @@ echo "release-checks: tests"
 npm test
 echo "release-checks: release scripts"
 bash tests/release-scripts.test.sh >/dev/null
-echo "release-checks: image entrypoint"
-bash tests/docker/entrypoint.test.sh >/dev/null
 echo "release-checks: build"
 npm run build
 echo "release-checks: api drift"
