@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Smoke test of the built image (default pyn-web:ci): runs it read-only with no capabilities against a stub API and checks
-# the app, headers, streaming, large uploads, and the off, internal and files TLS modes. Needs Docker, curl, jq, openssl.
+# the app, headers, streaming, large uploads, the off, internal and files TLS modes, and balancing over two stub servers.
+# Needs Docker, curl, jq, openssl.
 # Binds host ports 8080, 80 and 443. Run from the repository root after `npm run build` and `docker build -t pyn-web:ci .`.
 set -euo pipefail
 
@@ -17,7 +18,7 @@ cleanup() {
     docker ps -a || true
     docker logs web 2>&1 | tail -n 40 || true
   fi
-  docker rm -f web pyn-core >/dev/null 2>&1 || true
+  docker rm -f web pyn-core pyn-core2 >/dev/null 2>&1 || true
   docker network rm smoke >/dev/null 2>&1 || true
   docker volume rm smoke-data >/dev/null 2>&1 || true
   rm -rf "$work"
@@ -50,6 +51,26 @@ start_web() {
   die "web did not become healthy"
 }
 
+# ctl <container> <path>: calls a stub's control endpoint from inside the network (never through the web container).
+ctl() { docker exec "$1" python3 -I -c 'import sys,urllib.request as u; print(u.urlopen("http://127.0.0.1:8080"+sys.argv[1]).read().decode())' "$2"; }
+
+# spread <url> <n>: how many of n requests each stub answered, as "name=count ..." sorted.
+spread() {
+  local i
+  for i in $(seq "$2"); do curl -fsS --max-time 5 "$1" | jq -r .server; done | sort | uniq -c | awk '{ printf "%s=%s ", $2, $1 }'
+}
+
+# wait_spread <url> <want> <seconds>: waits until the answering stubs, over 10 requests, are exactly <want> (e.g. "stub1").
+wait_spread() {
+  local _ got
+  for _ in $(seq "$3"); do
+    got=$(for _ in $(seq 10); do curl -s --max-time 5 "$1" | jq -r '.server // "none"'; done | sort -u | paste -sd, -)
+    [ "$got" = "$2" ] && return 0
+    sleep 1
+  done
+  die "waited for $2 to answer $1, last saw: $got"
+}
+
 # seen <curl args...>: the X-Forwarded-For and X-Forwarded-Proto the stub saw for a /v1/ request.
 seen() { curl -fsS "$@" | jq -r '.headers["X-Forwarded-For"] + " " + .headers["X-Forwarded-Proto"]'; }
 
@@ -65,7 +86,7 @@ wait_tls() {
 step "stub API"
 docker network create smoke >/dev/null
 docker volume create smoke-data >/dev/null
-docker run -d --name pyn-core --network smoke -v "$repo/tests/docker/stub-api.py:/stub.py:ro" "$STUB_IMAGE" python3 -I /stub.py 8080 >/dev/null
+docker run -d --name pyn-core --network smoke -v "$repo/tests/docker/stub-api.py:/stub.py:ro" "$STUB_IMAGE" python3 -I /stub.py 8080 stub1 >/dev/null
 sleep 2
 
 step "config validates in every mode"
@@ -84,6 +105,11 @@ validate() { # validate <name> <env...>
   echo "valid: $name"
 }
 validate off -e PYN_TLS=off
+for mode in "off:-e PYN_TLS=off" "auto:-e PYN_SITE=pyn.example.com -e PYN_TLS=auto" "internal:-e PYN_SITE=192.168.1.10" \
+  "files:-e PYN_SITE=127.0.0.1 -e PYN_TLS=files"; do
+  # shellcheck disable=SC2086
+  validate "several servers, ${mode%%:*}" -e PYN_API_URL="http://pyn-core:8080 http://pyn-core2:8080,http://[::1]:8080" ${mode#*:}
+done
 validate unset-site-default
 validate auto -e PYN_SITE=pyn.example.com -e PYN_TLS=auto
 validate internal -e PYN_SITE=192.168.1.10 -e PYN_TLS=internal
@@ -105,6 +131,9 @@ fail_check "needs PYN_SITE" -e PYN_TLS=internal
 fail_check "needs both /certs/tls.crt and /certs/tls.key" -e PYN_TLS=files -e PYN_SITE=pyn.example.com
 fail_check "needs CF_API_TOKEN" -e PYN_TLS=dns-cloudflare -e PYN_SITE=pyn.example.com
 fail_check "PYN_API_URL is not set" -e PYN_API_URL=
+fail_check "same server twice" -e PYN_API_URL="http://pyn-core:8080 http://pyn-core:8080"
+fail_check "same scheme" -e PYN_API_URL="http://pyn-core:8080 https://pyn-core2:8080"
+fail_check "no path" -e PYN_API_URL="http://pyn-core:8080 http://pyn-core2:8080/v1"
 
 step "off mode: plain HTTP on 8080"
 start_web -p 127.0.0.1:8080:8080
@@ -123,6 +152,12 @@ grep -qi '^cache-control: public, max-age=31536000, immutable' <<<"$assethead" |
 eq "$(curl -s -o /dev/null -w '%{http_code}' "$web/")" 200 "off mode serves the app without a redirect"
 eq "$(curl -s -o /dev/null -w '%{redirect_url}' "$web/")" "" "off mode redirect"
 eq "$(curl -s -o /dev/null -w '%{http_code}' "$web/healthz")" 200 "/healthz reaches the stub"
+eq "$(curl -fsS "$web/readyz" | jq -r .server)" stub1 "/readyz is answered by the server, not the app"
+has '^cache-control: no-store' curl -fsS -D - -o /dev/null "$web/readyz" || die "/readyz must not be cacheable"
+ctl pyn-core /_ctl/ready/0 >/dev/null
+eq "$(curl -s -o /dev/null -w '%{http_code}' "$web/readyz")" 503 "/readyz carries the server's 503"
+eq "$(curl -s -o /dev/null -w '%{http_code}' "$web/v1/ping")" 200 "one server: no health checks, /v1 still reaches it while unready"
+ctl pyn-core /_ctl/ready/1 >/dev/null
 eq "$(curl -fsS "$web/v1/ping" | jq -r .path)" /v1/ping "/v1 is forwarded"
 ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web)
 if curl -s --max-time 3 "http://$ip:8082/health" >/dev/null; then die "health site is reachable from outside the container"; fi
@@ -150,6 +185,61 @@ if peak=$(docker exec web cat /sys/fs/cgroup/memory.peak 2>/dev/null); then
 else
   echo "warning: no cgroup v2 memory.peak, memory not checked"
 fi
+
+step "several servers: spread, readiness, a stopped server, streaming, no replay of an interrupted upload"
+docker run -d --name pyn-core2 --network smoke -v "$repo/tests/docker/stub-api.py:/stub.py:ro" "$STUB_IMAGE" python3 -I /stub.py 8080 stub2 >/dev/null
+sleep 2
+start_web -e PYN_API_URL="http://pyn-core:8080 http://pyn-core2:8080" -p 127.0.0.1:8080:8080
+sleep 2
+got=$(spread "$web/v1/ping" 40)
+echo "spread: $got"
+[[ $got == *stub1=* && $got == *stub2=* ]] || die "requests were not spread over both servers: $got"
+[ "$(curl -s -o /dev/null -w '%{http_code}' "$web/readyz")" = 200 ] || die "/readyz through two servers"
+
+# An unready server (503) leaves rotation within a few health check intervals (5 s) and returns when ready.
+ctl pyn-core /_ctl/ready/0 >/dev/null
+wait_spread "$web/v1/ping" stub2 15
+for _ in $(seq 10); do eq "$(curl -s -o /dev/null -w '%{http_code}' "$web/readyz")" 200 "/readyz reflects the copy that answers"; done
+ctl pyn-core /_ctl/ready/1 >/dev/null
+wait_spread "$web/v1/ping" stub1,stub2 20
+
+# A stopped server is taken out; requests keep succeeding (a refused connection is retried before anything is sent).
+docker kill pyn-core2 >/dev/null
+for _ in $(seq 10); do eq "$(curl -s -o /dev/null -w '%{http_code}' -X POST -d x "$web/v1/upload")" 200 "request while a server is stopped"; done
+wait_spread "$web/v1/ping" stub1 15
+docker start pyn-core2 >/dev/null
+wait_spread "$web/v1/ping" stub1,stub2 30
+
+# Streams and large uploads behave as with one server.
+first=
+while read -r _; do [ -n "$first" ] || first=$(date +%s.%N); done < <(curl -fsSN "$web/v1/stream")
+test -n "$first" || die "no streamed data through two servers"
+curl -fsS -T "$work/big.bin" -X POST "$web/v1/upload" -o "$work/upload.json" || die "upload through two servers failed"
+eq "$(jq -r .got "$work/upload.json")" $((UPLOAD_MIB * 1024 * 1024)) "bytes received through two servers"
+
+# A server that drops the connection after part of an upload: the client gets a gateway error and the upload is not replayed.
+posts() { # total POST /v1/drop requests the two stubs have seen
+  { ctl pyn-core /_ctl/stats; ctl pyn-core2 /_ctl/stats; } | jq -s '[.[] | .["POST /v1/drop"] // 0] | add'
+}
+before=$(posts)
+head -c 200000 /dev/zero >"$work/part.bin"
+code=$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary @"$work/part.bin" "$web/v1/drop")
+eq "$code" 502 "an interrupted upload is reported, not hidden"
+eq "$(($(posts) - before))" 1 "the interrupted upload reached exactly one server"
+
+step "several servers: all down, the loopback health site and the app stay up"
+docker kill pyn-core pyn-core2 >/dev/null
+code=
+for _ in $(seq 20); do
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$web/v1/ping")
+  [ "$code" = 503 ] && break
+  sleep 1
+done
+eq "$code" 503 "no server available is a 503 from the web container"
+docker exec web wget -q -O /dev/null http://127.0.0.1:8082/health || die "web health depends on the servers"
+has '<div id="app">' curl -fsS "$web/some/client/route" || die "the app is served while the servers are down"
+docker start pyn-core pyn-core2 >/dev/null
+sleep 2
 
 step "internal mode (the default for an IP address): redirect, own certificate authority, forwarded headers"
 docker rm -f web >/dev/null
