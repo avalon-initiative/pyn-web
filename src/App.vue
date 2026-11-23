@@ -42,7 +42,6 @@ import { passwordChangeRequired } from './state/password-change.state'
 import { onPendingDeletion } from './state/pending.state'
 import { ownProfile } from './state/own-profile.state'
 import { ownAccessSessions } from './state/access-session.state'
-import { pendingInvitations } from './state/invitations.state'
 import { nameProblem, useNameCheck } from './state/name.state'
 import { internalPath } from './state/links.state'
 import {
@@ -51,7 +50,15 @@ import {
   sessionRepos,
   startSessionRefresh,
 } from './state/session-data.state'
-import { activeNav, sideNavItems } from './state/shell.state'
+import {
+  loadTopBar,
+  resetTopBar,
+  searchTarget,
+  topBarExtras,
+  topBarOwners,
+  useTopBar,
+} from './state/top-bar.state'
+import { setRecentUser } from './state/recent.state'
 import { breadcrumbs } from './state/breadcrumbs.state'
 import {
   dismissSecurityNotice,
@@ -67,7 +74,6 @@ import {
   PynShell,
   PynSecondFactor,
   PynSignIn,
-  PynSideNav,
   PynTopBar,
   PynVersionFooter,
   PynSecurityNotice,
@@ -90,10 +96,13 @@ import type {
 import { helpHint, recoveryHint } from './state/two-factor.state'
 import type { RegistrationInfo, Session, SignInOptions } from './types/auth.types'
 
-withDefaults(defineProps<{ navItems?: NavItem[]; accountMenuItems?: AccountMenuItem[] }>(), {
-  navItems: () => [],
-  accountMenuItems: () => [],
-})
+const props = withDefaults(
+  defineProps<{ navItems?: NavItem[]; accountMenuItems?: AccountMenuItem[] }>(),
+  {
+    navItems: () => [],
+    accountMenuItems: () => [],
+  },
+)
 const router = useRouter()
 const route = useRoute()
 const user = ref('')
@@ -116,16 +125,16 @@ applyTheme(theme.value)
 
 const publicPage = computed(() => route.matched.some((r) => r.meta.public === true))
 const trail = computed(() => breadcrumbs(route))
-const bare = computed(() => route.matched.some((r) => r.meta.bare === true))
 const slugs = computed(() => sessionRepos.value.map(repoSlug))
-const currentRepo = computed(() =>
-  route.params.owner && route.params.name
-    ? `${String(route.params.owner)}/${String(route.params.name)}`
-    : '',
-)
-const currentOrg = computed(() =>
-  route.params.owner && !route.params.name ? String(route.params.owner) : '',
-)
+const owners = computed(() => topBarOwners(user.value, sessionOrgs.value))
+const extras = computed(() => topBarExtras(props.navItems, props.accountMenuItems))
+const { locksHeld, locksExpiring, notifications } = useTopBar()
+const currentOwner = computed(() => {
+  const owner = String(route.params.owner ?? '')
+  return owners.value.some((o) => o.name === owner) ? owner : undefined
+})
+
+const search = (text: string) => router.push(searchTarget(text))
 
 function setTheme(choice: ThemeChoice) {
   theme.value = choice
@@ -135,11 +144,15 @@ function setTheme(choice: ThemeChoice) {
 
 let stopRefresh = () => {}
 watch(user, (name) => {
+  setRecentUser(name ?? '')
   stopRefresh()
-  if (name) stopRefresh = startSessionRefresh()
-  else {
+  if (name) {
+    stopRefresh = startSessionRefresh()
+    void loadTopBar()
+  } else {
     stopRefresh = () => {}
     clearSessionData()
+    resetTopBar()
   }
 })
 onUnmounted(() => stopRefresh())
@@ -390,9 +403,16 @@ onMounted(async () => {
         @manage-admins="leaveSetup('/_/admin/accounts')"
       />
     </main>
-    <PynShell v-else-if="ready && !user && publicPage" bare :breadcrumbs="trail">
+    <PynShell v-else-if="ready && !user && publicPage" :breadcrumbs="trail">
       <template #top>
-        <PynTopBar signed-out sign-in-href="/" :theme="theme" @theme="setTheme" />
+        <PynTopBar
+          signed-out
+          sign-in-href="/"
+          :theme="theme"
+          @theme="setTheme"
+          @search="search"
+          @open="(slug) => router.push(`/${slug}`)"
+        />
       </template>
       <RouterView />
     </PynShell>
@@ -442,7 +462,7 @@ onMounted(async () => {
       />
     </main>
     <template v-else-if="user">
-      <PynShell :bare="bare" :breadcrumbs="trail">
+      <PynShell :breadcrumbs="trail">
         <template #top>
           <PynTopBar
             :user="user"
@@ -451,24 +471,17 @@ onMounted(async () => {
             :repos="slugs"
             :theme="theme"
             :admin="admin"
-            :extra-account="accountMenuItems"
-            @account="(id) => selectAccountItem(accountMenuItems, id)"
+            :extra-account="extras"
+            :owners="owners"
+            :current-owner="currentOwner"
+            :locks-held="locksHeld"
+            :locks-expiring="locksExpiring"
+            :notifications="notifications"
+            @account="(id) => selectAccountItem(extras, id)"
             @open="(slug) => router.push(`/${slug}`)"
+            @search="search"
             @theme="setTheme"
             @sign-out="leave"
-          />
-        </template>
-        <template v-if="!bare" #side>
-          <PynSideNav
-            :account="user"
-            :display-name="ownProfile.display_name"
-            :avatar-url="ownProfile.avatar_url"
-            :items="sideNavItems(admin, navItems, pendingInvitations)"
-            :current="activeNav(route.path, navItems)"
-            :repos="sessionRepos"
-            :current-repo="currentRepo"
-            :orgs="sessionOrgs"
-            :current-org="currentOrg"
           />
         </template>
         <PynSecurityNotice

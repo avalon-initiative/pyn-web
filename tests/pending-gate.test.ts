@@ -1,7 +1,6 @@
 import {
   PynAccountDelete,
   PynAccountPendingDeletion,
-  PynSideNav,
   PynSignIn,
   PynTopBar,
 } from '@avalon-initiative/pyn-common-ui'
@@ -162,14 +161,12 @@ describe('own identity in the shell', () => {
     'GET /v1/account/deletion': () => reply(200, idle),
   }
 
-  it('passes the display name and avatar to the top bar and side nav', async () => {
+  it('passes the display name and avatar to the top bar', async () => {
     serve(withProfile)
     const w = await open()
-    for (const c of [PynTopBar, PynSideNav]) {
-      const part = w.findComponent(c)
-      expect(part.props('displayName')).toBe('Wendy W')
-      expect(part.props('avatarUrl')).toBe(profile.avatar_url)
-    }
+    const part = w.findComponent(PynTopBar)
+    expect(part.props('displayName')).toBe('Wendy W')
+    expect(part.props('avatarUrl')).toBe(profile.avatar_url)
   })
 
   it('falls back to the account name when the profile cannot load', async () => {
@@ -184,7 +181,7 @@ describe('own identity in the shell', () => {
     const w = await open()
     ownProfile.value = { display_name: 'New Name', avatar_url: null }
     await flushPromises()
-    expect(w.findComponent(PynSideNav).props('displayName')).toBe('New Name')
+    expect(w.findComponent(PynTopBar).props('displayName')).toBe('New Name')
   })
 
   it('makes no profile request for a pending account', async () => {

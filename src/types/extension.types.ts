@@ -10,7 +10,7 @@ export interface AccountMenuItem extends MenuItem {
 export interface PynExtension {
   /** Top-level routes; each path must sit under EXTENSION_PREFIX. */
   routes?: RouteRecordRaw[]
-  /** Side-nav entries, listed after the built-in ones. */
+  /** Links listed in the account menu after People and Your organizations. */
   navItems?: NavItem[]
   /** Account-menu entries, listed after the built-in ones. */
   accountMenuItems?: AccountMenuItem[]

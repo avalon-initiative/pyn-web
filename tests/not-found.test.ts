@@ -1,8 +1,8 @@
+import { topBarExtras } from '../src/state/top-bar.state'
 import { accountNav, accountNavItems, navItems } from '@avalon-initiative/pyn-common-ui'
 import { createMemoryHistory } from 'vue-router'
 import { describe, expect, it } from 'vitest'
 import { makeRouter } from '../src/router'
-import { sideNavItems } from '../src/state/shell.state'
 
 const resolve = (path: string) => makeRouter(createMemoryHistory()).resolve(path)
 
@@ -76,7 +76,7 @@ describe('navigation targets', () => {
     { id: 'delete-account', href: '/_/settings/delete' },
   ]
   const hrefs = [
-    ...sideNavItems(true).map((i) => i.href),
+    ...topBarExtras([], []).map((i) => i.href!),
     ...navItems(true).map((i) => i.href),
     ...accountNav.map((i) => i.href),
     ...accountNavItems(true).map((i) => i.href),

@@ -1,6 +1,6 @@
 # Extending the app at build time
 
-A separately built application can add routes, side-nav entries and account-menu entries to the standard app. There is
+A separately built application can add routes, nav entries (shown in the account menu) and account-menu entries to the standard app. There is
 no runtime loading: nothing is fetched from an address, and the extras are compiled into the consumer's own web build
 (decision pyn#816). With nothing registered the app is exactly the standard one.
 
@@ -45,7 +45,7 @@ reserved for extensions; a built-in page never takes it.
 
 ## What a page can use
 
-Pages render inside the shell, so they get the sidebar, top bar and theme for free. A page reaches:
+Pages render inside the shell, so they get the top bar and theme for free. A page reaches:
 
 - the session: `inject(sessionKey)` gives `{ user, admin, expire }` (refs; call `expire()` when the server answers 401);
 - the API: `api` (typed `openapi-fetch` client, adds the CSRF header) and `call(request)` (unwraps the body and throws

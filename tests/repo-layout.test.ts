@@ -110,9 +110,9 @@ describe('shell on repository and dashboard routes', () => {
     expect(w.find('header').exists()).toBe(true)
   })
 
-  it('shows the sidebar on dashboard routes', async () => {
+  it('shows no sidebar on dashboard routes', async () => {
     const { w } = await open('/')
-    expect(w.find('header ~ aside').exists()).toBe(true)
+    expect(w.find('[aria-label="Toggle navigation"]').exists()).toBe(false)
   })
 
   it('shows the repository shell with its tab bar', async () => {

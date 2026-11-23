@@ -1,6 +1,5 @@
 import {
   PynPeopleList,
-  PynSideNav,
   PynSignIn,
   PynTopBar,
   PynViewNotice,
@@ -8,7 +7,6 @@ import {
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
-import { activeNav, sideNavItems } from '../src/state/shell.state'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { usePeople } from '../src/state/people.state'
 
@@ -101,10 +99,8 @@ describe('people page', () => {
     return { w, router }
   }
 
-  it('is public and listed in the nav', () => {
+  it('is public', () => {
     expect(makeRouter(createMemoryHistory()).resolve('/_/people').meta.public).toBe(true)
-    expect(sideNavItems(false).find((i) => i.id === 'people')?.href).toBe('/_/people')
-    expect(activeNav('/_/people')).toBe('people')
   })
 
   it('shows the list signed out with a sign-in link, and sign-in elsewhere', async () => {
@@ -139,6 +135,6 @@ describe('people page', () => {
     const { w } = await open('/_/people')
     expect(w.findComponent(PynPeopleList).props('people')).toHaveLength(1)
     expect(w.findComponent(PynTopBar).props('signedOut')).toBeFalsy()
-    expect(w.findComponent(PynSideNav).exists()).toBe(true)
+    expect(w.find('aside').exists()).toBe(false)
   })
 })
