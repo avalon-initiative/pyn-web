@@ -22,7 +22,9 @@ const name = computed(() => String(route.params.owner))
 const user = inject(sessionKey)!.user
 const section = computed(() => String(route.path.split('/')[3] ?? ''))
 const org = ref<OrgInfo | null>(null)
-const { freeze, frozen } = useOwnerFreeze(name, getOwnerFreeze)
+const { freeze, frozen } = useOwnerFreeze(name, (o) =>
+  user.value ? getOwnerFreeze(o) : Promise.reject(new Error('signed out')),
+)
 const profile = ref<Schemas['OrgProfile'] | null>(null)
 const loaded = ref(false)
 const userPage = computed(() => route.name === 'owner' || route.name === 'owner-usage')
@@ -30,6 +32,8 @@ const { error, attempt } = useAction()
 
 // A name that is not an organization is a user: only the profile page applies.
 async function load() {
+  // Organization lookups need an account: signed out, every name is shown as a user's page.
+  if (!user.value) return
   return attempt(async () => {
     try {
       org.value = await getOrg(name.value)

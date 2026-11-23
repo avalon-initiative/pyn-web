@@ -53,6 +53,7 @@ import OwnerUsageView from './views/OwnerUsageView.vue'
 import OwnerView from './views/OwnerView.vue'
 import RepoView from './views/RepoView.vue'
 import ReposView from './views/ReposView.vue'
+import ExploreView from './views/ExploreView.vue'
 import DashboardView from './views/DashboardView.vue'
 import { recentFor, recordRecent } from './state/recent.state'
 
@@ -72,6 +73,7 @@ export const ownerParam = ':owner([^/_][^/]*|_[^/]+)'
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/_/repos', name: 'repos', component: ReposView, meta: { crumb: 'Repositories' } },
+  { path: '/_/explore', name: 'explore', component: ExploreView, meta: { public: true } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/people', name: 'people', component: PeopleView, meta: { public: true } },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
@@ -118,7 +120,7 @@ export const routes: RouteRecordRaw[] = [
     path: `/${ownerParam}`,
     component: OrgView,
     children: [
-      { path: '', name: 'owner', component: OwnerView },
+      { path: '', name: 'owner', component: OwnerView, meta: { public: true } },
       { path: '-/usage', name: 'owner-usage', component: OwnerUsageView },
       { path: '-/members', name: 'org-members', component: OrgMembersView },
       { path: '-/teams', name: 'org-teams', component: OrgTeamsView },
@@ -132,12 +134,12 @@ export const routes: RouteRecordRaw[] = [
     component: RepoView,
     meta: { bare: true },
     children: [
-      { path: '', name: 'files', component: RepoFilesView },
-      { path: 'tree/:path(.*)?', name: 'tree', component: RepoFilesView },
-      { path: 'blob/:path(.+)', name: 'blob', component: RepoBlobView },
-      { path: 'locks', name: 'locks', component: RepoLocksView },
+      { path: '', name: 'files', component: RepoFilesView, meta: { public: true } },
+      { path: 'tree/:path(.*)?', name: 'tree', component: RepoFilesView, meta: { public: true } },
+      { path: 'blob/:path(.+)', name: 'blob', component: RepoBlobView, meta: { public: true } },
+      { path: 'locks', name: 'locks', component: RepoLocksView, meta: { public: true } },
+      { path: 'history', name: 'history', component: RepoHistoryView, meta: { public: true } },
       { path: 'branches', name: 'branches', component: RepoBranchesView },
-      { path: 'history', name: 'history', component: RepoHistoryView },
       { path: 'policy', name: 'policy', component: RepoPolicyReadView },
       ...['members', 'roles', 'invites', 'audit'].map((section) => ({
         path: section,

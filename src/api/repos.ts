@@ -26,6 +26,9 @@ const blank = (v: string | null | undefined) => v || undefined
 export const listRepos = (owner?: string) =>
   call<RepoInfo[]>(api.GET('/v1/repos', { params: { query: { owner: blank(owner) } } }))
 
+export const exploreRepos = (query: { after?: string; limit?: number } = {}) =>
+  call<Schemas['RepoPage']>(api.GET('/v1/explore/repos', { params: { query } }))
+
 export const createRepo = (owner: string, s: RepoSettings) =>
   call<RepoInfo>(
     api.POST('/v1/repos', {

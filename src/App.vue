@@ -125,7 +125,16 @@ const recoveryDays = ref<number | undefined>()
 const theme = ref<ThemeChoice>(loadTheme())
 applyTheme(theme.value)
 
-const publicPage = computed(() => route.matched.some((r) => r.meta.public === true))
+const accessMode = ref<string>()
+const signInRequested = ref(false)
+// A private server refuses every signed-out read, so its public pages would only show errors.
+const publicPage = computed(
+  () => accessMode.value !== 'private' && route.matched.some((r) => r.meta.public === true),
+)
+watch(
+  () => route.fullPath,
+  () => (signInRequested.value = false),
+)
 const trail = computed(() => breadcrumbs(route))
 const slugs = computed(() => sessionRepos.value.map(repoSlug))
 const owners = computed(() => topBarOwners(user.value, sessionOrgs.value))
@@ -372,6 +381,15 @@ async function leave() {
 }
 
 function followLink(e: MouseEvent) {
+  if (
+    !user.value &&
+    (e.target as Element | null)?.closest?.('[data-sign-in]') &&
+    publicPage.value
+  ) {
+    e.preventDefault()
+    signInRequested.value = true
+    return
+  }
   const path = internalPath(e, window.location.origin)
   if (path === null) return
   e.preventDefault()
@@ -393,6 +411,7 @@ onMounted(async () => {
   void fetchServerBuild().then((b) => (serverBuild.value = b))
   const status = await fetchSetupStatus().catch(() => null)
   if (status && !status.initialised) setup.value = status
+  accessMode.value = status?.access_mode
   await loadOptions()
   const session = await restoreSession().catch(() => null)
   if (session) await beginSession(session)
@@ -418,7 +437,7 @@ onMounted(async () => {
         @manage-admins="leaveSetup('/_/admin/accounts')"
       />
     </main>
-    <PynShell v-else-if="ready && !user && publicPage" :breadcrumbs="trail">
+    <PynShell v-else-if="ready && !user && publicPage && !signInRequested" :breadcrumbs="trail">
       <template #top>
         <PynTopBar
           signed-out

@@ -72,7 +72,8 @@ export async function signOut(): Promise<void> {
   }
 }
 
-export const fetchSetupStatus = () => call<SetupStatus>(api.GET('/v1/setup'))
+export const fetchSetupStatus = () =>
+  call<SetupStatus & Pick<Schemas['SetupStatus'], 'access_mode'>>(api.GET('/v1/setup'))
 
 export const completeSetup = (form: SetupForm) =>
   call<{ user: string }>(
