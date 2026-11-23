@@ -4,15 +4,23 @@ import { useRouter } from 'vue-router'
 import { createOrg } from '../api/orgs'
 import { refreshOrgs } from '../state/session-data.state'
 import { useAction } from '../state/action.state'
-import { useNameCheck } from '../state/name.state'
+import { canonicalName, describeNameError, nameProblem, useNameCheck } from '../state/name.state'
+import { ref } from 'vue'
 
 const router = useRouter()
-const { busy, error, attempt } = useAction()
+const typed = ref('')
+const { busy, error, attempt } = useAction(true, (e) => describeNameError(e, typed.value))
 const { nameMessage, checkName } = useNameCheck()
 
 const create = (name: string) =>
   attempt(async () => {
-    const org = await createOrg(name)
+    typed.value = canonicalName(name)
+    const problem = nameProblem(name)
+    if (problem) {
+      error.value = problem
+      return
+    }
+    const org = await createOrg(typed.value)
     void refreshOrgs()
     await router.push(orgPath(org.name))
   })

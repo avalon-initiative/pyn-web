@@ -7,12 +7,14 @@ import { listRepos } from '../api/repos'
 import { restoreSession } from '../api/auth'
 import { renameAccount } from '../api/username'
 import { useAction } from '../state/action.state'
+import { canonicalName, describeNameError, nameProblem } from '../state/name.state'
 import { sessionKey } from '../state/context.state'
 
 const session = inject(sessionKey)!
 const hasPassword = ref(true)
 const repositories = ref<string[]>([])
-const { busy, error, attempt } = useAction()
+const typed = ref('')
+const { busy, error, attempt } = useAction(true, (e) => describeNameError(e, typed.value))
 
 async function load() {
   hasPassword.value = (await fetchMe().catch(() => null))?.has_password !== false
@@ -22,7 +24,13 @@ async function load() {
 
 const rename = (form: RenameForm) =>
   attempt(async () => {
-    const renamed = await renameAccount(form)
+    typed.value = canonicalName(form.username)
+    const problem = nameProblem(form.username)
+    if (problem) {
+      error.value = problem
+      return
+    }
+    const renamed = await renameAccount({ ...form, username: typed.value })
     session.user.value = (await restoreSession())?.user ?? renamed.new_name
     repositories.value = renamed.repositories
     hasPassword.value = (await fetchMe().catch(() => null))?.has_password !== false

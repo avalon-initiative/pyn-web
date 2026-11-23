@@ -13,6 +13,11 @@ export class ApiError extends Error {
   }
 }
 
+const PASSKEY_GENERIC = 'The passkey could not be verified. Try again, or use another passkey.'
+const PASSKEY_NOT_REGISTERED =
+  'This passkey is not registered here, or it was registered before a fix; remove it and add it again.'
+const PASSKEY_ADDRESS = "The address in the browser does not match the server's public address."
+
 const FRIENDLY: Record<string, string> = {
   repo_not_found: 'That repository does not exist, or you have no role in it.',
   repo_exists: 'A repository with that name already exists for this owner.',
@@ -54,7 +59,18 @@ const FRIENDLY: Record<string, string> = {
   member_limit_reached:
     'The organization has reached its member limit. The invitation stays; try again once there is room.',
   second_factor_invalid: 'That code is not right, or it was already used. Try the next one.',
-  passkey_invalid: 'The passkey could not be verified. Try again, or use another passkey.',
+  passkey_invalid: PASSKEY_GENERIC,
+  passkey_ceremony_expired: 'The sign-in took too long. Try again.',
+  passkey_not_registered: PASSKEY_NOT_REGISTERED,
+  passkey_user_handle_mismatch: PASSKEY_NOT_REGISTERED,
+  passkey_origin_not_allowed: PASSKEY_ADDRESS,
+  passkey_rp_id_mismatch: PASSKEY_ADDRESS,
+  passkey_user_verification_required: 'Your device must verify you (PIN or biometrics).',
+  passkey_counter_regressed: 'This passkey may have been copied; it was refused.',
+  passkey_challenge_mismatch: PASSKEY_GENERIC,
+  passkey_signature_invalid: PASSKEY_GENERIC,
+  passkey_replayed: PASSKEY_GENERIC,
+  passkey_already_registered: PASSKEY_GENERIC,
   passkey_not_found: 'That passkey no longer exists.',
   factor_not_found: 'That second factor no longer exists.',
   passkeys_unavailable:

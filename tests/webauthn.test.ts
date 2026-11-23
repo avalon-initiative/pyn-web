@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ApiError, describeError } from '../src/api/client'
 import {
   createPasskey,
   fromBase64Url,
@@ -100,5 +101,38 @@ describe('passkey ceremonies', () => {
   it('words a dismissed prompt and ignores other errors', () => {
     expect(passkeyBrowserError(new DOMException('x', 'NotAllowedError'))).toContain('cancelled')
     expect(passkeyBrowserError(new Error('x'))).toBeNull()
+  })
+})
+
+describe('passkey error messages', () => {
+  const text = (code: string) => describeError(new ApiError(401, code, 'x'))
+  const generic = 'The passkey could not be verified. Try again, or use another passkey.'
+  const notRegistered =
+    'This passkey is not registered here, or it was registered before a fix; remove it and add it again.'
+  const address = "The address in the browser does not match the server's public address."
+
+  it('words each specific code', () => {
+    expect(text('passkey_ceremony_expired')).toBe('The sign-in took too long. Try again.')
+    expect(text('passkey_not_registered')).toBe(notRegistered)
+    expect(text('passkey_user_handle_mismatch')).toBe(notRegistered)
+    expect(text('passkey_origin_not_allowed')).toBe(address)
+    expect(text('passkey_rp_id_mismatch')).toBe(address)
+    expect(text('passkey_user_verification_required')).toBe(
+      'Your device must verify you (PIN or biometrics).',
+    )
+    expect(text('passkey_counter_regressed')).toBe(
+      'This passkey may have been copied; it was refused.',
+    )
+  })
+
+  it('keeps the generic text for the rest', () => {
+    for (const code of [
+      'passkey_invalid',
+      'passkey_challenge_mismatch',
+      'passkey_signature_invalid',
+      'passkey_replayed',
+      'passkey_already_registered',
+    ])
+      expect(text(code)).toBe(generic)
   })
 })

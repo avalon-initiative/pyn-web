@@ -27,7 +27,6 @@ import { fetchServerBuild } from './api/server'
 import { webRevision, webVersion } from './state/version.state'
 import { minServerVersion, serverTooOld } from './state/server-compat.state'
 import type { ServerBuild } from './types/version.types'
-import { describeError } from './api/client'
 import { blockedStatus } from './state/account.state'
 import { sessionKey } from './state/context.state'
 import { freshPrompt } from './state/fresh.state'
@@ -42,7 +41,8 @@ import { passwordChangeRequired } from './state/password-change.state'
 import { onPendingDeletion } from './state/pending.state'
 import { ownProfile } from './state/own-profile.state'
 import { ownAccessSessions } from './state/access-session.state'
-import { nameProblem, useNameCheck } from './state/name.state'
+import { canonicalName, describeNameError, nameProblem, useNameCheck } from './state/name.state'
+import { rememberedUser, rememberUser } from './state/remember.state'
 import { internalPath } from './state/links.state'
 import {
   clearSessionData,
@@ -217,6 +217,7 @@ async function begin(name: string, mustChangePassword?: boolean) {
 
 const beginSession = (s: Session) => begin(s.user, s.password_change_required === true)
 
+const typedName = ref('')
 async function attempt(action: () => Promise<void>) {
   busy.value = true
   error.value = ''
@@ -225,7 +226,7 @@ async function attempt(action: () => Promise<void>) {
   } catch (e) {
     const status = blockedStatus(e)
     if (status) notice.value = { status, user: pendingUser.value }
-    else error.value = describeError(e)
+    else error.value = describeNameError(e, typedName.value)
   } finally {
     busy.value = false
   }
@@ -254,8 +255,10 @@ const setupUsername = ref('')
 const finishSetup = (form: SetupForm) =>
   attempt(async () => {
     if (refuseName(form.username)) return
-    await completeSetup(form)
-    setupUsername.value = form.username
+    typedName.value = canonicalName(form.username)
+    const username = typedName.value
+    await completeSetup({ ...form, username })
+    setupUsername.value = username
     setupDone.value = true
   })
 
@@ -267,11 +270,14 @@ const leaveSetup = async (to?: string) => {
   if (to) await router.push(to)
 }
 
-const submitSignIn = (form: SignInForm) =>
+type SignInSubmit = SignInForm & { remember?: boolean }
+
+const submitSignIn = (form: SignInSubmit) =>
   attempt(async () => {
     pendingUser.value = form.username
     try {
       await beginSession(await signIn(form))
+      rememberUser(form.username, !!form.remember)
     } catch (e) {
       if (!needsSecondFactor(e)) throw e
       challenge.value = form
@@ -343,13 +349,15 @@ onEnrolmentRequired(async () => {
 const join = (form: RegisterForm) =>
   attempt(async () => {
     if (refuseName(form.username)) return
-    pendingUser.value = form.username
-    const { status } = await register(form)
-    if (status === 'active') await beginSession(await signIn(form))
+    typedName.value = canonicalName(form.username)
+    const named = { ...form, username: typedName.value }
+    pendingUser.value = named.username
+    const { status } = await register(named)
+    if (status === 'active') await beginSession(await signIn(named))
     else
       notice.value = {
         status: status === 'disabled' ? 'account_disabled' : status,
-        user: form.username,
+        user: named.username,
       }
   })
 
@@ -469,7 +477,7 @@ onMounted(async () => {
         :password-sign-in="signInOptions?.password"
         :passkeys="passkeysOffered"
         :return-to="route.fullPath"
-        :initial-username="setupUsername || undefined"
+        :initial-username="setupUsername || rememberedUser() || undefined"
         :callback-error="callbackError"
         :email-verification="registration?.email_verification"
         :notice="notice"

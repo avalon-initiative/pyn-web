@@ -100,10 +100,44 @@ describe('NewOrgView', () => {
   it('shows the name problem while typing', async () => {
     const router = makeRouter(createMemoryHistory())
     const w = mount(NewOrgView, { global: { plugins: [router] } })
-    await w.find('input').setValue('Bad Name')
-    expect(w.text()).toContain('"Bad Name" is not a valid name.')
-    await w.find('input').setValue('studio')
+    await w.find('input').setValue('Bad.Name')
+    expect(w.text()).toContain('"Bad.Name" is not a valid name.')
+    await w.find('input').setValue('Art Studio')
     expect(w.text()).not.toContain('is not a valid name.')
+  })
+
+  it('sends the canonical name and navigates to the name the server returns', async () => {
+    const fn = vi.fn(
+      async () => new Response(JSON.stringify({ name: 'art-studio' }), { status: 201 }),
+    )
+    vi.stubGlobal('fetch', fn)
+    const router = makeRouter(createMemoryHistory())
+    const push = vi.spyOn(router, 'push').mockResolvedValue(undefined)
+    const w = mount(NewOrgView, { global: { plugins: [router] } })
+    await w.find('input').setValue('  Art Studio ')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    const call = (fn.mock.calls as unknown as [string, RequestInit][]).find(
+      (c) => c[1]?.method === 'POST' && c[0].endsWith('/v1/orgs'),
+    )
+    expect(JSON.parse(String(call?.[1].body))).toEqual({ name: 'art-studio' })
+    expect(push).toHaveBeenCalledWith('/art-studio')
+  })
+
+  it('words a taken name against the canonical form', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ code: 'user_exists', message: 'x' }), { status: 409 }),
+      ),
+    )
+    const router = makeRouter(createMemoryHistory())
+    const w = mount(NewOrgView, { global: { plugins: [router] } })
+    await w.find('input').setValue('Art Studio')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    expect(w.find('[role=alert]').text()).toContain('"art-studio" is already taken')
   })
 })
 
