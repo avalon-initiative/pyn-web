@@ -63,6 +63,3 @@ export const topBarExtras = (
   ...navItems.map((i) => ({ id: i.id, label: i.label, href: i.href })),
   ...accountItems,
 ]
-
-/** Where a search goes: the exact repository when it is in the list, else the home page filtered by the text. */
-export const searchTarget = (text: string) => ({ path: '/', query: { q: text.trim() } })
