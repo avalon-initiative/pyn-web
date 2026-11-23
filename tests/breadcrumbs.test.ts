@@ -12,7 +12,8 @@ const trail = (path: string) => breadcrumbs(router.resolve(path))
 const labels = (path: string) => trail(path).map((c) => c.label)
 
 const table: [string, string, ...(string | undefined)[]][] = [
-  ['/', 'repos'],
+  ['/', 'dashboard'],
+  ['/_/repos', 'repos', 'Home', 'Repositories'],
   ['/_/people', 'people', 'Home', 'People'],
   ['/_/locks', 'my-locks', 'Home', 'Your locks'],
   ['/_/new', 'new-repo', 'Home', 'New repository'],
@@ -97,7 +98,7 @@ const table: [string, string, ...(string | undefined)[]][] = [
 describe('breadcrumb trail', () => {
   it.each(table)('%s (%s)', (path, name, ...expected) => {
     expect(router.resolve(path).name).toBe(name)
-    expect(labels(path)).toEqual(name === 'repos' ? [] : expected.length ? expected : [])
+    expect(labels(path)).toEqual(name === 'dashboard' ? [] : expected.length ? expected : [])
   })
 
   it('covers every named route in the router', () => {
