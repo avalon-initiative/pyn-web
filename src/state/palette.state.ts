@@ -188,10 +188,16 @@ export function usePalette(opts: {
     loading.value = false
   }
 
-  function show() {
+  function show(initial = '') {
     reset()
+    text.value = initial
     helpOpen.value = false
     open.value = true
+  }
+
+  function showHelp() {
+    open.value = false
+    helpOpen.value = true
   }
 
   function close() {
@@ -269,5 +275,5 @@ export function usePalette(opts: {
     }
   })
 
-  return { open, helpOpen, items, loading, help, show, close, input, select }
+  return { open, helpOpen, text, items, loading, help, show, showHelp, close, input, select }
 }

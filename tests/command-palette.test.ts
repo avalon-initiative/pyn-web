@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PynTopBar } from '@avalon-initiative/pyn-common-ui'
 import { createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
 import { clearSessionData } from '../src/state/session-data.state'
@@ -234,5 +235,21 @@ describe('in the app', () => {
     const text = help()?.textContent ?? ''
     expect(text).toContain('Go to dashboard')
     expect(text).toContain('Open the command palette')
+  })
+
+  it('carries the top bar search text into the palette', async () => {
+    const { w } = await openApp()
+    w.findComponent(PynTopBar).vm.$emit('search', 'core')
+    await flushPromises()
+    const field = palette()?.querySelector('input') as HTMLInputElement
+    expect(field.value).toBe('core')
+  })
+
+  it('opens the help dialog from the top bar menu entry', async () => {
+    const { w } = await openApp()
+    w.findComponent(PynTopBar).vm.$emit('shortcuts')
+    await flushPromises()
+    expect(help()?.textContent).toContain('Go to dashboard')
+    expect(palette()).toBeNull()
   })
 })
