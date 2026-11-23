@@ -1,6 +1,7 @@
 import type { Schemas } from '../api/schema'
 
 export type Branch = Schemas['Branch']
+export type ActivePolicy = Schemas['ActivePolicy']
 export type BranchComparison = Schemas['BranchComparison']
 export type HistoryPage = Schemas['HistoryPage']
 

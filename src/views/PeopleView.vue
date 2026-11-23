@@ -4,6 +4,7 @@ import {
   PynPeopleSearch,
   PynViewHeader,
   PynViewNotice,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { onMounted } from 'vue'
 import { usePeople } from '../state/people.state'
@@ -17,8 +18,9 @@ onMounted(() => search(''))
   <PynViewHeader title="People" />
   <PynPeopleSearch :busy="busy" @search="search" />
   <PynViewNotice v-if="error" tone="warning">{{ error }}</PynViewNotice>
+  <PynLoading v-if="!loaded && !error" />
   <PynPeopleList
-    v-if="loaded"
+    v-else-if="loaded"
     :people="people"
     :more="!!next"
     :busy="busy"

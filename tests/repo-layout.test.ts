@@ -72,6 +72,8 @@ describe('repository routes', () => {
     expect(resolve('/acme/game/tree/src').name).toBe('tree')
     expect(resolve('/acme/game/blob/a/b.txt').name).toBe('blob')
     expect(resolve('/acme/game/locks').name).toBe('locks')
+    expect(resolve('/acme/game/branches').name).toBe('branches')
+    expect(resolve('/acme/game/policy').name).toBe('policy')
     expect(resolve('/acme/game/history').name).toBe('history')
   })
 
@@ -123,7 +125,9 @@ describe('shell on repository and dashboard routes', () => {
     expect(shell.props('tabs')!.map((t: { label: string }) => t.label)).toEqual([
       'Code',
       'Locks',
+      'Branches',
       'History',
+      'Policy',
     ])
     expect(shell.text()).toContain('8h leases')
     expect(shell.text()).toContain('your role: admin')

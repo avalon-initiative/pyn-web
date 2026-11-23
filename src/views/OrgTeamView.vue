@@ -9,6 +9,7 @@ import {
   type TeamFormValue,
   type TeamInfo,
   PynViewError,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import NotFoundView from './NotFoundView.vue'
 import { computed, inject, ref, watch } from 'vue'
@@ -88,7 +89,8 @@ watch(
 
 <template>
   <PynViewError v-if="page.error.value">{{ page.error.value }}</PynViewError>
-  <NotFoundView v-else-if="loaded && notFound" />
+  <PynLoading v-else-if="!loaded" />
+  <NotFoundView v-else-if="notFound" />
   <template v-else-if="loaded && team">
     <PynTeamDetail
       :key="team.id"

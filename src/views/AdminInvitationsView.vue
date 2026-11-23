@@ -6,6 +6,7 @@ import { useAction } from '../state/action.state'
 import { INVITATION_ROLES, invitationTargets } from '../state/server-invitations.state'
 import { sessionOrgs, sessionRepos } from '../state/session-data.state'
 import type { ServerInvitationCreate } from '@avalon-initiative/pyn-common-ui'
+import type { ServerInvitationRequest } from '../types/server-invitation.types'
 import type { ServerInvitation } from '../types/server-invitation.types'
 
 const invitations = ref<ServerInvitation[]>([])
@@ -22,7 +23,7 @@ const load = () =>
 
 const create = (body: ServerInvitationCreate) =>
   action.attempt(async () => {
-    const made = await createServerInvitation(body)
+    const made = await createServerInvitation(body as ServerInvitationRequest)
     created.value = made.code
     emailed.value = made.emailed
     invitations.value = await listServerInvitations()

@@ -11,6 +11,7 @@ import { useHashScroll } from '../state/hash.state'
 import {
   fileBody,
   folderParam,
+  repoPath,
   readmeEntry,
   VIEW_LIMIT,
   type ReadmeDoc,
@@ -135,6 +136,7 @@ onUnmounted(() => clearInterval(timer))
     :listing="listing"
     :summary="barSummary"
     :branches="branches"
+    :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :readme="readme"
     :missing="missing"
     :me="user"
