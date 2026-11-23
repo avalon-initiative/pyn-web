@@ -13,6 +13,7 @@ import {
   deleteWebhook,
   getWebhook,
   listWebhookDeliveries,
+  listWebhookEventTypes,
   listWebhooks,
   redeliverWebhook,
   retireWebhookSecret,
@@ -20,7 +21,14 @@ import {
   updateWebhook,
 } from '../api/webhooks'
 import { useAction } from '../state/action.state'
-import { asStatus, replaceById, replaceDelivery, toViewDelivery } from '../state/webhooks.state'
+import {
+  asStatus,
+  replaceById,
+  replaceDelivery,
+  toViewDelivery,
+  useEventTypes,
+  webhookError,
+} from '../state/webhooks.state'
 import type { WebhookCreate, WebhookUpdate } from '@avalon-initiative/pyn-common-ui'
 import type {
   CreatedWebhook,
@@ -38,10 +46,12 @@ const nextBefore = ref<number | null>(null)
 const redelivering = ref('')
 const creating = ref(false)
 const created = ref('')
-const create = useAction()
+const create = useAction(true, webhookError)
 const list = useAction()
-const detail = useAction()
+const detail = useAction(true, webhookError)
 const feed = useAction()
+
+const eventTypes = useEventTypes(listWebhookEventTypes)
 
 const selected = computed(() => webhooks.value.find((w) => w.id === selectedId.value) ?? null)
 const stale = (id: number) => selectedId.value !== id
@@ -149,7 +159,10 @@ const redeliver = async (id: number, deliveryId: string) => {
   redelivering.value = ''
 }
 
-onMounted(loadList)
+onMounted(() => {
+  void loadList()
+  void eventTypes.load()
+})
 </script>
 
 <template>
@@ -171,6 +184,9 @@ onMounted(loadList)
       <PynWebhookForm
         v-if="creating"
         :secret="created"
+        :event-type-options="eventTypes.options.value"
+        :event-types-loading="eventTypes.loading.value"
+        :event-types-error="eventTypes.error.value"
         :busy="create.busy.value"
         :error="create.error.value"
         @submit="submit"
@@ -181,6 +197,9 @@ onMounted(loadList)
         v-else-if="selected"
         :webhook="selected"
         :secret="secret"
+        :event-type-options="eventTypes.options.value"
+        :event-types-loading="eventTypes.loading.value"
+        :event-types-error="eventTypes.error.value"
         :busy="detail.busy.value"
         :error="detail.error.value"
         :deliveries="deliveries.map(toViewDelivery)"

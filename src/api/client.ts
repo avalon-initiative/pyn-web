@@ -26,6 +26,12 @@ const FRIENDLY: Record<string, string> = {
     'Transfer or delete the repositories and organizations this account owns first.',
   user_not_found: 'That account does not exist.',
   user_exists: 'That name is already taken by a user or an organization.',
+  invalid_invite: 'That invitation code is not valid: it may be used, revoked or expired.',
+  server_invitation_not_found:
+    'That invitation no longer exists. Reload the list to see where it stands.',
+  email_already_confirmed: 'That account has already confirmed its email address.',
+  email_verification_off:
+    'This server does not verify email addresses, so there is no confirmation to resend.',
   org_not_found: 'That organization does not exist.',
   not_org_owner: 'Only an owner of the organization can do that.',
   not_org_member: 'Only a member of the organization can do that.',

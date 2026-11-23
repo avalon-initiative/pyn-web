@@ -26,6 +26,7 @@ const SETTINGS: Record<string, string> = {
 
 const ADMIN: Record<string, string> = {
   'admin-accounts': 'Accounts',
+  'admin-invitations': 'Invitations',
   'admin-access': 'Server access',
   'admin-two-factor': 'Two-factor',
   'admin-access-sessions': 'Access sessions',

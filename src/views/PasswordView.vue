@@ -3,6 +3,7 @@ import { PynPasswordForm } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { fetchMe } from '../api/admin'
 import { changePassword } from '../api/password'
+import { PASSWORD_CHANGE_REASON, passwordChangeRequired } from '../state/password-change.state'
 import {
   PASSWORD_CHANGED,
   PASSWORD_MIN_LENGTH,
@@ -28,6 +29,7 @@ async function submit(form: { current?: string; next: string }) {
     const first = !hasPassword.value
     await changePassword(first ? undefined : form.current, form.next)
     if (first) hasPassword.value = true
+    passwordChangeRequired.value = false
     success.value = first ? PASSWORD_SET : PASSWORD_CHANGED
   } catch (e) {
     error.value = passwordError(e)
@@ -45,6 +47,7 @@ async function submit(form: { current?: string; next: string }) {
     :busy="busy"
     :error="error"
     :success="success"
+    :reason="passwordChangeRequired ? PASSWORD_CHANGE_REASON : undefined"
     @submit="submit"
   />
 </template>

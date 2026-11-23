@@ -1,16 +1,22 @@
 <script setup lang="ts">
-import { PynAccessMode, PynViewHeader, PynViewStack } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynAccessMode,
+  PynEmailStatus,
+  PynViewHeader,
+  PynViewStack,
+} from '@avalon-initiative/pyn-common-ui'
 import { computed, onMounted, ref } from 'vue'
-import { fetchAccessMode, setAccessMode } from '../api/admin'
+import { fetchAccessMode, fetchAdminSettings, setAccessMode } from '../api/admin'
 import { fetchRegistration } from '../api/auth'
 import { useAction } from '../state/action.state'
 import { accessChecklist } from '../state/access.state'
 import type { AccessMode } from '@avalon-initiative/pyn-common-ui'
 import type { RegistrationInfo } from '../types/auth.types'
-import type { ServerSetup } from '../types/admin.types'
+import type { AdminSettings, ServerSetup } from '../types/admin.types'
 
 const setup = ref<ServerSetup | null>(null)
 const registration = ref<RegistrationInfo | null>(null)
+const emailSettings = ref<AdminSettings['email'] | null>(null)
 const load = useAction()
 const save = useAction()
 
@@ -22,6 +28,7 @@ onMounted(() =>
   load.attempt(async () => {
     setup.value = await fetchAccessMode()
     registration.value = await fetchRegistration().catch(() => null)
+    emailSettings.value = (await fetchAdminSettings().catch(() => null))?.email ?? null
   }),
 )
 
@@ -43,6 +50,11 @@ const change = (mode: AccessMode) =>
       :busy="save.busy.value"
       :error="save.error.value"
       @change="change"
+    />
+    <PynEmailStatus
+      v-if="emailSettings"
+      :mailer="emailSettings.mailer"
+      :verification="emailSettings.verification"
     />
   </PynViewStack>
 </template>
