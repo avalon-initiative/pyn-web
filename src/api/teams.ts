@@ -1,4 +1,7 @@
 import { api, call } from './http'
+import type { Schemas } from './schema'
+
+type Role = Schemas['Role']
 import type { RepoTeam, TeamInfo } from '@avalon-initiative/pyn-common-ui'
 
 type Repo = { owner: string; name: string }
@@ -41,7 +44,7 @@ export const setRepoTeam = (r: Repo, team: string, role: string) =>
   call<void>(
     api.PUT('/v1/repos/{owner}/{name}/teams/{team}', {
       params: { path: { ...r, team } },
-      body: { role },
+      body: { role: role as Role },
     }),
   )
 
