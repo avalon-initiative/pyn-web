@@ -177,6 +177,12 @@ async function attempt(action: () => Promise<void>) {
   }
 }
 
+/** The sign-in page's options; an uninitialised server refuses them, so they are read again after setup. */
+async function loadOptions() {
+  registration.value = await fetchRegistration().catch(() => null)
+  signInOptions.value = await fetchSignInOptions().catch(() => null)
+}
+
 const pendingUser = ref('')
 const challenge = ref<SignInForm | null>(null)
 const freshPasskeys = ref(false)
@@ -203,6 +209,7 @@ const finishSetup = (form: SetupForm) =>
 const leaveSetup = async (to?: string) => {
   setup.value = null
   setupDone.value = false
+  await loadOptions()
   if (to) await router.push(to)
 }
 
@@ -315,6 +322,7 @@ function dismissNotice() {
 async function leave() {
   await signOut().catch(() => undefined)
   expire()
+  await loadOptions()
   await router.push('/')
 }
 
@@ -340,8 +348,7 @@ onMounted(async () => {
   void fetchServerBuild().then((b) => (serverBuild.value = b))
   const status = await fetchSetupStatus().catch(() => null)
   if (status && !status.initialised) setup.value = status
-  registration.value = await fetchRegistration().catch(() => null)
-  signInOptions.value = await fetchSignInOptions().catch(() => null)
+  await loadOptions()
   const session = await restoreSession().catch(() => null)
   if (session) await begin(session.user)
   ready.value = true
