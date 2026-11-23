@@ -6,7 +6,12 @@ import { register, resendVerification, signIn, verifyEmail } from '../src/api/au
 import { ApiError, describeError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { blockedStatus } from '../src/state/account.state'
-import { nameProblem, useNameCheck } from '../src/state/name.state'
+import {
+  canonicalName,
+  describeNameError,
+  nameProblem,
+  useNameCheck,
+} from '../src/state/name.state'
 
 const reply = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(body === null ? null : JSON.stringify(body), { status, headers })
@@ -152,7 +157,7 @@ describe('external sign-in', () => {
 })
 
 describe('name messages', () => {
-  const rules = '2 to 39 lowercase letters, digits, "-" or "_", and cannot be a reserved word'
+  const rules = '2 to 39 letters, digits, spaces, "-" or "_"'
 
   it('names the rejected value and the rules for a reserved name', () => {
     const e = new ApiError(400, 'reserved_name', '"admin" is reserved and cannot be used as a name')
@@ -169,16 +174,17 @@ describe('name messages', () => {
 
   it('checks the name format before submitting', () => {
     expect(nameProblem('wendy_1')).toBe('')
-    for (const bad of ['', 'a', 'Wendy', 'we ndy', 'a'.repeat(40)])
+    for (const bad of ['', 'a', 'a'.repeat(40), 'we.ndy', 'wendy!', 'wéndy', 'we\tndy'])
       expect(nameProblem(bad)).toContain(`"${bad}" is not a valid name.`)
+    for (const ok of ['Wendy', 'we ndy', '  Wendy  Q ']) expect(nameProblem(ok)).toBe('')
     expect(nameProblem('ab')).toBe('')
     expect(nameProblem('a'.repeat(39))).toBe('')
   })
 
   it('shows the problem while typing and clears it when valid or blank', () => {
     const { nameMessage, checkName } = useNameCheck()
-    checkName('Wendy')
-    expect(nameMessage.value).toContain('"Wendy" is not a valid name.')
+    checkName('Wend!y')
+    expect(nameMessage.value).toContain('"Wend!y" is not a valid name.')
     checkName('wendy')
     expect(nameMessage.value).toBe('')
     checkName('W')
@@ -197,7 +203,7 @@ describe('name messages', () => {
       .find((b) => /create|register|sign up/i.test(b.text()))
       ?.trigger('click')
     const input = w.find('input[autocomplete=username]')
-    await input.setValue('Bad Name')
+    await input.setValue('Bad.Name')
     expect(nameMessage.value).toContain('is not a valid name.')
     await w.setProps({ nameMessage: nameMessage.value })
     expect(w.text()).toContain('is not a valid name.')
@@ -302,5 +308,31 @@ describe('verification email guidance', () => {
     const w = await open('/verify-email?token=old')
     expect(w.text()).toContain('Link not valid')
     expect(w.text().toLowerCase()).not.toContain(guidance)
+  })
+})
+
+describe('canonical owner names', () => {
+  it('trims, joins whitespace runs with "-" and lowercases ASCII only', () => {
+    expect(canonicalName('  Wendy   Q  Smith ')).toBe('wendy-q-smith')
+    expect(canonicalName('Acme_Co-1')).toBe('acme_co-1')
+    expect(canonicalName('ÉCOLE')).toBe('École')
+  })
+
+  it('shows the canonical form while typing and nothing when invalid or blank', () => {
+    const { nameCanonical, checkName } = useNameCheck()
+    checkName('My Team')
+    expect(nameCanonical.value).toBe('my-team')
+    checkName('bad.name')
+    expect(nameCanonical.value).toBe('')
+    checkName('  ')
+    expect(nameCanonical.value).toBe('')
+  })
+
+  it('words user_exists against the canonical name and leaves other errors alone', () => {
+    const taken = new ApiError(409, 'user_exists', 'x')
+    expect(describeNameError(taken, 'my-team')).toBe(
+      '"my-team" is already taken by a user or an organization.',
+    )
+    expect(describeNameError(new ApiError(403, 'forbidden', 'nope'), 'my-team')).toBe('nope')
   })
 })
