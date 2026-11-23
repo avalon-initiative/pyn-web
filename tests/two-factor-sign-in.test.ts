@@ -1,4 +1,10 @@
-import { PynSecondFactor, PynSignIn, PynTwoFactorNag } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynSecondFactor,
+  PynSetup,
+  PynSignIn,
+  PynTopBar,
+  PynTwoFactorNag,
+} from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
@@ -149,6 +155,40 @@ describe('passkey sign-in', () => {
     expect(w.findComponent(PynSignIn).exists()).toBe(false)
   })
 
+  it('offers the passkey on the second-factor step and signs in with the typed username', async () => {
+    stubBrowser()
+    const fn = serve({
+      ...base,
+      'POST /v1/session': needsCode,
+      'POST /v1/session/passkey/begin': () => reply(200, begun),
+      'POST /v1/session/passkey/finish': () => reply(200, session),
+    })
+    const { w } = await open()
+    w.findComponent(PynSignIn).vm.$emit('sign-in', { username: 'wendy', password: 'pw' })
+    await flushPromises()
+    expect(w.findComponent(PynSecondFactor).props('passkeys')).toBe(true)
+    w.findComponent(PynSecondFactor).vm.$emit('passkey')
+    await flushPromises()
+    expect(sent(fn, 'POST /v1/session/passkey/begin')[0]).toEqual({ username: 'wendy' })
+    expect(w.findComponent(PynSecondFactor).exists()).toBe(false)
+  })
+
+  it('shows a failed ceremony on the second-factor step', async () => {
+    stubBrowser()
+    serve({
+      ...base,
+      'POST /v1/session': needsCode,
+      'POST /v1/session/passkey/begin': () =>
+        reply(401, { code: 'passkey_invalid', message: 'no such passkey' }),
+    })
+    const { w } = await open()
+    w.findComponent(PynSignIn).vm.$emit('sign-in', { username: 'wendy', password: 'pw' })
+    await flushPromises()
+    w.findComponent(PynSecondFactor).vm.$emit('passkey')
+    await flushPromises()
+    expect(w.findComponent(PynSecondFactor).props('error')).not.toBe('')
+  })
+
   it('shows a friendly error when the prompt is dismissed', async () => {
     vi.stubGlobal('PublicKeyCredential', {})
     vi.stubGlobal('navigator', {
@@ -163,6 +203,61 @@ describe('passkey sign-in', () => {
     w.findComponent(PynSignIn).vm.$emit('passkey')
     await flushPromises()
     expect(w.findComponent(PynSignIn).props('error')).toContain('cancelled')
+  })
+})
+
+describe('sign-in options fetched before setup', () => {
+  const unset = () => reply(503, { code: 'not_initialised', message: 'x' })
+
+  function serveSetup() {
+    let done = false
+    serve({
+      ...base,
+      'GET /v1/setup': () =>
+        reply(200, done ? { initialised: true } : { initialised: false, registration: 'closed' }),
+      'GET /v1/registration': () => (done ? reply(200, { registration: 'closed' }) : unset()),
+      'GET /v1/sign-in-options': () =>
+        done ? reply(200, { password: true, passkeys: true }) : unset(),
+      'POST /v1/setup': () => ((done = true), reply(201, { user: 'wendy' })),
+    })
+  }
+
+  it('offers the passkey after the setup wizard hands over to sign-in', async () => {
+    vi.stubGlobal('PublicKeyCredential', {})
+    vi.stubGlobal('navigator', { credentials: { get: vi.fn() } })
+    serveSetup()
+    const { w } = await open()
+    const form = {
+      token: 't',
+      username: 'wendy',
+      password: 'pw',
+      email: '',
+      server_name: '',
+      public_url: '',
+      registration: 'closed',
+    }
+    w.findComponent(PynSetup).vm.$emit('finish', form)
+    await flushPromises()
+    w.findComponent(PynSetup).vm.$emit('sign-in')
+    await flushPromises()
+    expect(w.findComponent(PynSignIn).props('passkeys')).toBe(true)
+  })
+
+  it('reloads the options after signing out', async () => {
+    vi.stubGlobal('PublicKeyCredential', {})
+    vi.stubGlobal('navigator', { credentials: { get: vi.fn() } })
+    let calls = 0
+    serve({
+      ...base,
+      'GET /v1/sign-in-options': () =>
+        ++calls === 1 ? unset() : reply(200, { password: true, passkeys: true }),
+      'GET /v1/session': () => reply(200, session),
+      'DELETE /v1/session': () => reply(204, null),
+    })
+    const { w } = await open()
+    w.findComponent(PynTopBar).vm.$emit('sign-out')
+    await flushPromises()
+    expect(w.findComponent(PynSignIn).props('passkeys')).toBe(true)
   })
 })
 

@@ -41,10 +41,15 @@ beforeEach(() => {
   vi.mocked(api.listNotices).mockResolvedValue([])
   vi.mocked(fetchMe).mockResolvedValue({ has_password: true } as never)
 })
-afterEach(() => (twoFactorDue.value = null))
+const mounted: ReturnType<typeof mount>[] = []
+afterEach(() => {
+  twoFactorDue.value = null
+  mounted.splice(0).forEach((w) => w.unmount())
+})
 
 const mountView = async () => {
   const w = mount(SecurityView)
+  mounted.push(w)
   await flushPromises()
   return w
 }
@@ -209,5 +214,25 @@ describe('withFreshCheck', () => {
       withFreshCheck(() => Promise.reject(new ApiError(403, 'forbidden', 'x'))),
     ).rejects.toMatchObject({ code: 'forbidden' })
     expect(freshPrompt.value).toBeNull()
+  })
+})
+
+describe('unsaved recovery codes', () => {
+  it('asks before the page is left while they are shown', async () => {
+    vi.mocked(api.regenerateRecoveryCodes).mockResolvedValue(['aaaa-bbbb'])
+    vi.mocked(api.fetchTwoFactor).mockResolvedValue(on as never)
+    const w = await mountView()
+    const leave = () => {
+      const e = new Event('beforeunload', { cancelable: true })
+      window.dispatchEvent(e)
+      return e.defaultPrevented
+    }
+    expect(leave()).toBe(false)
+    w.findComponent(PynTwoFactor).vm.$emit('regenerate-codes')
+    await flushPromises()
+    expect(leave()).toBe(true)
+    w.findComponent(PynRecoveryCodes).vm.$emit('saved')
+    await flushPromises()
+    expect(leave()).toBe(false)
   })
 })

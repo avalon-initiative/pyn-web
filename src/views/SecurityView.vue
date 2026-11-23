@@ -11,13 +11,20 @@ import {
   PynViewError,
   PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onMounted } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import { useOwnAccessHistory } from '../state/access-history.state'
 import { useSecurity } from '../state/security.state'
 import { SECURITY_PATH, twoFactorDue } from '../state/two-factor.state'
 
 const s = useSecurity()
 onMounted(s.load)
+
+const KEEP_CODES = 'Your recovery codes are shown only once. Leave without saving them?'
+const warnUnsaved = (e: BeforeUnloadEvent) => s.codes.value && e.preventDefault()
+window.addEventListener('beforeunload', warnUnsaved)
+onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnsaved))
+onBeforeRouteLeave(() => !s.codes.value || window.confirm(KEEP_CODES))
 const history = useOwnAccessHistory()
 </script>
 
