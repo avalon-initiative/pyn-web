@@ -27,6 +27,7 @@ import NotFoundView from './views/NotFoundView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
+import RepoBranchesView from './views/RepoBranchesView.vue'
 import RepoFilesView from './views/RepoFilesView.vue'
 import RepoHistoryView from './views/RepoHistoryView.vue'
 import RepoInvitesView from './views/RepoInvitesView.vue'
@@ -34,6 +35,7 @@ import RepoLocksView from './views/RepoLocksView.vue'
 import RepoMembersView from './views/RepoMembersView.vue'
 import RepoRolesView from './views/RepoRolesView.vue'
 import RepoGeneralView from './views/RepoGeneralView.vue'
+import RepoPolicyReadView from './views/RepoPolicyReadView.vue'
 import RepoPolicyView from './views/RepoPolicyView.vue'
 import RepoSettingsLayout from './views/RepoSettingsLayout.vue'
 import RepoStorageView from './views/RepoStorageView.vue'
@@ -137,6 +139,8 @@ export const routes: RouteRecordRaw[] = [
       { path: 'blob/:path(.+)', name: 'blob', component: RepoBlobView, meta: { public: true } },
       { path: 'locks', name: 'locks', component: RepoLocksView, meta: { public: true } },
       { path: 'history', name: 'history', component: RepoHistoryView, meta: { public: true } },
+      { path: 'branches', name: 'branches', component: RepoBranchesView },
+      { path: 'policy', name: 'policy', component: RepoPolicyReadView },
       ...['members', 'roles', 'invites', 'audit'].map((section) => ({
         path: section,
         redirect: settingsRedirect(section),

@@ -7,6 +7,7 @@ import {
   PynRepoList,
   PynSignInPrompt,
   PynViewError,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -63,7 +64,8 @@ watch(
     message="Sign in to see this page, or check the address."
     sign-in-href="/"
   />
-  <template v-else-if="loaded">
+  <PynLoading v-else-if="!loaded" />
+  <template v-else>
     <PynProfileLayout v-if="profile" :repos="repos" :orgs="profile.organizations">
       <template #header>
         <PynProfileHeader

@@ -6,6 +6,7 @@ import {
   teamPath,
   type TeamFormValue,
   PynViewError,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -45,6 +46,7 @@ onMounted(async () => {
 <template>
   <PynTeamList v-if="loaded" :org="name" :teams="teams" />
   <PynViewError v-else-if="list.error.value">{{ list.error.value }}</PynViewError>
+  <PynLoading v-else />
   <PynTeamForm
     v-if="loaded && canWrite(isOrgOwner(org), frozen)"
     :busy="create.busy.value"

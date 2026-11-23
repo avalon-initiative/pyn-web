@@ -6,6 +6,7 @@ import {
   PynViewAction,
   PynViewError,
   PynViewHeader,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listMyOrgs } from '../api/orgs'
@@ -29,7 +30,8 @@ onMounted(async () => {
     <PynViewAction href="/_/new-org" primary>New organization</PynViewAction>
   </PynViewHeader>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <template v-else-if="loaded">
+  <PynLoading v-else-if="!loaded" />
+  <template v-else>
     <PynOrgList v-if="orgs.length" :orgs="orgs" />
     <PynEmptyState
       v-else

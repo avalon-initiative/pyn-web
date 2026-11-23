@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PynInvites } from '@avalon-initiative/pyn-common-ui'
+import { PynInvites, PynLoading } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { createInvite, listInvites, listRoles, revokeInvite } from '../api/repos'
 import { useAction } from '../state/action.state'
@@ -49,4 +49,5 @@ onMounted(async () => {
     @revoke="revoke"
   />
   <p v-else-if="error" role="alert">{{ error }}</p>
+  <PynLoading v-else />
 </template>

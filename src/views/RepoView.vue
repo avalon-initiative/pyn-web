@@ -24,6 +24,7 @@ import { compareChanges, useBranchCompare } from '../state/compare.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import { refusedSignedOut } from '../state/public.state'
+import { withPolicyTabs } from '../state/repo-tabs.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
 import type { LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
@@ -139,10 +140,12 @@ provide(repoKey, {
 })
 
 const tabs = computed(() =>
-  repoShellTabs(permissions.value, isRepoOwner(owner.value, user.value, org.value), {
-    serverAdmin: admin.value,
-    insights: false,
-  }),
+  withPolicyTabs(
+    repoShellTabs(permissions.value, isRepoOwner(owner.value, user.value, org.value), {
+      serverAdmin: admin.value,
+      insights: false,
+    }),
+  ),
 )
 const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.value}`))
 </script>
