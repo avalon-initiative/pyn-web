@@ -14,7 +14,7 @@ import { ApiError, describeError } from '../src/api/client'
 import { getOwnerUsage, getRepoBreakdown, getRepoUsage, setRepoStorageCap } from '../src/api/usage'
 import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
 import { canOpenSettings, canSeeStorage, canSetCap } from '../src/state/repo-access.state'
-import { routes } from '../src/router'
+import { ownerParam, routes } from '../src/router'
 import OrgView from '../src/views/OrgView.vue'
 import OwnerUsageView from '../src/views/OwnerUsageView.vue'
 import RepoStorageView from '../src/views/RepoStorageView.vue'
@@ -97,7 +97,7 @@ describe('repo_storage_limit_reached', () => {
 
 describe('routes', () => {
   it('declares the owner usage page next to the organization pages', () => {
-    const owner = routes.find((r) => r.path === '/:owner')!
+    const owner = routes.find((r) => r.path === `/${ownerParam}`)!
     expect(owner.children!.find((c) => c.name === 'owner-usage')!.path).toBe('-/usage')
   })
 })

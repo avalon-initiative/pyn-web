@@ -97,7 +97,7 @@ afterEach(() => {
 
 async function openApp() {
   const router = makeRouter(createMemoryHistory())
-  await router.push('/_/keys')
+  await router.push('/_/settings/keys')
   const { default: App } = await import('../src/App.vue')
   const w = mount(App, { attachTo: document.body, global: { plugins: [router] } })
   apps.push(w)
@@ -110,11 +110,9 @@ describe('session-level lists', () => {
   it('loads each list once after sign-in and not again on a route change', async () => {
     const { router } = await openApp()
     expect(snapshot()).toEqual([1, 1, 1, 1])
-    await router.push('/_/password')
+    await router.push('/_/locks')
     await flushPromises()
-    await router.push('/_/security')
-    await flushPromises()
-    await router.push('/_/keys')
+    await router.push('/_/people')
     await flushPromises()
     expect(snapshot()).toEqual([1, 1, 1, 1])
     expect(sessionOrgs.value).toHaveLength(orgs.length)

@@ -91,9 +91,9 @@ describe('PasswordView', () => {
 })
 
 describe('password route', () => {
-  it('redirects /_/settings to the password page', async () => {
+  it('keeps the password page under /_/settings', async () => {
     const router = makeRouter(createMemoryHistory())
-    await router.push('/_/settings')
+    await router.push('/_/settings/password')
     expect(router.currentRoute.value.fullPath).toBe('/_/settings/password')
     expect(router.currentRoute.value.name).toBe('password')
   })

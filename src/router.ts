@@ -1,3 +1,4 @@
+import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized, RouteRecordRaw, RouterHistory } from 'vue-router'
 import { scrollToHash } from './state/hash.state'
@@ -57,7 +58,10 @@ const settingsRedirect =
   })
 
 // Account pages live under "/_/" and organization pages under "/:owner/-/": neither "_" nor "-" can be a
-// user, organization or repository name.
+// user, organization or repository name. The owner pattern excludes "_" so unknown "/_/..." paths reach
+// the catch-all.
+export const ownerParam = ':owner([^/_][^/]*|_[^/]+)'
+
 export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'repos', component: ReposView },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
@@ -88,21 +92,21 @@ export const routes: RouteRecordRaw[] = [
     path: '/_/settings',
     component: AccountView,
     children: [
-      { path: '', redirect: '/_/settings/password' },
+      { path: '', redirect: '/_/settings/profile' },
       { path: 'profile', name: 'profile-settings', component: ProfileSettingsView },
       { path: 'emails', name: 'emails', component: EmailAddressesView },
       { path: 'username', name: 'username', component: UsernameView },
       { path: 'password', name: 'password', component: PasswordView },
       { path: 'security', name: 'security', component: SecurityView },
-      { path: 'keys', name: 'keys', component: KeysView, alias: '/_/keys' },
-      { path: 'tokens', name: 'tokens', component: TokensView, alias: '/_/tokens' },
+      { path: 'keys', name: 'keys', component: KeysView },
+      { path: 'tokens', name: 'tokens', component: TokensView },
       { path: 'identities', name: 'identities', component: IdentitiesView },
       { path: 'delete', name: 'delete-account', component: DeleteAccountView },
     ],
   },
-  { path: '/:owner/-', redirect: { name: 'owner' } },
+  { path: `/${ownerParam}/-`, redirect: { name: 'owner' } },
   {
-    path: '/:owner',
+    path: `/${ownerParam}`,
     component: OrgView,
     children: [
       { path: '', name: 'owner', component: OwnerView },
@@ -115,7 +119,7 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/:owner/:name',
+    path: `/${ownerParam}/:name`,
     component: RepoView,
     meta: { bare: true },
     children: [
@@ -142,6 +146,12 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
     ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: PynPageNotFound,
+    meta: { public: true },
   },
 ]
 
