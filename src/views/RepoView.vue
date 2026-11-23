@@ -27,7 +27,7 @@ import { refusedSignedOut } from '../state/public.state'
 import { withPolicyTabs } from '../state/repo-tabs.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
-import type { LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
+import type { LockInfo, OrgInfo, RepoFact } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
@@ -153,6 +153,15 @@ const tabs = computed(() =>
     }),
   ),
 )
+const facts = computed<RepoFact[]>(() => {
+  const r = repo.value
+  if (!r) return []
+  return [
+    { value: `${r.lease_hours}h leases`, title: 'How long a lock lasts before it expires' },
+    ...(r.role ? [{ label: 'your role', value: r.role }] : []),
+    ...(org.value ? [{ value: 'organization' }] : []),
+  ]
+})
 const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.value}`))
 </script>
 
@@ -177,12 +186,10 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :locked-count="locks?.length ?? 0"
       :lock-holders="lockHolders(locks ?? [])"
       :max-tabs="5"
-      hide-path
+      :facts="facts"
+      :hide-lock-strip="section === 'locks'"
     >
       <template #actions>
-        <span data-lease>{{ repo.lease_hours }}h leases</span>
-        <span v-if="repo.role" data-role>your role: {{ repo.role }}</span>
-        <span v-if="org" data-org>organization</span>
         <PynBranchPicker
           v-if="permissions.includes('read') && !onLanding"
           :branches="picker.options.value"

@@ -1,7 +1,6 @@
-import { orgPath, repoPath, repoSettingsPath, treePath } from '@avalon-initiative/pyn-common-ui'
+import { orgPath } from '@avalon-initiative/pyn-common-ui'
 import type { Crumb } from '@avalon-initiative/pyn-common-ui'
 import type { LocationQuery, RouteMeta, RouteParams } from 'vue-router'
-import { branchParam } from './branch.state'
 
 interface Where {
   name?: string | symbol | null
@@ -52,25 +51,27 @@ const PERSONAL: Record<string, string> = {
   'new-org': 'New organization',
 }
 
-const REPO: Record<string, string> = {
-  locks: 'Locks',
-  branches: 'Branches',
-  history: 'History',
-  policy: 'Policy',
-}
-
-const REPO_SETTINGS: Record<string, string> = {
-  'settings-members': 'Members',
-  'settings-roles': 'Roles',
-  'settings-invites': 'Invitations',
-  'settings-policy': 'Policy',
-  'settings-storage': 'Storage',
-  'settings-audit': 'Audit log',
-}
+// Repository pages show the shell's owner / repo title instead of a trail.
+const REPO_PAGES = new Set([
+  'files',
+  'tree',
+  'blob',
+  'locks',
+  'branches',
+  'history',
+  'policy',
+  'settings',
+  'settings-members',
+  'settings-roles',
+  'settings-invites',
+  'settings-policy',
+  'settings-storage',
+  'settings-audit',
+])
 
 const text = (v: string | string[] | undefined) => (Array.isArray(v) ? v.join('/') : (v ?? ''))
 
-/** The trail above a page, built from the route name and params; labels are plain text. */
+/** The trail above a page, from the route name and params; empty on repository pages. */
 export function breadcrumbs(to: Where): Crumb[] {
   const name = String(to.name ?? '')
   const owner = text(to.params.owner)
@@ -88,28 +89,7 @@ export function breadcrumbs(to: Where): Crumb[] {
     return [...trail, { label: 'Teams', href: orgPath(owner, 'teams') }, last(text(to.params.team))]
   }
 
-  const repo = { owner, name: text(to.params.name) }
-  const branch = branchParam(to.query)
-  const base: Crumb[] = [
-    HOME,
-    { label: owner, href: `/${encodeURIComponent(owner)}` },
-    { label: repo.name, href: repoPath(repo, '', branch) },
-  ]
-  if (name === 'files') return [...base, last('Code')]
-  if (name === 'tree' || name === 'blob') {
-    const parts = text(to.params.path).split('/').filter(Boolean)
-    const trail = parts.map((label, i) => {
-      if (i === parts.length - 1) return last(label)
-      return { label, href: treePath(repo, parts.slice(0, i + 1).join('/'), branch) }
-    })
-    return [...base, { label: 'Code', href: treePath(repo, '', branch) }, ...trail]
-  }
-  if (name in REPO) return [...base, last(REPO[name])]
-  if (name === 'settings') return [...base, last('Settings')]
-  if (name in REPO_SETTINGS) {
-    const settings = { label: 'Settings', href: repoSettingsPath(repo, 'settings') }
-    return [...base, settings, last(REPO_SETTINGS[name])]
-  }
+  if (REPO_PAGES.has(name)) return []
 
   const crumb = to.meta.crumb
   return typeof crumb === 'string' ? [HOME, last(crumb)] : []

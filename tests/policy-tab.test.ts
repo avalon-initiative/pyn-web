@@ -2,7 +2,7 @@ import {
   PynBranchList,
   PynPolicyView,
   PynRepoShell,
-  PynViewSummary,
+  PynFileView,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -198,7 +198,8 @@ describe('branches page', () => {
 describe('file page', () => {
   it('names the rule that matches the path', async () => {
     const { w, calls } = await open('/acme/game/blob/pic.png')
-    expect(w.find('[data-policy-rule]').text()).toBe('Exclusive: matches rule "*.png"')
+    expect(w.findComponent(PynFileView).props('note')).toBe('Exclusive: matches rule "*.png"')
+    expect(w.text()).toContain('Exclusive: matches rule "*.png"')
     expect(calls.some((c) => c.includes('/policy?path=pic.png'))).toBe(true)
   })
 
@@ -211,8 +212,7 @@ describe('file page', () => {
     const { w } = await open('/acme/game/blob/pic.png', ['read'], {
       '/v1/repos/acme/game/policy': { default_mode: 'shared', source: 'file', rules: [] },
     })
-    expect(w.find('[data-policy-rule]').exists()).toBe(false)
-    expect(w.findComponent(PynViewSummary).exists()).toBe(false)
+    expect(w.findComponent(PynFileView).props('note')).toBeUndefined()
   })
 })
 
