@@ -53,12 +53,12 @@ import {
 import {
   loadTopBar,
   resetTopBar,
-  searchTarget,
   topBarExtras,
   topBarOwners,
   useTopBar,
 } from './state/top-bar.state'
-import { setRecentUser } from './state/recent.state'
+import { recentItems, setRecentUser } from './state/recent.state'
+import { usePalette } from './state/palette.state'
 import { breadcrumbs } from './state/breadcrumbs.state'
 import {
   dismissSecurityNotice,
@@ -71,7 +71,9 @@ import type { AccountMenuItem } from './types/extension.types'
 import {
   PynAccessSessionBanner,
   PynAccountPendingDeletion,
+  PynCommandPalette,
   PynShell,
+  PynShortcutsHelp,
   PynSecondFactor,
   PynSignIn,
   PynTopBar,
@@ -143,7 +145,20 @@ const currentOwner = computed(() => {
   return owners.value.some((o) => o.name === owner) ? owner : undefined
 })
 
-const search = (text: string) => router.push(searchTarget(text))
+const currentRepo = computed(() => {
+  const owner = String(route.params.owner ?? '')
+  const name = String(route.params.name ?? '')
+  return owner && name && route.name !== 'not-found' ? { owner, name } : null
+})
+const palette = usePalette({
+  user,
+  admin,
+  repos: sessionRepos,
+  orgs: sessionOrgs,
+  recent: recentItems,
+  repo: currentRepo,
+  go: (path) => router.push(path),
+})
 
 function setTheme(choice: ThemeChoice) {
   theme.value = choice
@@ -429,7 +444,6 @@ onMounted(async () => {
           sign-in-href="/"
           :theme="theme"
           @theme="setTheme"
-          @search="search"
           @open="(slug) => router.push(`/${slug}`)"
         />
       </template>
@@ -498,7 +512,7 @@ onMounted(async () => {
             :notifications="notifications"
             @account="(id) => selectAccountItem(extras, id)"
             @open="(slug) => router.push(`/${slug}`)"
-            @search="search"
+            @search="palette.show"
             @theme="setTheme"
             @sign-out="leave"
           />
@@ -527,6 +541,23 @@ onMounted(async () => {
           <PynAccessSessionBanner :sessions="ownAccessSessions" />
           <RouterView />
         </template>
+        <PynCommandPalette
+          :open="palette.open.value"
+          :items="palette.items.value"
+          :loading="palette.loading.value"
+          label="Command palette"
+          placeholder="Search repositories, people and pages"
+          unfiltered
+          @input="palette.input"
+          @select="palette.select"
+          @close="palette.close"
+        />
+        <PynShortcutsHelp
+          :open="palette.helpOpen.value"
+          :groups="palette.help.value"
+          label="Keyboard shortcuts"
+          @close="palette.helpOpen.value = false"
+        />
         <template #footer>
           <PynVersionFooter
             :web-version="webVersion"

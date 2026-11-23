@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
 import { clearSessionData } from '../src/state/session-data.state'
-import { refreshTopBar, resetTopBar, searchTarget, topBarOwners } from '../src/state/top-bar.state'
+import { refreshTopBar, resetTopBar, topBarOwners } from '../src/state/top-bar.state'
 import { invitations, orgs } from './fixtures/org-data'
 import { sampleRepos } from './fixtures/shell-data'
 
@@ -200,14 +200,11 @@ describe('search routing', () => {
     expect(router.currentRoute.value.path).toBe('/alice/core-engine')
   })
 
-  it('sends other text to the home page as a query', async () => {
+  it('opens the command palette for other text, leaving the route alone', async () => {
     const router = await searchFor('zzz')
-    expect(router.currentRoute.value.path).toBe('/')
-    expect(router.currentRoute.value.query.q).toBe('zzz')
-  })
-
-  it('trims the text', () => {
-    expect(searchTarget('  zzz ')).toEqual({ path: '/', query: { q: 'zzz' } })
+    expect(router.currentRoute.value.path).toBe('/_/people')
+    expect(router.currentRoute.value.query.q).toBeUndefined()
+    expect(document.querySelector('[role=dialog][aria-label="Command palette"]')).not.toBeNull()
   })
 })
 
