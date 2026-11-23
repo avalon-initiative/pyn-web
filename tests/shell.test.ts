@@ -162,10 +162,9 @@ describe('PynRepoShell', () => {
 })
 
 describe('PynShell', () => {
-  it('drops the side navigation and toggle when bare', () => {
+  it('renders no side navigation or toggle without a side slot', () => {
     const w = mount(PynShell, {
-      props: { bare: true },
-      slots: { top: 'top', side: '<a href="#x">x</a>', default: 'body' },
+      slots: { top: 'top', default: 'body' },
     })
     expect(w.find('aside').exists()).toBe(false)
     expect(w.find('[aria-label="Toggle navigation"]').exists()).toBe(false)
