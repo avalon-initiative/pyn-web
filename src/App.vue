@@ -513,6 +513,7 @@ onMounted(async () => {
             @account="(id) => selectAccountItem(extras, id)"
             @open="(slug) => router.push(`/${slug}`)"
             @search="palette.show"
+            @shortcuts="palette.showHelp"
             @theme="setTheme"
             @sign-out="leave"
           />
@@ -545,6 +546,7 @@ onMounted(async () => {
           :open="palette.open.value"
           :items="palette.items.value"
           :loading="palette.loading.value"
+          :initial-text="palette.text.value"
           label="Command palette"
           placeholder="Search repositories, people and pages"
           unfiltered
