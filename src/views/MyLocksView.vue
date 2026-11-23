@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { PynEmptyState, PynMyLocks, PynViewHeader } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynEmptyState,
+  PynMyLocks,
+  PynViewHeader,
+  PynLoading,
+} from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listMyLocks, releaseLock } from '../api/repos'
 import { useAction } from '../state/action.state'
@@ -39,7 +44,8 @@ onMounted(async () => {
 
 <template>
   <PynViewHeader title="Your active locks" />
-  <template v-if="loaded && !locks.length && !error">
+  <PynLoading v-if="!loaded" />
+  <template v-else-if="!locks.length && !error">
     <PynEmptyState
       title="You hold no locks"
       :description="LOCKS_HINT"

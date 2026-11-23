@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { PynOwnerUsage, PynViewError, repoPath, splitRepo } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynOwnerUsage,
+  PynViewError,
+  repoPath,
+  splitRepo,
+  PynLoading,
+} from '@avalon-initiative/pyn-common-ui'
 import type { RepoUsage } from '@avalon-initiative/pyn-common-ui'
 import { inject } from 'vue'
 import { useRouter } from 'vue-router'
@@ -16,5 +22,6 @@ const open = (row: RepoUsage) => router.push(repoPath(splitRepo(row.repository))
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <PynOwnerUsage v-else-if="loaded && usage" :usage="usage" @open="open" />
+  <PynLoading v-else-if="!loaded" />
+  <PynOwnerUsage v-else-if="usage" :usage="usage" @open="open" />
 </template>
