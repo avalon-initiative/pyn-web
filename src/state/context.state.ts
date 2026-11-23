@@ -25,8 +25,12 @@ export interface RepoContext {
   frozen: Ref<boolean>
   /** Live locks, null until first read; the pages that read them keep it current. */
   locks: Ref<LockInfo[] | null>
-  /** Branches for the overview rail; ahead and behind only for the branch being compared. */
+  /** Every branch, newest first; ahead and behind only for the branch being compared. */
   branches: ComputedRef<BranchSummary[]>
+  branchesLoading?: Ref<boolean>
+  branchesError?: Ref<string>
+  /** Switches the page to a branch through the address. */
+  selectBranch?: (name: string) => unknown
   reload: () => Promise<void>
 }
 

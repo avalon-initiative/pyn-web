@@ -11,7 +11,6 @@ import {
   PynViewAction,
   PynBranchPicker,
   PynBranchCompare,
-  PynCloneMenu,
   blobPath,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, provide, ref, watch } from 'vue'
@@ -41,6 +40,8 @@ const section = computed(() => {
   return first === 'tree' || first === 'blob' ? '' : [first, ...rest].filter(Boolean).join('/')
 })
 
+// The landing page carries its own branch picker in the toolbar.
+const onLanding = computed(() => route.name === 'files' || route.name === 'tree')
 const signedOut = computed(() => !user.value)
 const { freeze, frozen } = useOwnerFreeze(owner, (o) =>
   signedOut.value ? Promise.reject(new Error('signed out')) : getOwnerFreeze(o),
@@ -126,6 +127,7 @@ const branches = computed(() =>
           behind: compare.result.value.behind,
         }
       : null,
+    Infinity,
   ),
 )
 
@@ -137,6 +139,9 @@ provide(repoKey, {
   frozen,
   locks,
   branches,
+  branchesLoading: picker.loading,
+  branchesError: picker.error,
+  selectBranch: picker.select,
   reload: async () => void (await load()),
 })
 
@@ -148,8 +153,6 @@ const tabs = computed(() =>
     }),
   ),
 )
-const origin = window.location.origin
-const slug = computed(() => `${owner.value}/${name.value}`)
 const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.value}`))
 </script>
 
@@ -181,17 +184,12 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
         <span v-if="repo.role" data-role>your role: {{ repo.role }}</span>
         <span v-if="org" data-org>organization</span>
         <PynBranchPicker
-          v-if="permissions.includes('read')"
+          v-if="permissions.includes('read') && !onLanding"
           :branches="picker.options.value"
           :current="picker.current.value"
           :loading="picker.loading.value"
           :error="picker.error.value || undefined"
           @select="picker.select"
-        />
-        <PynCloneMenu
-          v-if="permissions.includes('read')"
-          :https-url="`${origin}/${slug}`"
-          :command="`pyn clone ${slug}`"
         />
       </template>
       <PynSignInPrompt

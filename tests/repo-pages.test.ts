@@ -595,7 +595,11 @@ describe('blob view', () => {
       global: {
         plugins: [router],
         provide: {
-          [repoKey as symbol]: { target: ref({ owner: 'alice', name: 'game' }) },
+          [repoKey as symbol]: {
+            target: ref({ owner: 'alice', name: 'game' }),
+            permissions: ref(['read', 'lock']),
+            frozen: ref(false),
+          },
           [sessionKey as symbol]: { user: ref('alice'), admin: ref(false) },
         },
       },
