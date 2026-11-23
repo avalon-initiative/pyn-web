@@ -5,6 +5,7 @@ import {
   PynProfileHeader,
   PynProfileLayout,
   PynRepoList,
+  PynSignInPrompt,
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
@@ -14,6 +15,7 @@ import type { PublicProfile } from '../api/profile'
 import { listRepos } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { orgKey, sessionKey } from '../state/context.state'
+import { refusedSignedOut } from '../state/public.state'
 import { sortRepos } from '../state/repo.state'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
@@ -23,6 +25,8 @@ const router = useRouter()
 const repos = ref<RepoInfo[]>([])
 const profile = ref<PublicProfile | null>(null)
 const loaded = ref(false)
+// A signed-out miss reads the same for a private, an organization and a missing name.
+const gated = ref(false)
 const { error, attempt } = useAction()
 const mine = computed(() => (org.value ? org.value.role === 'owner' : name.value === self.value))
 
@@ -31,13 +35,19 @@ watch(
   name,
   async () => {
     loaded.value = false
+    gated.value = false
     profile.value = null
     await attempt(async () => {
-      if (org.value) {
-        repos.value = sortRepos(await listRepos(name.value))
-      } else {
-        profile.value = await getProfile(name.value)
-        repos.value = sortRepos(profile.value.repositories)
+      try {
+        if (org.value) {
+          repos.value = sortRepos(await listRepos(name.value))
+        } else {
+          profile.value = await getProfile(name.value)
+          repos.value = sortRepos(profile.value.repositories)
+        }
+      } catch (e) {
+        if (!self.value && refusedSignedOut(e)) gated.value = true
+        else throw e
       }
     })
     loaded.value = true
@@ -48,6 +58,11 @@ watch(
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
+  <PynSignInPrompt
+    v-else-if="gated"
+    message="Sign in to see this page, or check the address."
+    sign-in-href="/"
+  />
   <template v-else-if="loaded">
     <PynProfileLayout v-if="profile" :repos="repos" :orgs="profile.organizations">
       <template #header>

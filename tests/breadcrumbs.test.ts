@@ -14,6 +14,7 @@ const labels = (path: string) => trail(path).map((c) => c.label)
 const table: [string, string, ...(string | undefined)[]][] = [
   ['/', 'dashboard'],
   ['/_/repos', 'repos', 'Home', 'Repositories'],
+  ['/_/explore', 'explore', 'Home', 'Explore'],
   ['/_/people', 'people', 'Home', 'People'],
   ['/_/locks', 'my-locks', 'Home', 'Your locks'],
   ['/_/new', 'new-repo', 'Home', 'New repository'],

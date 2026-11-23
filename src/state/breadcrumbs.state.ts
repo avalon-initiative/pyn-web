@@ -44,6 +44,7 @@ const ORG: Record<string, string> = {
 
 const PERSONAL: Record<string, string> = {
   'my-locks': 'Your locks',
+  explore: 'Explore',
   people: 'People',
   orgs: 'Organizations',
   invitations: 'Invitations',

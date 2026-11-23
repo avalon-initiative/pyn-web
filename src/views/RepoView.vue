@@ -3,6 +3,7 @@ import {
   PynRepoShell,
   PynOwnerFrozenNotice,
   PynRepoNotFound,
+  PynSignInPrompt,
   orgPath,
   repoShellTabs,
   PynViewError,
@@ -22,6 +23,7 @@ import { useBranch, useBranches } from '../state/branch.state'
 import { compareChanges, useBranchCompare } from '../state/compare.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
+import { refusedSignedOut } from '../state/public.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
 import type { LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
@@ -37,13 +39,18 @@ const section = computed(() => {
   return first === 'tree' || first === 'blob' ? '' : [first, ...rest].filter(Boolean).join('/')
 })
 
-const { freeze, frozen } = useOwnerFreeze(owner, getOwnerFreeze)
+const signedOut = computed(() => !user.value)
+const { freeze, frozen } = useOwnerFreeze(owner, (o) =>
+  signedOut.value ? Promise.reject(new Error('signed out')) : getOwnerFreeze(o),
+)
 const target = computed(() => ({ owner: owner.value, name: name.value }))
 const repo = ref<RepoInfo | null>(null)
 const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
 const locks = ref<LockInfo[] | null>(null)
 const notFound = ref(false)
+// A signed-out miss reads the same for a private and a missing repository.
+const gated = ref(false)
 const { error, attempt } = useAction()
 const branch = useBranch()
 const picker = useBranches(target, listBranches)
@@ -67,18 +74,18 @@ function openChange(path: string) {
 async function load() {
   const t = target.value
   notFound.value = false
+  gated.value = false
   return attempt(async () => {
     try {
-      const [info, me, owningOrg] = await Promise.all([
-        getRepo(t),
-        repoMe(t),
-        getOrg(t.owner).catch(() => null),
-      ])
+      const [info, me, owningOrg] = signedOut.value
+        ? [await getRepo(t), { permissions: ['read'] }, null]
+        : await Promise.all([getRepo(t), repoMe(t), getOrg(t.owner).catch(() => null)])
       repo.value = info
       permissions.value = me.permissions
       org.value = owningOrg
     } catch (e) {
-      if (e instanceof ApiError && e.code === 'repo_not_found') notFound.value = true
+      if (signedOut.value && refusedSignedOut(e)) gated.value = true
+      else if (e instanceof ApiError && e.code === 'repo_not_found') notFound.value = true
       else throw e
     }
   })
@@ -141,7 +148,12 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
 </script>
 
 <template>
-  <PynRepoNotFound v-if="notFound" :slug="`${owner}/${name}`" />
+  <PynSignInPrompt
+    v-if="gated"
+    message="Sign in to see this repository, or check the address."
+    sign-in-href="/"
+  />
+  <PynRepoNotFound v-else-if="notFound" :slug="`${owner}/${name}`" />
   <PynViewError v-else-if="error">{{ error }}</PynViewError>
   <template v-else-if="repo">
     <PynOwnerFrozenNotice v-if="freeze" :freeze="freeze" />
@@ -171,6 +183,12 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
           @select="picker.select"
         />
       </template>
+      <PynSignInPrompt
+        v-if="signedOut"
+        message="Sign in to lock files, contribute or manage this repository."
+        :heading-level="3"
+        sign-in-href="/"
+      />
       <PynViewSummary v-if="!permissions.includes('read')">
         You have no role in this repository. Ask an admin to add you or send an invitation.
       </PynViewSummary>
