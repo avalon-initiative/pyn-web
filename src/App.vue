@@ -112,7 +112,10 @@ const admin = ref(false)
 const error = ref('')
 const serverBuild = ref<ServerBuild | null>(null)
 const serverOutdated = computed(() => serverTooOld(serverBuild.value?.version))
-const { nameMessage, checkName } = useNameCheck()
+const { nameMessage, nameCanonical, checkName } = useNameCheck()
+const remember = ref(!!rememberedUser())
+// Turn on once the server accepts a long-lived session (pyn#1400).
+const STAY_SIGNED_IN = false
 const busy = ref(false)
 const registration = ref<RegistrationInfo | null>(null)
 const signInOptions = ref<SignInOptions | null>(null)
@@ -272,14 +275,12 @@ const leaveSetup = async (to?: string) => {
   if (to) await router.push(to)
 }
 
-type SignInSubmit = SignInForm & { remember?: boolean }
-
-const submitSignIn = (form: SignInSubmit) =>
+const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
     pendingUser.value = form.username
     try {
       await beginSession(await signIn(form))
-      rememberUser(form.username, !!form.remember)
+      rememberUser(form.username, remember.value)
     } catch (e) {
       if (!needsSecondFactor(e)) throw e
       challenge.value = form
@@ -290,6 +291,7 @@ const submitChallenge = (second: SecondFactorForm) =>
   attempt(async () => {
     if (!challenge.value) return
     await beginSession(await signIn(challenge.value, second.code.trim()))
+    rememberUser(challenge.value.username, remember.value)
     challenge.value = null
   })
 
@@ -490,7 +492,12 @@ onMounted(async () => {
         :resent="resent"
         :busy="busy"
         :error="error"
+        v-model:remember="remember"
+        remember-option
+        :stay-signed-in-option="STAY_SIGNED_IN"
         :name-message="nameMessage"
+        :name-canonical="nameCanonical"
+        @dismiss-error="error = ''"
         @name-input="checkName"
         @sign-in="submitSignIn"
         @register="join"

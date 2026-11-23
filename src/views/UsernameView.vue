@@ -7,13 +7,14 @@ import { listRepos } from '../api/repos'
 import { restoreSession } from '../api/auth'
 import { renameAccount } from '../api/username'
 import { useAction } from '../state/action.state'
-import { canonicalName, describeNameError, nameProblem } from '../state/name.state'
+import { canonicalName, describeNameError, nameProblem, useNameCheck } from '../state/name.state'
 import { sessionKey } from '../state/context.state'
 
 const session = inject(sessionKey)!
 const hasPassword = ref(true)
 const repositories = ref<string[]>([])
 const typed = ref('')
+const { nameCanonical, checkName } = useNameCheck()
 const { busy, error, attempt } = useAction(true, (e) => describeNameError(e, typed.value))
 
 async function load() {
@@ -46,6 +47,8 @@ onMounted(load)
     :repositories="repositories"
     :busy="busy"
     :error="error"
+    :name-canonical="nameCanonical"
+    @name-input="checkName"
     @rename="rename"
   />
 </template>

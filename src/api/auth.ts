@@ -16,7 +16,9 @@ export const fetchRegistration = () => call<RegistrationInfo>(api.GET('/v1/regis
 /** The server sets the HttpOnly session cookie; the page only keeps the CSRF token. */
 export async function signIn(form: SignInForm, code?: string): Promise<Session> {
   const session = await call<Session>(
-    api.POST('/v1/session', { body: { ...form, code: code ?? null } }),
+    api.POST('/v1/session', {
+      body: { username: form.username, password: form.password, code: code ?? null },
+    }),
   )
   setCsrfToken(session.csrf_token)
   return session
