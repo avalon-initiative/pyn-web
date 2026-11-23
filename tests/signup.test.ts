@@ -246,6 +246,27 @@ describe('verification email guidance', () => {
     return w
   }
 
+  const registerForm = async (emailVerification: boolean) => {
+    vi.stubGlobal('fetch', server(emailVerification))
+    const w = await open('/')
+    await w
+      .findAll('button')
+      .find((b) => /create|register|sign up/i.test(b.text()))
+      ?.trigger('click')
+    await flushPromises()
+    return w
+  }
+
+  it('says on the sign-up form that no confirmation email is sent when verification is off', async () => {
+    const w = await registerForm(false)
+    expect(w.text()).toContain('does not send a confirmation email')
+  })
+
+  it('does not say it when verification is required', async () => {
+    const w = await registerForm(true)
+    expect(w.text()).not.toContain('does not send a confirmation email')
+  })
+
   it('says what to do after sign-up when verification is required', async () => {
     const w = await signUp(true)
     expect(w.text()).toContain('Check your email')
