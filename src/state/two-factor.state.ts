@@ -22,3 +22,8 @@ export function reportEnrolmentRequired(code: string) {
 
 export const needsSecondFactor = (e: unknown) =>
   e instanceof ApiError && e.status === 401 && e.code === SECOND_FACTOR_REQUIRED
+
+export const recoveryHint =
+  'Recovery codes were shown once when two-factor authentication was turned on; enter one of them instead of a code.'
+export const helpHint =
+  'Without an authenticator, passkey or recovery code, a server administrator with access to the server host can help.'

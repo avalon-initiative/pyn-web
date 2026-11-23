@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  PynPageNotFound,
   PynTeamDelete,
   PynTeamDetail,
   PynTeamForm,
@@ -11,6 +10,7 @@ import {
   type TeamInfo,
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
+import NotFoundView from './NotFoundView.vue'
 import { computed, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
@@ -88,7 +88,7 @@ watch(
 
 <template>
   <PynViewError v-if="page.error.value">{{ page.error.value }}</PynViewError>
-  <PynPageNotFound v-else-if="loaded && notFound" />
+  <NotFoundView v-else-if="loaded && notFound" />
   <template v-else-if="loaded && team">
     <PynTeamDetail
       :key="team.id"

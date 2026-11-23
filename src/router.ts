@@ -1,6 +1,6 @@
-import { PynPageNotFound } from '@avalon-initiative/pyn-common-ui'
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized, RouteRecordRaw, RouterHistory } from 'vue-router'
+import { trackPrevious } from './state/navigation.state'
 import { scrollToHash } from './state/hash.state'
 import AdminAccessView from './views/AdminAccessView.vue'
 import AdminAccessSessionsView from './views/AdminAccessSessionsView.vue'
@@ -21,6 +21,7 @@ import UsernameView from './views/UsernameView.vue'
 import DeleteAccountView from './views/DeleteAccountView.vue'
 import PasswordView from './views/PasswordView.vue'
 import SecurityView from './views/SecurityView.vue'
+import NotFoundView from './views/NotFoundView.vue'
 import NewRepoView from './views/NewRepoView.vue'
 import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
@@ -150,7 +151,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: PynPageNotFound,
+    component: NotFoundView,
     meta: { public: true },
   },
 ]
@@ -166,5 +167,6 @@ export const makeRouter = (
       if (to.hash) scrollToHash(to.hash)
     },
   })
+  trackPrevious(router)
   return router
 }

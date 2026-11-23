@@ -185,7 +185,8 @@ describe('what the client can change', () => {
     .map((p) => [p, readFileSync(p, 'utf8')] as const)
 
   it('keeps nothing the server trusts in browser storage or script-readable cookies', () => {
-    for (const [p, text] of sources)
+    // The notice's dismissal is a per-tab display preference, not something the server trusts.
+    for (const [p, text] of sources.filter(([p]) => !p.endsWith('security-notice.state.ts')))
       expect(text, p).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/)
   })
 

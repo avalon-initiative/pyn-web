@@ -16,6 +16,7 @@ import {
 import type { Notice, TwoFactorStatus } from '../types/two-factor.types'
 import { fetchMe } from '../api/admin'
 import { useAction } from './action.state'
+import { applySecurityStatus } from './security-notice.state'
 import { twoFactorDue } from './two-factor.state'
 import { createPasskey, passkeyBrowserError, passkeysSupported } from './webauthn.state'
 
@@ -32,6 +33,7 @@ export function useSecurity() {
   async function refresh() {
     status.value = await fetchTwoFactor()
     twoFactorDue.value = status.value.required ?? null
+    applySecurityStatus(status.value)
   }
 
   const load = () =>

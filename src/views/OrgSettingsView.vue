@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  PynPageNotFound,
   PynOrgDelete,
   PynOrgRepoPolicy,
   PynOrgSettings,
@@ -10,6 +9,7 @@ import {
   PynViewError,
   PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
+import NotFoundView from './NotFoundView.vue'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -151,5 +151,5 @@ onMounted(() => {
       @remove="remove"
     />
   </PynViewStack>
-  <PynPageNotFound v-else />
+  <NotFoundView v-else />
 </template>
