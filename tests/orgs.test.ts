@@ -106,6 +106,13 @@ describe('NewOrgView', () => {
     expect(w.text()).not.toContain('is not a valid name.')
   })
 
+  it('previews the stored form of a valid name', async () => {
+    const router = makeRouter(createMemoryHistory())
+    const w = mount(NewOrgView, { global: { plugins: [router] } })
+    await w.find('input').setValue('Art Studio')
+    expect(w.text()).toContain('art-studio')
+  })
+
   it('sends the canonical name and navigates to the name the server returns', async () => {
     const fn = vi.fn(
       async () => new Response(JSON.stringify({ name: 'art-studio' }), { status: 201 }),

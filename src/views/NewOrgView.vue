@@ -10,7 +10,7 @@ import { ref } from 'vue'
 const router = useRouter()
 const typed = ref('')
 const { busy, error, attempt } = useAction(true, (e) => describeNameError(e, typed.value))
-const { nameMessage, checkName } = useNameCheck()
+const { nameMessage, nameCanonical, checkName } = useNameCheck()
 
 const create = (name: string) =>
   attempt(async () => {
@@ -34,6 +34,7 @@ const create = (name: string) =>
     :busy="busy"
     :error="error"
     :name-message="nameMessage"
+    :name-canonical="nameCanonical"
     @name-input="checkName"
     @submit="create"
   />

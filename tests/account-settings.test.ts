@@ -141,6 +141,16 @@ describe('UsernameView', () => {
     expect(c.props('repositories')).toEqual(['boss/game'])
   })
 
+  it('previews the stored form of the typed name', async () => {
+    vi.mocked(repos.listRepos).mockResolvedValue([])
+    const w = mountView(UsernameView)
+    await flushPromises()
+    const c = w.findComponent(PynUsernameChange)
+    c.vm.$emit('nameInput', 'Big Boss')
+    await flushPromises()
+    expect(c.props('nameCanonical')).toBe('big-boss')
+  })
+
   it('shows a refusal', async () => {
     vi.mocked(repos.listRepos).mockResolvedValue([])
     vi.mocked(username.renameAccount).mockRejectedValue(new ApiError(409, 'user_exists', 'taken'))

@@ -11,6 +11,7 @@ import {
   PynViewAction,
   PynBranchPicker,
   PynBranchCompare,
+  PynCloneMenu,
   blobPath,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, provide, ref, watch } from 'vue'
@@ -147,6 +148,8 @@ const tabs = computed(() =>
     }),
   ),
 )
+const origin = window.location.origin
+const slug = computed(() => `${owner.value}/${name.value}`)
 const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.value}`))
 </script>
 
@@ -184,6 +187,11 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
           :loading="picker.loading.value"
           :error="picker.error.value || undefined"
           @select="picker.select"
+        />
+        <PynCloneMenu
+          v-if="permissions.includes('read')"
+          :https-url="`${origin}/${slug}`"
+          :command="`pyn clone ${slug}`"
         />
       </template>
       <PynSignInPrompt

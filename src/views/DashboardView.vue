@@ -99,7 +99,9 @@ onMounted(() => void Promise.all([repos.load(), orgs.load(), loadAttention()]))
       </PynDashboardCard>
     </template>
     <template #side>
-      <PynViewError v-if="acceptError">{{ acceptError }}</PynViewError>
+      <PynViewError v-if="acceptError" dismissible @dismiss="acceptError = ''">{{
+        acceptError
+      }}</PynViewError>
       <PynDashboardCard
         heading="Needs your attention"
         :loading="attentionLoading"

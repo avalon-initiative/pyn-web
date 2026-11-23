@@ -3327,8 +3327,20 @@ export interface components {
       /** @description Shown to administrators; not to the account holder. */
       reason?: string | null
     }
+    /** @description A refused send. The error never carries a recipient address or a credential. */
+    EmailFailure: {
+      /** Format: date-time */
+      at: string
+      error: string
+    }
     /** @description Whether the server sends email. */
     EmailSettings: {
+      last_failure?: components['schemas']['EmailFailure'] | null
+      /**
+       * Format: date-time
+       * @description When a message last went out since the server started; null when none has.
+       */
+      last_sent_at?: string | null
       mailer: components['schemas']['MailerKind']
       /** @description Whether sign-up must confirm the address (`PYN_EMAIL_VERIFICATION`, on by default when a mailer is set). */
       verification: boolean

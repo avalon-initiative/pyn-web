@@ -125,7 +125,9 @@ onMounted(() => {
       Grant the administrator role to a second account in the list below.
     </PynViewNotice>
     <p v-if="note">{{ note }}</p>
-    <PynViewNotice v-if="sent" tone="info" title="Done">{{ sent }}</PynViewNotice>
+    <PynViewNotice v-if="sent" tone="info" title="Done" dismissible @dismiss="sent = ''">{{
+      sent
+    }}</PynViewNotice>
     <PynAddAccount :busy="adding.busy.value" :error="adding.error.value" @add="add" />
     <PynAccounts
       :accounts="accounts"
