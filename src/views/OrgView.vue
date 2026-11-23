@@ -4,6 +4,7 @@ import {
   PynOwnerFrozenNotice,
   PynUserHeader,
   PynViewError,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import NotFoundView from './NotFoundView.vue'
 import { computed, inject, provide, ref, watch } from 'vue'
@@ -58,7 +59,8 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <template v-else-if="loaded">
+  <PynLoading v-else-if="!loaded" />
+  <template v-else>
     <PynOwnerFrozenNotice v-if="freeze && (org || userPage)" :freeze="freeze" />
     <template v-if="org">
       <PynOrgHeader

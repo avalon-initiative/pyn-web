@@ -4,6 +4,7 @@ import {
   PynUsageBreakdown,
   PynViewError,
   PynViewStack,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject } from 'vue'
 import { getRepoBreakdown, getRepoUsage, setRepoStorageCap } from '../api/usage'
@@ -38,4 +39,5 @@ const s = useRepoStorage(target, withBreakdown, {
       />
     </template>
   </PynViewStack>
+  <PynLoading v-else />
 </template>
