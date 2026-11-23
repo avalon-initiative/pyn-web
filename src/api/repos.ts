@@ -11,7 +11,7 @@ import {
   type RepoSummary,
   type TreeListing,
 } from '@avalon-initiative/pyn-common-ui'
-import type { Branch } from '../types/repo.types'
+import type { ActivePolicy, Branch } from '../types/repo.types'
 import type { Registered } from '../types/auth.types'
 import { api, binaryBody, call } from './http'
 import type { Schemas } from './schema'
@@ -44,6 +44,11 @@ export const repoMe = (r: Repo) => call<Me>(api.GET('/v1/repos/{owner}/{name}/me
 
 export const listBranches = (r: Repo) =>
   call<Branch[]>(api.GET('/v1/repos/{owner}/{name}/branches', at(r)))
+
+export const fetchPolicy = (r: Repo, paths: string[] = []) =>
+  call<ActivePolicy>(
+    api.GET('/v1/repos/{owner}/{name}/policy', { params: { path: r, query: { path: paths } } }),
+  )
 
 export async function fetchFiles(r: Repo): Promise<FileRow[]> {
   const rows: FileRow[] = []

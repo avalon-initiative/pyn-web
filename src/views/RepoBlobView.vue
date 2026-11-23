@@ -2,11 +2,12 @@
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
-import { fetchContent, fetchTree } from '../api/repos'
+import { fetchContent, fetchPolicy, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useBranch } from '../state/branch.state'
 import { useHashScroll } from '../state/hash.state'
+import { ruleLine } from '../state/policy.state'
 import {
   PynFileView,
   contentUrl,
@@ -23,6 +24,7 @@ import {
   type LineRange,
   type TreeEntry,
   PynViewError,
+  PynViewSummary,
 } from '@avalon-initiative/pyn-common-ui'
 
 const { target } = inject(repoKey)!
@@ -34,6 +36,7 @@ const branch = useBranch()
 const entry = ref<TreeEntry | null>(null)
 const body = ref<FileBody | null>(null)
 const missing = ref(false)
+const rule = ref('')
 const lines = computed(() => parseLineHash(route.hash))
 const now = ref(new Date())
 const { error, attempt } = useAction()
@@ -46,6 +49,16 @@ async function bodyFor(p: string, e: TreeEntry, b?: string): Promise<FileBody> {
     return { kind: 'image', src: contentUrl(target.value, p, undefined, b) }
   }
   return fileBody(p, await fetchContent(target.value, p, VIEW_LIMIT, undefined, b))
+}
+
+// The rule line is a convenience: a failed read shows none.
+async function loadRule(p: string) {
+  try {
+    const { paths } = await fetchPolicy(target.value, [p])
+    if (p === path.value) rule.value = ruleLine(paths?.[0])
+  } catch {
+    if (p === path.value) rule.value = ''
+  }
 }
 
 async function refresh() {
@@ -69,6 +82,7 @@ async function refresh() {
     missing.value = !found
     entry.value = found ?? null
     if (!found) return
+    void loadRule(p)
     const revision = found.last_change?.id ?? null
     if (body.value && revision === loadedRevision) return
     const next = await bodyFor(p, found, b)
@@ -82,6 +96,7 @@ watch([path, branch], () => {
   entry.value = null
   body.value = null
   missing.value = false
+  rule.value = ''
   loadedRevision = null
   refresh()
 })
@@ -98,6 +113,7 @@ onUnmounted(() => clearInterval(timer))
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
+  <PynViewSummary v-if="rule" data-policy-rule>{{ rule }}</PynViewSummary>
   <PynFileView
     :owner="target.owner"
     :name="target.name"

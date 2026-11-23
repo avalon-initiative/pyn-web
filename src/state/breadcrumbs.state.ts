@@ -53,7 +53,9 @@ const PERSONAL: Record<string, string> = {
 
 const REPO: Record<string, string> = {
   locks: 'Locks',
+  branches: 'Branches',
   history: 'History',
+  policy: 'Policy',
 }
 
 const REPO_SETTINGS: Record<string, string> = {

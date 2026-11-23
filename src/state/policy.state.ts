@@ -2,9 +2,19 @@ import { computed, ref } from 'vue'
 import { ApiError, describeError } from '../api/client'
 import type { FileEntry } from '../types/lock.types'
 import type { PolicyPreview } from '../types/policy.types'
+import type { ActivePolicy } from '../types/repo.types'
 
 export const POLICY_PATH = '.pyn/pyn.toml'
 export const EDIT_POLICY = 'edit_policy'
+
+/** The line naming a path's mode and the rule that decided it; empty without an answer. */
+export function ruleLine(p: NonNullable<ActivePolicy['paths']>[number] | undefined): string {
+  if (!p) return ''
+  const mode = p.mode === 'exclusive' ? 'Exclusive' : 'Shared'
+  return p.rule
+    ? `${mode}: matches rule "${p.rule.pattern}"`
+    : `${mode}: no rule matches, the default`
+}
 
 /** A failed save, by what the person can do about it. */
 export type PolicyConflict =
