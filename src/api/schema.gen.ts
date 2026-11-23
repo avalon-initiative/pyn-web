@@ -133,6 +133,38 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/invitations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_server_invitations']
+    put?: never
+    post: operations['create_server_invitation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/invitations/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['revoke_server_invitation']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/limits': {
     parameters: {
       query?: never
@@ -302,7 +334,7 @@ export interface paths {
     }
     get: operations['list_accounts']
     put?: never
-    post?: never
+    post: operations['add_account']
     delete?: never
     options?: never
     head?: never
@@ -405,6 +437,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/users/{user}/resend-confirmation': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['resend_confirmation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/users/{user}/two-factor/reset': {
     parameters: {
       query?: never
@@ -431,6 +479,22 @@ export interface paths {
     get: operations['list_webhooks']
     put?: never
     post: operations['create_webhook']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/admin/webhooks/event-types': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_webhook_event_types']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -2665,6 +2729,12 @@ export interface components {
       id: number
       path?: string | null
     }
+    /** @description An account an administrator creates with a one-time password. */
+    AddAccountRequest: {
+      /** @description The one-time password: the person must replace it at their first sign-in. */
+      password: string
+      username: string
+    }
     AddEmailRequest: {
       address: string
     }
@@ -2714,6 +2784,7 @@ export interface components {
       account_deletion: components['schemas']['AccountDeletionSettings']
       administrators: components['schemas']['AdministratorSummary']
       certificate: components['schemas']['CertificateSettings']
+      email: components['schemas']['EmailSettings']
       storage: components['schemas']['StorageSettings']
     }
     /** @description How many active server administrators exist. */
@@ -3025,6 +3096,16 @@ export interface components {
       owner?: string | null
       visibility?: components['schemas']['Visibility'] | null
     }
+    CreateServerInvitationRequest: {
+      /** @description Where to send the code; used only when a mailer is configured, and stored only to tell invitations apart. */
+      email?: string | null
+      /**
+       * Format: int32
+       * @description Days the code works, 1 to 90; 7 when left out.
+       */
+      expires_in_days?: number | null
+      grant?: components['schemas']['ServerInvitationGrant'] | null
+    }
     CreateServiceCredentialRequest: {
       /**
        * @description Addresses or CIDR blocks (`192.0.2.7`, `10.0.0.0/8`, `2001:db8::/32`) the credential may be used from, at most 64.
@@ -3076,8 +3157,11 @@ export interface components {
     CreateWebhookRequest: {
       /** @description Defaults to true. */
       enabled?: boolean
-      /** @description Event types to deliver, such as `repository.created`; empty or left out means every type. */
-      event_types?: string[]
+      /**
+       * @description Event types to deliver, such as `repository.created`; empty or left out means every type. An unknown type is
+       *     refused with `400 invalid_request`.
+       */
+      event_types?: components['schemas']['WebhookEventType'][]
       /** @description 1 to 256 bytes, no control characters. */
       name: string
       /** @description `https` only (`http` when the operator allows it), no user name or password, no fragment, at most 2048 bytes. */
@@ -3087,6 +3171,13 @@ export interface components {
       /** @description Give this to the person being invited. Shown once and never stored. */
       code: string
       info: components['schemas']['InviteInfo']
+    }
+    CreatedServerInvitation: {
+      /** @description Give this to the person being invited, as `pyn register <name> --invite <code>` or in the sign-up form. Shown once. */
+      code: string
+      /** @description The message was handed to a configured mailer; false when no address was given or no mailer is on. */
+      emailed: boolean
+      invitation: components['schemas']['ServerInvitationInfo']
     }
     CreatedServiceCredential: {
       info: components['schemas']['ServiceCredentialInfo']
@@ -3141,6 +3232,12 @@ export interface components {
     DisableAccountRequest: {
       /** @description Shown to administrators; not to the account holder. */
       reason?: string | null
+    }
+    /** @description Whether the server sends email. */
+    EmailSettings: {
+      mailer: components['schemas']['MailerKind']
+      /** @description Whether sign-up must confirm the address (`PYN_EMAIL_VERIFICATION`, on by default when a mailer is set). */
+      verification: boolean
     }
     /** @description Body of every non-2xx response; `code` is stable and machine-readable. */
     ErrorBody: {
@@ -3420,6 +3517,11 @@ export interface components {
       password: string
       username: string
     }
+    /**
+     * @description Which mailer the server sends with. Never carries a host or a credential.
+     * @enum {string}
+     */
+    MailerKind: 'none' | 'log' | 'smtp'
     /** @description The caller and what they may do in one repository. */
     Me: {
       permissions: string[]
@@ -4427,6 +4529,34 @@ export interface components {
       /** @description The server's release version; empty when an older server did not report one. */
       version: string
     }
+    /** @description The role a server invitation gives in one repository or one organization; exactly one of the two targets. */
+    ServerInvitationGrant: {
+      /** @description An organization's name. */
+      organization?: string | null
+      /** @description `owner/name` of a personal repository. */
+      repository?: string | null
+      /** @description A repository role (`reader`, `writer`, `maintainer`, `admin`) or an organization role (`member`, `owner`). */
+      role: string
+    }
+    /** @description A server invitation as an administrator sees it; the code is never part of it. */
+    ServerInvitationInfo: {
+      /** Format: date-time */
+      created_at: string
+      created_by: string
+      email?: string | null
+      /** Format: date-time */
+      expires_at: string
+      grant?: components['schemas']['ServerInvitationGrant'] | null
+      id: string
+      /** Format: date-time */
+      revoked_at?: string | null
+      status: components['schemas']['ServerInvitationStatus']
+      /** Format: date-time */
+      used_at?: string | null
+      used_by?: string | null
+    }
+    /** @enum {string} */
+    ServerInvitationStatus: 'pending' | 'used' | 'revoked' | 'expired'
     ServiceCredentialInfo: {
       /** @description Empty means any address. */
       allowed_sources?: string[]
@@ -4458,6 +4588,11 @@ export interface components {
       csrf_token: string
       /** Format: date-time */
       expires_at: string
+      /**
+       * @description True when an administrator set the password and the person must replace it (`PUT /v1/me/password`).
+       *     Advisory: the server does not refuse other requests until it is changed.
+       */
+      password_change_required?: boolean
       user: string
     }
     SetCreationRuleRequest: {
@@ -4829,8 +4964,8 @@ export interface components {
     /** @description Fields left out stay as they are. */
     UpdateWebhookRequest: {
       enabled?: boolean | null
-      /** @description Replaces the list; an empty list means every type. */
-      event_types?: string[] | null
+      /** @description Replaces the list; an empty list means every type. An unknown type is refused with `400 invalid_request`. */
+      event_types?: components['schemas']['WebhookEventType'][] | null
       name?: string | null
       url?: string | null
     }
@@ -4960,6 +5095,40 @@ export interface components {
     }
     /** @enum {string} */
     WebhookDeliveryStatus: 'pending' | 'delivered' | 'failed'
+    /**
+     * @description An event type; `GET /v1/admin/webhooks/event-types` describes each.
+     * @enum {string}
+     */
+    WebhookEventType:
+      | 'account.created'
+      | 'account.approved'
+      | 'account.disabled'
+      | 'account.enabled'
+      | 'account.deletion_scheduled'
+      | 'account.deletion_restored'
+      | 'account.deleted'
+      | 'account.renamed'
+      | 'organization.created'
+      | 'organization.deleted'
+      | 'repository.created'
+      | 'repository.renamed'
+      | 'repository.deleted'
+      | 'repository.storage_cap_changed'
+      | 'owner.limits_changed'
+      | 'owner.frozen'
+      | 'owner.unfrozen'
+      | 'owner.limit_reached'
+      | 'lock.acquired'
+      | 'lock.released'
+      | 'lock.expired'
+      | 'lock.forced'
+    /** @description One event type a webhook subscription may list. */
+    WebhookEventTypeInfo: {
+      /** @description One line saying when it is raised. */
+      description: string
+      /** @description The dotted name, such as `repository.created`. */
+      name: string
+    }
     /** @description An active signing secret. Its value is shown once, when it is created, and never again. */
     WebhookSecretInfo: {
       /** Format: date-time */
@@ -5322,6 +5491,143 @@ export interface operations {
       }
       /** @description server_admin_required: service credentials cannot read the log */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_server_invitations: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description newest first; never with a code */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ServerInvitationInfo'][]
+        }
+      }
+      /** @description server_admin_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  create_server_invitation: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateServerInvitationRequest']
+      }
+    }
+    responses: {
+      /** @description the code is shown once; `emailed` says whether a mailer took the message */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CreatedServerInvitation']
+        }
+      }
+      /** @description invalid_request: a bad address, an expiry outside 1 to 90 days, an unknown role, or a grant naming both or neither of repository and organization */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required: also for any service credential or narrower token */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_not_found or org_not_found for the grant's target */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many messages to that address this hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  revoke_server_invitation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the invitation's id */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the code stops working; revoking twice is harmless */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description invalid_request: the invitation was already used */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_invitation_not_found */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -5899,6 +6205,57 @@ export interface operations {
       }
     }
   }
+  add_account: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AddAccountRequest']
+      }
+    }
+    responses: {
+      /** @description an active account whose password is one-time: its first sign-in answers `password_change_required` */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AccountInfo']
+        }
+      }
+      /** @description invalid_request: a bad name or a password under 10 characters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_exists, or name_reserved */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   start_access_session: {
     parameters: {
       query?: never
@@ -6276,6 +6633,63 @@ export interface operations {
       }
     }
   }
+  resend_confirmation: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the account's user name */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description a fresh link was sent; a failed delivery is only logged */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description server_admin_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description email_already_confirmed, or email_verification_off when the server does not verify addresses */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: three messages to one address per hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   reset_two_factor: {
     parameters: {
       query?: never
@@ -6375,13 +6789,42 @@ export interface operations {
           'application/json': components['schemas']['CreatedWebhook']
         }
       }
-      /** @description invalid_request: bad name, url (https only, no user info or fragment) or event type */
+      /** @description invalid_request: bad name, url (https only, no user info or fragment) or an event type outside the known set */
       400: {
         headers: {
           [name: string]: unknown
         }
         content: {
           'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_webhook_event_types: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description every type a subscription may list, in the documented order, with a one-line description */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WebhookEventTypeInfo'][]
         }
       }
       /** @description server_admin_required, or service_scope_required for a service credential without manage_webhooks */
@@ -6498,7 +6941,7 @@ export interface operations {
           'application/json': components['schemas']['Webhook']
         }
       }
-      /** @description invalid_request: nothing to change, or a bad name, url or event type */
+      /** @description invalid_request: nothing to change, or a bad name, url or an event type outside the known set */
       400: {
         headers: {
           [name: string]: unknown

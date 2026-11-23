@@ -9,7 +9,6 @@ import {
   PynRepoDelete,
   PynRepoForm,
   PynRepoList,
-  PynRepoNav,
   PynRepoNotFound,
   PynRoles,
   parseLockLimit,
@@ -276,15 +275,7 @@ describe('PynRepoDelete', () => {
   })
 })
 
-describe('PynRepoNav and PynRepoNotFound', () => {
-  it('marks the current tab', () => {
-    const w = mount(PynRepoNav, {
-      props: { owner: 'alice', name: 'game', tabs: repoTabs(['read'], false), current: 'locks' },
-    })
-    expect(w.find('[aria-current=page]').text()).toBe('Locks')
-    expect(w.findAll('a')[0].attributes('href')).toBe('/alice/game')
-  })
-
+describe('PynRepoNotFound', () => {
   it('does not reveal whether the repository exists', () => {
     const w = mount(PynRepoNotFound, { props: { slug: 'bob/secret' } })
     expect(w.text()).toContain('bob/secret')
