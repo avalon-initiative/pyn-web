@@ -3168,7 +3168,7 @@ export interface components {
       role: components['schemas']['Role']
     }
     CreateOrgRequest: {
-      /** @description Shares the namespace with user names: 2 to 39 lowercase letters, digits, `-` or `_`, not reserved. */
+      /** @description Normalised to a canonical name (trimmed, spaces become `-`, lowercased); shares the namespace with user names: 2 to 39 letters, digits, `-` or `_`, not reserved. The typed form becomes the display name when it differs. */
       name: string
     }
     CreateRepoRequest: {
@@ -4352,7 +4352,7 @@ export interface components {
     RenameRequest: {
       /** @description The account's current password; omitted only by an account with none, from a web session. */
       password?: string | null
-      /** @description The new name: 2 to 39 lowercase letters, digits, `-` or `_`. */
+      /** @description The new name, normalised like a registered one: 2 to 39 letters, digits, `-` or `_` (spaces become `-`, case is ignored). */
       username: string
     }
     /** @description The answer to a username change. */
@@ -8412,7 +8412,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description passkey_invalid: the answer failed verification, the ceremony expired or was used, the authenticator did not verify the person, or it is already registered */
+      /** @description a refusal code (passkey_ceremony_expired, passkey_origin_not_allowed, passkey_user_verification_required, passkey_already_registered, ...) or passkey_invalid for malformed data */
       401: {
         headers: {
           [name: string]: unknown
@@ -8492,7 +8492,7 @@ export interface operations {
           'application/json': components['schemas']['FreshCheck']
         }
       }
-      /** @description passkey_invalid */
+      /** @description a refusal code: passkey_ceremony_expired, passkey_not_registered, passkey_user_handle_mismatch, passkey_signature_invalid, passkey_counter_regressed, ... or passkey_invalid for malformed data */
       401: {
         headers: {
           [name: string]: unknown
@@ -13698,7 +13698,7 @@ export interface operations {
           'application/json': components['schemas']['SessionInfo']
         }
       }
-      /** @description passkey_invalid */
+      /** @description a refusal code: passkey_ceremony_expired, passkey_not_registered, passkey_user_handle_mismatch, passkey_signature_invalid, passkey_counter_regressed, ... or passkey_invalid for malformed data */
       401: {
         headers: {
           [name: string]: unknown
