@@ -51,6 +51,8 @@ import OwnerUsageView from './views/OwnerUsageView.vue'
 import OwnerView from './views/OwnerView.vue'
 import RepoView from './views/RepoView.vue'
 import ReposView from './views/ReposView.vue'
+import DashboardView from './views/DashboardView.vue'
+import { recentFor, recordRecent } from './state/recent.state'
 
 const settingsRedirect =
   (section: string) => (to: Pick<RouteLocationNormalized, 'params' | 'query' | 'hash'>) => ({
@@ -66,7 +68,8 @@ const settingsRedirect =
 export const ownerParam = ':owner([^/_][^/]*|_[^/]+)'
 
 export const routes: RouteRecordRaw[] = [
-  { path: '/', name: 'repos', component: ReposView },
+  { path: '/', name: 'dashboard', component: DashboardView },
+  { path: '/_/repos', name: 'repos', component: ReposView, meta: { crumb: 'Repositories' } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/people', name: 'people', component: PeopleView, meta: { public: true } },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
@@ -172,5 +175,9 @@ export const makeRouter = (
   })
   router.beforeEach(passwordChangeGuard)
   trackPrevious(router)
+  router.afterEach((to, _from, failure) => {
+    const item = failure ? null : recentFor(to)
+    if (item) recordRecent(item)
+  })
   return router
 }
