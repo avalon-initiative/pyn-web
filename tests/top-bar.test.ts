@@ -139,7 +139,9 @@ describe('top bar data', () => {
   it('renders no side navigation on any route and keeps old destinations reachable', async () => {
     const { w, router } = await openApp()
     for (const p of ['/', '/_/locks', '/acme/game', '/_/orgs'])
-      expect(await router.push(p).then(() => w.find('aside').exists())).toBe(false)
+      expect(
+        await router.push(p).then(() => w.find('[aria-label="Toggle navigation"]').exists()),
+      ).toBe(false)
     await w.find('[aria-label="Account menu"]').trigger('click')
     const hrefs = w.findAll('[role=menu] a').map((a) => a.attributes('href'))
     expect(hrefs).toEqual(
@@ -149,7 +151,7 @@ describe('top bar data', () => {
   })
 
   it('fetches the counts once per sign-in, not on route changes', async () => {
-    const { router } = await openApp()
+    const { router } = await openApp('/_/people')
     const n = () => calls.filter((c) => c === 'GET /v1/me/locks' || c === 'GET /v1/me/notices')
     expect(n()).toHaveLength(2)
     await router.push('/_/people')
@@ -160,7 +162,7 @@ describe('top bar data', () => {
 
   it('shows zero, with no error, when the fetches fail', async () => {
     broken = true
-    const { w } = await openApp()
+    const { w } = await openApp('/_/people')
     const bar = w.findComponent(PynTopBar)
     expect(bar.props('locksHeld')).toBe(0)
     expect(bar.props('notifications')).toBe(0)

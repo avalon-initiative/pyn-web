@@ -58,6 +58,7 @@ import {
   topBarOwners,
   useTopBar,
 } from './state/top-bar.state'
+import { setRecentUser } from './state/recent.state'
 import { breadcrumbs } from './state/breadcrumbs.state'
 import {
   dismissSecurityNotice,
@@ -143,6 +144,7 @@ function setTheme(choice: ThemeChoice) {
 
 let stopRefresh = () => {}
 watch(user, (name) => {
+  setRecentUser(name ?? '')
   stopRefresh()
   if (name) {
     stopRefresh = startSessionRefresh()
