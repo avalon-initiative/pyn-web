@@ -79,7 +79,8 @@ describe('router', () => {
     expect(resolve('/_/new').name).toBe('new-repo')
     expect(resolve('/_/settings/keys').name).toBe('keys')
     expect(resolve('/_/settings/identities').name).toBe('identities')
-    expect(resolve('/').name).toBe('repos')
+    expect(resolve('/').name).toBe('dashboard')
+    expect(resolve('/_/repos').name).toBe('repos')
   })
 })
 

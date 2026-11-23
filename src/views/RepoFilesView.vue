@@ -22,7 +22,7 @@ import {
   PynRepoLanding,
 } from '@avalon-initiative/pyn-common-ui'
 
-const { target, repo } = inject(repoKey)!
+const { target, repo, locks, branches } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const route = useRoute()
 const path = computed(() => folderParam(route.params.path))
@@ -90,6 +90,7 @@ async function refresh() {
       if (p !== path.value || b !== branch.value) return
       listing.value = tree
       summary.value = sum
+      locks.value = sum.locks
       missing.value = false
       await loadReadme(tree.entries, p)
     } catch (e) {
@@ -133,6 +134,7 @@ onUnmounted(() => clearInterval(timer))
     :branch="branch"
     :listing="listing"
     :summary="barSummary"
+    :branches="branches"
     :readme="readme"
     :missing="missing"
     :me="user"

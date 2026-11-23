@@ -16,14 +16,15 @@ import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
 import { getOrg, getOwnerFreeze } from '../api/orgs'
-import { compareBranch, getRepo, listBranches, repoMe } from '../api/repos'
+import { compareBranch, getRepo, listBranches, listLocks, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { useBranch, useBranches } from '../state/branch.state'
 import { compareChanges, useBranchCompare } from '../state/compare.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import { isRepoOwner } from '../state/repo-access.state'
-import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
+import { lockHolders, railBranches } from '../state/repo-rail.state'
+import type { LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
@@ -41,6 +42,7 @@ const target = computed(() => ({ owner: owner.value, name: name.value }))
 const repo = ref<RepoInfo | null>(null)
 const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
+const locks = ref<LockInfo[] | null>(null)
 const notFound = ref(false)
 const { error, attempt } = useAction()
 const branch = useBranch()
@@ -82,13 +84,40 @@ async function load() {
   })
 }
 
+// One request per repository visit; the Code and Locks pages refresh the list after that.
+async function loadLocks() {
+  const t = target.value
+  try {
+    const list = await listLocks(t)
+    if (t === target.value && locks.value === null) locks.value = list
+  } catch {
+    // The count is a convenience: no strip and no badge without it.
+  }
+}
+
 watch(
   target,
   () => {
     repo.value = null
-    load()
+    locks.value = null
+    load().then(() => {
+      if (permissions.value.includes('read')) void loadLocks()
+    })
   },
   { immediate: true },
+)
+
+const branches = computed(() =>
+  railBranches(
+    picker.options.value,
+    compare.result.value && compareHead.value
+      ? {
+          head: compareHead.value,
+          ahead: compare.result.value.ahead,
+          behind: compare.result.value.behind,
+        }
+      : null,
+  ),
 )
 
 provide(repoKey, {
@@ -97,6 +126,8 @@ provide(repoKey, {
   permissions,
   org,
   frozen,
+  locks,
+  branches,
   reload: async () => void (await load()),
 })
 
@@ -122,6 +153,10 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :current="section"
       :branch="branch"
       :owner-href="ownerHref"
+      :locked-count="locks?.length ?? 0"
+      :lock-holders="lockHolders(locks ?? [])"
+      :max-tabs="5"
+      hide-path
     >
       <template #actions>
         <span data-lease>{{ repo.lease_hours }}h leases</span>
