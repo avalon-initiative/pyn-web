@@ -2,6 +2,7 @@ import {
   PynAccountSettings,
   PynAdminLayout,
   PynOrgHeader,
+  PynProfileHeader,
   PynRepoLanding,
   PynRepoShell,
   PynSettingsLayout,
@@ -236,11 +237,12 @@ describe('organization and owner headers', () => {
     expect(header.find('h1').text()).toContain('studio')
   })
 
-  it('keeps the user header for a user name', async () => {
+  it('shows one identity block on a user profile, without the user header', async () => {
     const { w } = await open('/acme')
-    expect(w.findComponent(PynUserHeader).exists()).toBe(true)
+    expect(w.findComponent(PynUserHeader).exists()).toBe(false)
     expect(w.findComponent(PynOrgHeader).exists()).toBe(false)
-    expect(w.findComponent(PynUserHeader).props('avatarUrl')).toBe('/v1/users/acme/avatar?v=z')
+    expect(w.findAll('h1')).toHaveLength(1)
+    expect(w.findComponent(PynProfileHeader).props('avatarUrl')).toBe('/v1/users/acme/avatar?v=z')
   })
 })
 

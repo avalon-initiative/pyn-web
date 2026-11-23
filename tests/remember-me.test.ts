@@ -37,14 +37,14 @@ afterEach(() => {
 })
 
 describe('remember me', () => {
-  it('offers the remember option and keeps stay-signed-in off', async () => {
+  it('offers both the remember and the stay-signed-in options', async () => {
     const w = await openSignedOut(server(ok))
     const form = w.findComponent(PynSignIn)
     expect(form.props('rememberOption')).toBe(true)
-    expect(form.props('staySignedInOption')).toBe(false)
+    expect(form.props('staySignedInOption')).toBe(true)
   })
 
-  it('remembers the name when checked and sends only the credentials', async () => {
+  it('remembers the name when checked and never sends it as the session flag', async () => {
     const fn = server(ok)
     const w = await openSignedOut(fn)
     const form = w.findComponent(PynSignIn)
@@ -57,7 +57,22 @@ describe('remember me', () => {
       username: 'wendy',
       password: 'pw',
       code: null,
+      remember: false,
     })
+  })
+
+  it('maps the stay-signed-in box to the longer session flag', async () => {
+    const fn = server(ok)
+    const w = await openSignedOut(fn)
+    w.findComponent(PynSignIn).vm.$emit('signIn', {
+      username: 'wendy',
+      password: 'pw',
+      staySignedIn: true,
+    })
+    await flushPromises()
+    expect(rememberedUser()).toBe('')
+    const post = fn.mock.calls.find((c) => c[1]?.method === 'POST' && c[0] === '/v1/session')
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({ remember: true })
   })
 
   it('forgets the name when unchecked', async () => {
