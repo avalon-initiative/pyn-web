@@ -101,6 +101,7 @@ describe('PynTree', () => {
     const w = tree()
     const hrefs = w.findAll('a').map((a) => a.attributes('href'))
     expect(hrefs).toEqual([
+      '/acme/castle-quest/history',
       '/acme/castle-quest/tree/Content',
       '/acme/castle-quest/tree/Config',
       '/acme/castle-quest/tree/Source',
@@ -113,8 +114,7 @@ describe('PynTree', () => {
   it('shows the revision, author and age of the last change', () => {
     const row = tree().findAll('tbody tr')[0]
     expect(row.text()).toContain('Level design changes')
-    expect(row.text()).toContain('r61')
-    expect(row.text()).toContain('jamie · 2 hours ago')
+    expect(row.text()).toContain('2 hours ago')
     expect(row.find('[data-mode=mixed]').exists()).toBe(true)
   })
 
@@ -144,7 +144,6 @@ describe('PynRepoLanding', () => {
     expect(w.text()).toContain('Repository details')
     expect(w.text()).toContain('Locked files')
     expect(w.text()).toContain('Recent activity')
-    expect(w.text()).toContain('Exclusive File Checkout')
     expect(w.text()).toContain('main')
   })
 

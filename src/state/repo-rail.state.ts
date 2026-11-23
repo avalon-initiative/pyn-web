@@ -7,14 +7,15 @@ export function lockHolders(locks: LockInfo[]): string[] {
   return [...new Set(locks.map((l) => l.owner))]
 }
 
-/** The newest branches first; ahead and behind are known only for the compared one. */
+/** The newest `limit` branches first; ahead and behind are known only for the compared one. */
 export function railBranches(
   options: BranchOption[],
   compared?: { head: string; ahead: number; behind: number } | null,
+  limit = RAIL_BRANCHES,
 ): BranchSummary[] {
   return [...options]
     .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
-    .slice(0, RAIL_BRANCHES)
+    .slice(0, limit)
     .map((o) => ({
       name: o.name,
       isDefault: o.isDefault,

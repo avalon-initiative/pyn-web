@@ -2,9 +2,10 @@
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
-import { fetchContent, fetchPolicy, fetchTree } from '../api/repos'
+import { checkout, fetchContent, fetchPolicy, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
+import { canWrite } from '../state/freeze.state'
 import { useBranch } from '../state/branch.state'
 import { useHashScroll } from '../state/hash.state'
 import { ruleLine } from '../state/policy.state'
@@ -27,7 +28,7 @@ import {
   PynViewSummary,
 } from '@avalon-initiative/pyn-common-ui'
 
-const { target } = inject(repoKey)!
+const { target, permissions, frozen } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const route = useRoute()
 const router = useRouter()
@@ -40,6 +41,7 @@ const rule = ref('')
 const lines = computed(() => parseLineHash(route.hash))
 const now = ref(new Date())
 const { error, attempt } = useAction()
+const lockable = computed(() => canWrite(permissions.value.includes('lock'), frozen.value))
 let loadedRevision: number | null = null
 let timer: ReturnType<typeof setInterval> | undefined
 
@@ -101,6 +103,12 @@ watch([path, branch], () => {
   refresh()
 })
 
+const lock = () =>
+  attempt(async () => {
+    await checkout(target.value, path.value, entry.value?.last_change?.id)
+    await refresh()
+  })
+
 const selectLines = (r: LineRange) => router.push({ hash: lineHash(r) })
 useHashScroll(() => body.value)
 
@@ -125,6 +133,8 @@ onUnmounted(() => clearInterval(timer))
     :me="user"
     :now="now"
     :lines="lines"
+    :lockable="lockable"
     @select-lines="selectLines"
+    @lock="lock"
   />
 </template>

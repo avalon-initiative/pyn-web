@@ -23,9 +23,12 @@ import {
   PynRepoLanding,
 } from '@avalon-initiative/pyn-common-ui'
 
-const { target, repo, locks, branches } = inject(repoKey)!
+const { target, repo, permissions, locks, branches, branchesLoading, branchesError, selectBranch } =
+  inject(repoKey)!
 const user = inject(sessionKey)!.user
 const route = useRoute()
+const origin = window.location.origin
+const slug = computed(() => `${target.value.owner}/${target.value.name}`)
 const path = computed(() => folderParam(route.params.path))
 const branch = useBranch()
 const listing = ref<TreeListing | null>(null)
@@ -137,9 +140,15 @@ onUnmounted(() => clearInterval(timer))
     :summary="barSummary"
     :branches="branches"
     :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
+    :branch-count="branches?.length"
+    :branches-loading="branchesLoading"
+    :branches-error="branchesError || undefined"
+    :https-url="permissions.includes('read') ? `${origin}/${slug}` : undefined"
+    :clone-command="`pyn clone ${slug}`"
     :readme="readme"
     :missing="missing"
     :me="user"
     :now="now"
+    @select="selectBranch?.($event)"
   />
 </template>

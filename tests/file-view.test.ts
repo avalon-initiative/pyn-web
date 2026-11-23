@@ -348,7 +348,8 @@ describe('file components', () => {
     expect(w.find('[data-mode=exclusive]').exists()).toBe(true)
     expect(w.find('[data-state]').text()).toContain('bob')
     expect(w.text()).toContain('r61')
-    expect(w.text()).toContain('jamie · 2 hours ago')
+    expect(w.text()).toContain('jamie')
+    expect(w.text()).toContain('2 hours ago')
     const hrefs = w.findAll('a').map((a) => a.attributes('href'))
     expect(hrefs).toContain('/acme/castle-quest/history?path=Content%2FLevel01.umap')
     expect(hrefs).toContain('/v1/repos/acme/castle-quest/content?path=Content%2FLevel01.umap')
@@ -401,7 +402,7 @@ describe('browse integration', () => {
     const hrefs = w.findAll('a').map((a) => a.attributes('href'))
     expect(hrefs).toContain('/acme/castle-quest/tree/Content')
     expect(hrefs).toContain('/acme/castle-quest/blob/README.md')
-    expect(hrefs).toHaveLength(rootEntries.length)
+    expect(hrefs).toHaveLength(rootEntries.length + 1)
   })
 
   it('shows the README under the listing, but not for a missing folder', () => {

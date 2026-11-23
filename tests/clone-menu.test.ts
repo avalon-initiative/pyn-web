@@ -1,4 +1,4 @@
-import { PynCloneMenu } from '@avalon-initiative/pyn-common-ui'
+import { PynCloneMenu, PynRepoLanding } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
@@ -35,6 +35,29 @@ function stubServer(permissions: string[], org: unknown = null) {
       if (url === '/v1/repos/acme/game/me') return json({ permissions })
       if (url === '/v1/orgs/acme') return org ? json(org) : json({ code: 'org_not_found' }, 404)
       if (url.startsWith('/v1/owners/')) return json({ frozen: false })
+      if (url.startsWith('/v1/repos/acme/game/tree'))
+        return json({
+          path: '',
+          entries: [{ name: 'a.txt', path: 'a.txt', kind: 'file', mode: 'shared' }],
+        })
+      if (url.startsWith('/v1/repos/acme/game/summary'))
+        return json({
+          default_branch: 'main',
+          files: 1,
+          exclusive_files: 0,
+          shared_files: 1,
+          locks: [],
+          activity: [],
+        })
+      if (url === '/v1/repos/acme/game/branches')
+        return json([
+          { name: 'main', default: true, updated_at: '2026-10-02T00:00:00Z' },
+          { name: 'dev', default: false, updated_at: '2026-10-03T00:00:00Z' },
+          { name: 'old', default: false, updated_at: '2026-09-01T00:00:00Z' },
+          { name: 'b4', default: false, updated_at: '2026-08-01T00:00:00Z' },
+          { name: 'b5', default: false, updated_at: '2026-07-01T00:00:00Z' },
+          { name: 'b6', default: false, updated_at: '2026-06-01T00:00:00Z' },
+        ])
       return json({ code: 'not_found', message: 'x' }, 404)
     }),
   )
@@ -55,7 +78,7 @@ async function open(path: string, permissions = ['read', 'lock'], org: unknown =
 afterEach(() => vi.unstubAllGlobals())
 
 describe('clone menu', () => {
-  it('offers the address and the command for a reader', async () => {
+  it('offers the address and the command for a reader, in the landing toolbar', async () => {
     const { w } = await open('/acme/game')
     const clone = w.findComponent(PynCloneMenu)
     expect(clone.exists()).toBe(true)
@@ -66,5 +89,26 @@ describe('clone menu', () => {
   it('is absent without read access', async () => {
     const { w } = await open('/acme/game', [])
     expect(w.findComponent(PynCloneMenu).exists()).toBe(false)
+  })
+})
+
+describe('landing toolbar wiring', () => {
+  it('passes every branch, the count and the Branches link', async () => {
+    const { w } = await open('/acme/game')
+    const landing = w.findComponent(PynRepoLanding)
+    expect(landing.props('branches')).toHaveLength(6)
+    expect(landing.props('branchCount')).toBe(6)
+    expect(landing.props('branchesHref')).toBe('/acme/game/branches')
+    expect(landing.props('cloneCommand')).toBe('pyn clone acme/game')
+  })
+
+  it('switches the branch through the address on select', async () => {
+    const { w, router } = await open('/acme/game')
+    w.findComponent(PynRepoLanding).vm.$emit('select', 'dev')
+    await flushPromises()
+    expect(router.currentRoute.value.query.branch).toBe('dev')
+    w.findComponent(PynRepoLanding).vm.$emit('select', 'main')
+    await flushPromises()
+    expect(router.currentRoute.value.query.branch).toBeUndefined()
   })
 })

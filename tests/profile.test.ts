@@ -19,8 +19,8 @@ const profile = {
     links: ['https://example.com'],
   },
   repositories: [
-    { id: 'r1', owner: 'ada', name: 'engine', public: true },
-    { id: 'r2', owner: 'ada', name: 'notes', public: true },
+    { id: 'r1', owner: 'ada', name: 'engine', public: true, created_at: '2026-01-02T03:04:05Z' },
+    { id: 'r2', owner: 'ada', name: 'notes', public: true, created_at: '2026-01-02T03:04:05Z' },
   ],
   repository_count: 2,
   organizations: [{ id: 'o1', name: 'studio', created_at: '2026-01-01T00:00:00Z', role: 'member' }],
