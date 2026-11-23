@@ -130,14 +130,16 @@ describe('shell on repository and dashboard routes', () => {
       'Policy',
     ])
     expect(shell.text()).toContain('8h leases')
-    expect(shell.text()).toContain('your role: admin')
+    expect(shell.text()).toContain('your role')
+    expect(shell.text()).toContain('admin')
   })
 
   it('marks an organization-owned repository', async () => {
     const org = { name: 'acme', role: 'member' }
     const { w } = await open('/acme/game', ['read'], org)
     expect(w.findComponent(PynRepoShell).props('ownerHref')).toBe('/acme')
-    expect(w.find('[data-org]').exists()).toBe(true)
+    const facts = w.findComponent(PynRepoShell).props('facts')
+    expect(facts?.map((f: { value: string }) => f.value)).toContain('organization')
   })
 
   it('hides the tab bar and explains without read', async () => {

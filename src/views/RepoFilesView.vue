@@ -21,11 +21,20 @@ import {
   PynEmptyState,
   PynViewError,
   PynRepoLanding,
+  railBranches,
 } from '@avalon-initiative/pyn-common-ui'
 
 const { target, repo, permissions, locks, branches, branchesLoading, branchesError, selectBranch } =
   inject(repoKey)!
 const user = inject(sessionKey)!.user
+// The default branch first, then the most recently updated, at most five.
+const rail = computed(() =>
+  railBranches(
+    [...(branches?.value ?? [])].sort((a, b) =>
+      (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''),
+    ),
+  ),
+)
 const route = useRoute()
 const origin = window.location.origin
 const slug = computed(() => `${target.value.owner}/${target.value.name}`)
@@ -139,6 +148,7 @@ onUnmounted(() => clearInterval(timer))
     :listing="listing"
     :summary="barSummary"
     :branches="branches"
+    :rail-branches="rail"
     :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :branch-count="branches?.length"
     :branches-loading="branchesLoading"

@@ -50,58 +50,27 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/acme/-/teams/art', 'org-team', 'Home', 'acme', 'Teams', 'art'],
   ['/acme/-/audit', 'org-audit', 'Home', 'acme', 'Audit log'],
   ['/acme/-/settings', 'org-settings', 'Home', 'acme', 'Settings'],
-  ['/alice/game', 'files', 'Home', 'alice', 'game', 'Code'],
-  ['/alice/game/tree/src/lib', 'tree', 'Home', 'alice', 'game', 'Code', 'src', 'lib'],
-  ['/alice/game/blob/src/a.txt', 'blob', 'Home', 'alice', 'game', 'Code', 'src', 'a.txt'],
-  ['/alice/game/locks', 'locks', 'Home', 'alice', 'game', 'Locks'],
-  ['/alice/game/branches', 'branches', 'Home', 'alice', 'game', 'Branches'],
-  ['/alice/game/history', 'history', 'Home', 'alice', 'game', 'History'],
-  ['/alice/game/policy', 'policy', 'Home', 'alice', 'game', 'Policy'],
-  ['/alice/game/settings', 'settings', 'Home', 'alice', 'game', 'Settings'],
-  [
-    '/alice/game/settings/members',
-    'settings-members',
-    'Home',
-    'alice',
-    'game',
-    'Settings',
-    'Members',
-  ],
-  ['/alice/game/settings/roles', 'settings-roles', 'Home', 'alice', 'game', 'Settings', 'Roles'],
-  [
-    '/alice/game/settings/invites',
-    'settings-invites',
-    'Home',
-    'alice',
-    'game',
-    'Settings',
-    'Invitations',
-  ],
-  ['/alice/game/settings/policy', 'settings-policy', 'Home', 'alice', 'game', 'Settings', 'Policy'],
-  [
-    '/alice/game/settings/storage',
-    'settings-storage',
-    'Home',
-    'alice',
-    'game',
-    'Settings',
-    'Storage',
-  ],
-  [
-    '/alice/game/settings/audit',
-    'settings-audit',
-    'Home',
-    'alice',
-    'game',
-    'Settings',
-    'Audit log',
-  ],
+  // Repository pages have no trail: the shell shows the owner / repo title.
+  ['/alice/game', 'files'],
+  ['/alice/game/tree/src/lib', 'tree'],
+  ['/alice/game/blob/src/a.txt', 'blob'],
+  ['/alice/game/locks', 'locks'],
+  ['/alice/game/branches', 'branches'],
+  ['/alice/game/history', 'history'],
+  ['/alice/game/policy', 'policy'],
+  ['/alice/game/settings', 'settings'],
+  ['/alice/game/settings/members', 'settings-members'],
+  ['/alice/game/settings/roles', 'settings-roles'],
+  ['/alice/game/settings/invites', 'settings-invites'],
+  ['/alice/game/settings/policy', 'settings-policy'],
+  ['/alice/game/settings/storage', 'settings-storage'],
+  ['/alice/game/settings/audit', 'settings-audit'],
 ]
 
 describe('breadcrumb trail', () => {
   it.each(table)('%s (%s)', (path, name, ...expected) => {
     expect(router.resolve(path).name).toBe(name)
-    expect(labels(path)).toEqual(name === 'dashboard' ? [] : expected.length ? expected : [])
+    expect(labels(path)).toEqual(expected)
   })
 
   it('covers every named route in the router', () => {
@@ -132,19 +101,6 @@ describe('breadcrumb trail', () => {
     }
   })
 
-  it('links folders to their tree route, keeping the branch', () => {
-    const crumbs = breadcrumbs(router.resolve('/alice/game/blob/a%20b/c/d.txt?branch=dev'))
-    expect(crumbs.map((c) => c.href)).toEqual([
-      '/',
-      '/alice',
-      '/alice/game?branch=dev',
-      '/alice/game?branch=dev',
-      '/alice/game/tree/a%20b?branch=dev',
-      '/alice/game/tree/a%20b/c?branch=dev',
-      undefined,
-    ])
-  })
-
   it('links the owner of an organization page and the account areas', () => {
     expect(trail('/acme/-/teams/art').map((c) => c.href)).toEqual([
       '/',
@@ -157,16 +113,9 @@ describe('breadcrumb trail', () => {
       label: 'Administration',
       href: '/_/admin/accounts',
     })
-    expect(trail('/alice/game/settings/policy')[3]).toEqual({
-      label: 'Settings',
-      href: '/alice/game/settings',
-    })
-    expect(trail('/alice/game/history')[0]).toEqual(H)
   })
 
   it('keeps a label as text, never markup', () => {
-    const last = breadcrumbs(router.resolve('/alice/game/blob/%3Cb%3Ex.txt')).at(-1)
-    expect(last?.label).toBe('<b>x.txt')
     const w = mount(PynShell, { props: { breadcrumbs: [H, { label: '<b>x.txt' }] } })
     expect(w.find('b').exists()).toBe(false)
   })

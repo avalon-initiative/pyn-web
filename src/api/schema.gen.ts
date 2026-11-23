@@ -3621,6 +3621,11 @@ export interface components {
        */
       code?: string | null
       password: string
+      /**
+       * @description `POST /v1/session` only: stay signed in for `PYN_SESSION_REMEMBER_DAYS` instead of `PYN_SESSION_DAYS`.
+       *     Absent or false keeps the usual lifetime.
+       */
+      remember?: boolean
       username: string
     }
     /**
@@ -3983,6 +3988,8 @@ export interface components {
     PasskeyAssertionRequest: {
       ceremony: string
       credential: components['schemas']['PasskeyAssertionCredential']
+      /** @description Passkey sign-in only: stay signed in for `PYN_SESSION_REMEMBER_DAYS`. Ignored by the fresh check. */
+      remember?: boolean
     }
     /** @description The authenticator's authentication response (`AuthenticatorAssertionResponseJSON`). */
     PasskeyAssertionResponse: {

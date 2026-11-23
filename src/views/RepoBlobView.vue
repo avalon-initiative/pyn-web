@@ -25,7 +25,6 @@ import {
   type LineRange,
   type TreeEntry,
   PynViewError,
-  PynViewSummary,
 } from '@avalon-initiative/pyn-common-ui'
 
 const { target, permissions, frozen } = inject(repoKey)!
@@ -121,7 +120,6 @@ onUnmounted(() => clearInterval(timer))
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <PynViewSummary v-if="rule" data-policy-rule>{{ rule }}</PynViewSummary>
   <PynFileView
     :owner="target.owner"
     :name="target.name"
@@ -130,6 +128,7 @@ onUnmounted(() => clearInterval(timer))
     :entry="entry"
     :body="body"
     :missing="missing"
+    :note="rule || undefined"
     :me="user"
     :now="now"
     :lines="lines"

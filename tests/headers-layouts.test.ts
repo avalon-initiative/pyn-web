@@ -71,6 +71,16 @@ function stubServer(o: Options = {}) {
         return json({ id: 'o1', name: 'studio', created_at: '2026-09-01T09:00:00Z', role: 'owner' })
       if (path === '/v1/orgs/studio/profile')
         return o.profile ? json(o.profile) : json({ code: 'x' }, 500)
+      if (path === '/v1/users/acme')
+        return json({
+          user: 'acme',
+          id: 'u1',
+          created_at: '2026-09-01T09:00:00Z',
+          organizations: [],
+          repositories: [],
+          repository_count: 0,
+          profile: { avatar_url: '/v1/users/acme/avatar?v=z' },
+        })
       if (path === '/v1/orgs/acme') return json({ code: 'org_not_found' }, 404)
       if (path.startsWith('/v1/owners/')) return json({ frozen: false })
       return json({ code: 'not_found', message: 'x' }, 404)
@@ -93,13 +103,29 @@ async function open(path: string, o: Options = {}) {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('repository page header', () => {
-  it('hides the shell path so the breadcrumb trail is the only one', async () => {
+  it('shows the owner / repo title and no global breadcrumb trail', async () => {
     const { w } = await open('/acme/game')
     const shell = w.findComponent(PynRepoShell)
-    expect(shell.props('hidePath')).toBe(true)
+    expect(shell.props('hidePath')).toBeFalsy()
     expect(shell.props('maxTabs')).toBe(5)
-    expect(w.find('nav[aria-label="Repository path"]').exists()).toBe(false)
-    expect(w.findAll('nav[aria-label="Breadcrumb"], nav[aria-label="Breadcrumbs"]')).toHaveLength(1)
+    expect(w.find('nav[aria-label="Repository path"]').exists()).toBe(true)
+    expect(w.find('nav[aria-label="Breadcrumb"], nav[aria-label="Breadcrumbs"]').exists()).toBe(
+      false,
+    )
+  })
+
+  it('passes the lease, role and organization as header facts', async () => {
+    const { w } = await open('/acme/game')
+    const facts = w.findComponent(PynRepoShell).props('facts')
+    expect(facts?.map((f: { value: string }) => f.value)).toEqual(['24h leases', 'admin'])
+  })
+
+  it('hides the lock strip on the Locks tab only', async () => {
+    const locks = await open('/acme/game/locks')
+    expect(locks.w.findComponent(PynRepoShell).props('hideLockStrip')).toBe(true)
+    expect(locks.w.findComponent(PynRepoShell).props('lockedCount')).toBe(2)
+    const history = await open('/acme/game/history')
+    expect(history.w.findComponent(PynRepoShell).props('hideLockStrip')).toBeFalsy()
   })
 
   it('shows the lock strip and the Locks badge from the repository locks', async () => {
@@ -136,6 +162,17 @@ describe('overview Branches panel', () => {
       { name: 'feature', isDefault: false, updatedAt: '2026-10-07T10:00:00Z' },
     ])
     expect(w.text()).toContain('Branches')
+  })
+
+  it('passes a rail with the default branch first, capped at five', async () => {
+    const many = ['a', 'b', 'c', 'd', 'e', 'f'].map((n, i) =>
+      branch(n, `2026-10-0${i + 1}T10:00:00Z`),
+    )
+    many.push(branch('main', '2026-09-01T10:00:00Z', true))
+    const { w } = await open('/acme/game', { branches: many })
+    const rail = w.findComponent(PynRepoLanding).props('railBranches')!
+    expect(rail.map((b: { name: string }) => b.name)).toEqual(['main', 'f', 'e', 'd', 'c'])
+    expect(w.findComponent(PynRepoLanding).props('branches')).toHaveLength(7)
   })
 
   it('adds ahead and behind for the compared branch only', async () => {
@@ -203,6 +240,7 @@ describe('organization and owner headers', () => {
     const { w } = await open('/acme')
     expect(w.findComponent(PynUserHeader).exists()).toBe(true)
     expect(w.findComponent(PynOrgHeader).exists()).toBe(false)
+    expect(w.findComponent(PynUserHeader).props('avatarUrl')).toBe('/v1/users/acme/avatar?v=z')
   })
 })
 
