@@ -29,6 +29,8 @@ async function view(component: object, body: unknown, url: string) {
           permissions: ref(['read', 'view_audit']),
           org: ref(null),
           frozen: ref(false),
+          locks: ref(null),
+          branches: ref([]),
         },
       },
     },

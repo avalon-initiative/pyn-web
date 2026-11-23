@@ -16,6 +16,7 @@ import type {
   RuleScope,
   TwoFactorSetting,
 } from '@avalon-initiative/pyn-common-ui'
+import type { Schemas } from './schema'
 import { api, call } from './http'
 
 const org_ = (org: string) => ({ params: { path: { org } } })
@@ -26,6 +27,9 @@ export const listMyOrgs = () => call<OrgInfo[]>(api.GET('/v1/me/orgs'))
 export const createOrg = (name: string) => call<OrgInfo>(api.POST('/v1/orgs', { body: { name } }))
 
 export const getOrg = (org: string) => call<OrgInfo>(api.GET('/v1/orgs/{org}', org_(org)))
+
+export const getOrgProfile = (org: string) =>
+  call<Schemas['OrgProfile']>(api.GET('/v1/orgs/{org}/profile', org_(org)))
 
 export const deleteOrg = (org: string) => call<void>(api.DELETE('/v1/orgs/{org}', org_(org)))
 

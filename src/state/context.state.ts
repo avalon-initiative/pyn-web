@@ -1,6 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import type { AccountDeletionStatus } from '../api/account-deletion'
-import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
+import type { BranchSummary, LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 export interface SessionContext {
@@ -23,6 +23,10 @@ export interface RepoContext {
   org: Ref<OrgInfo | null>
   /** Whether the owner is frozen: writes are refused. */
   frozen: Ref<boolean>
+  /** Live locks, null until first read; the pages that read them keep it current. */
+  locks: Ref<LockInfo[] | null>
+  /** Branches for the overview rail; ahead and behind only for the branch being compared. */
+  branches: ComputedRef<BranchSummary[]>
   reload: () => Promise<void>
 }
 
