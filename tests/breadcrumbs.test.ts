@@ -53,7 +53,9 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/alice/game/tree/src/lib', 'tree', 'Home', 'alice', 'game', 'Code', 'src', 'lib'],
   ['/alice/game/blob/src/a.txt', 'blob', 'Home', 'alice', 'game', 'Code', 'src', 'a.txt'],
   ['/alice/game/locks', 'locks', 'Home', 'alice', 'game', 'Locks'],
+  ['/alice/game/branches', 'branches', 'Home', 'alice', 'game', 'Branches'],
   ['/alice/game/history', 'history', 'Home', 'alice', 'game', 'History'],
+  ['/alice/game/policy', 'policy', 'Home', 'alice', 'game', 'Policy'],
   ['/alice/game/settings', 'settings', 'Home', 'alice', 'game', 'Settings'],
   [
     '/alice/game/settings/members',
