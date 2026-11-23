@@ -114,8 +114,8 @@ const serverBuild = ref<ServerBuild | null>(null)
 const serverOutdated = computed(() => serverTooOld(serverBuild.value?.version))
 const { nameMessage, nameCanonical, checkName } = useNameCheck()
 const remember = ref(!!rememberedUser())
-// Turn on once the server accepts a long-lived session (pyn#1400).
-const STAY_SIGNED_IN = false
+const STAY_SIGNED_IN = true
+const staySignedIn = ref(false)
 const busy = ref(false)
 const registration = ref<RegistrationInfo | null>(null)
 const signInOptions = ref<SignInOptions | null>(null)
@@ -310,7 +310,11 @@ const signInWithPasskey = () =>
   attempt(() =>
     ceremony(async () => {
       const begun = await beginPasskeySignIn(challenge.value?.username)
-      const session = await finishPasskeySignIn(begun.ceremony, await getPasskey(begun.public_key))
+      const session = await finishPasskeySignIn(
+        begun.ceremony,
+        await getPasskey(begun.public_key),
+        staySignedIn.value,
+      )
       challenge.value = null
       await beginSession(session)
     }),
@@ -493,6 +497,7 @@ onMounted(async () => {
         :busy="busy"
         :error="error"
         v-model:remember="remember"
+        v-model:stay-signed-in="staySignedIn"
         remember-option
         :stay-signed-in-option="STAY_SIGNED_IN"
         :name-message="nameMessage"

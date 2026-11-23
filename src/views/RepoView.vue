@@ -40,8 +40,8 @@ const section = computed(() => {
   return first === 'tree' || first === 'blob' ? '' : [first, ...rest].filter(Boolean).join('/')
 })
 
-// The landing page carries its own branch picker in the toolbar.
-const onLanding = computed(() => route.name === 'files' || route.name === 'tree')
+// The picker only applies where content is read per branch; the landing toolbar has its own.
+const showPicker = computed(() => route.name === 'blob' || route.name === 'history')
 const signedOut = computed(() => !user.value)
 const { freeze, frozen } = useOwnerFreeze(owner, (o) =>
   signedOut.value ? Promise.reject(new Error('signed out')) : getOwnerFreeze(o),
@@ -191,7 +191,7 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
     >
       <template #actions>
         <PynBranchPicker
-          v-if="permissions.includes('read') && !onLanding"
+          v-if="permissions.includes('read') && showPicker"
           :branches="picker.options.value"
           :current="picker.current.value"
           :loading="picker.loading.value"

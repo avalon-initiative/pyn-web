@@ -80,6 +80,11 @@ watch(
         >
           <template v-if="profile.user === self" #actions>
             <PynButton
+              label="Usage"
+              variant="secondary"
+              @click="router.push(`/${profile.user}/-/usage`)"
+            />
+            <PynButton
               label="Account settings"
               variant="secondary"
               @click="router.push('/_/settings')"

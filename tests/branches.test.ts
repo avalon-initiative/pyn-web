@@ -81,6 +81,16 @@ describe('branch picker', () => {
     expect(picker.props('current')).toBe('main')
   })
 
+  it('shows the header picker only where branches apply', async () => {
+    const pickers = async (path: string) =>
+      (await open(path)).w.findAllComponents(PynBranchPicker).length
+    expect(await pickers('/acme/game/history')).toBe(1)
+    expect(await pickers('/acme/game/blob/a.txt')).toBe(1)
+    for (const tab of ['locks', 'branches', 'policy']) {
+      expect([tab, await pickers(`/acme/game/${tab}`)]).toEqual([tab, 0])
+    }
+  })
+
   it('reads the default branch when the address names none', async () => {
     const { calls } = await open('/acme/game')
     const tree = ofPath(calls, '/v1/repos/acme/game/tree')

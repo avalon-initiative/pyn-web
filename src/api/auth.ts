@@ -17,7 +17,12 @@ export const fetchRegistration = () => call<RegistrationInfo>(api.GET('/v1/regis
 export async function signIn(form: SignInForm, code?: string): Promise<Session> {
   const session = await call<Session>(
     api.POST('/v1/session', {
-      body: { username: form.username, password: form.password, code: code ?? null },
+      body: {
+        username: form.username,
+        password: form.password,
+        code: code ?? null,
+        remember: !!form.staySignedIn,
+      },
     }),
   )
   setCsrfToken(session.csrf_token)
@@ -32,9 +37,12 @@ export const beginPasskeySignIn = (username?: string) =>
 export async function finishPasskeySignIn(
   ceremony: string,
   credential: Schemas['PasskeyAssertionCredential'],
+  staySignedIn = false,
 ): Promise<Session> {
   const session = await call<Session>(
-    api.POST('/v1/session/passkey/finish', { body: { ceremony, credential } }),
+    api.POST('/v1/session/passkey/finish', {
+      body: { ceremony, credential, remember: staySignedIn },
+    }),
   )
   setCsrfToken(session.csrf_token)
   return session

@@ -304,7 +304,6 @@ describe('owner navigation', () => {
     expect(hrefs(own)).toEqual(['/alice', '/alice/-/usage'])
     expect(own.findComponent(PynUserHeader).props('current')).toBe('usage')
     const other = await mountOrgView('/alice', 'bob', null)
-    expect(hrefs(other)).toEqual(['/alice'])
-    expect(other.findComponent(PynUserHeader).props('self')).toBe(false)
+    expect(other.findComponent(PynUserHeader).exists()).toBe(false)
   })
 })

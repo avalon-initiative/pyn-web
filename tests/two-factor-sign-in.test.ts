@@ -151,8 +151,23 @@ describe('passkey sign-in', () => {
     expect(sent(fn, 'POST /v1/session/passkey/finish')[0]).toEqual({
       ceremony: 'c1',
       credential: { id: 'cred', response: {} },
+      remember: false,
     })
     expect(w.findComponent(PynSignIn).exists()).toBe(false)
+  })
+
+  it('sends the longer session flag when stay signed in is ticked', async () => {
+    stubBrowser()
+    const fn = serve({
+      ...base,
+      'POST /v1/session/passkey/begin': () => reply(200, begun),
+      'POST /v1/session/passkey/finish': () => reply(200, session),
+    })
+    const { w } = await open()
+    w.findComponent(PynSignIn).vm.$emit('update:staySignedIn', true)
+    w.findComponent(PynSignIn).vm.$emit('passkey')
+    await flushPromises()
+    expect(sent(fn, 'POST /v1/session/passkey/finish')[0]).toMatchObject({ remember: true })
   })
 
   it('offers the passkey on the second-factor step and signs in with the typed username', async () => {
