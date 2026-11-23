@@ -14,6 +14,9 @@ import {
 import type { Branch } from '../types/repo.types'
 import type { Registered } from '../types/auth.types'
 import { api, binaryBody, call } from './http'
+import type { Schemas } from './schema'
+
+type Role = Schemas['Role']
 
 type Repo = { owner: string; name: string }
 
@@ -191,12 +194,14 @@ export const setMember = (r: Repo, user: string, role: string) =>
   call<void>(
     api.PUT('/v1/repos/{owner}/{name}/members/{user}', {
       params: { path: { ...r, user } },
-      body: { role },
+      body: { role: role as Role },
     }),
   )
 
 export const addUser = (r: Repo, u: NewUser) =>
-  call<Registered>(api.POST('/v1/repos/{owner}/{name}/users', { ...at(r), body: u }))
+  call<Registered>(
+    api.POST('/v1/repos/{owner}/{name}/users', { ...at(r), body: { ...u, role: u.role as Role } }),
+  )
 
 export const listRoles = (r: Repo) =>
   call<RoleGrant[]>(api.GET('/v1/repos/{owner}/{name}/roles', at(r)))
@@ -214,7 +219,7 @@ export const listInvites = (r: Repo) =>
 
 export const createInvite = (r: Repo, role: string, hours: number) =>
   call<{ code: string; info: InviteInfo }>(
-    api.POST('/v1/repos/{owner}/{name}/invites', { ...at(r), body: { role, hours } }),
+    api.POST('/v1/repos/{owner}/{name}/invites', { ...at(r), body: { role: role as Role, hours } }),
   )
 
 export const revokeInvite = (r: Repo, id: string) =>
