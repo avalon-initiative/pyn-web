@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PynOrgForm, orgPath, PynViewHeader } from '@avalon-initiative/pyn-common-ui'
+import { PynOrgForm, orgPath, PynViewAction, PynViewHeader } from '@avalon-initiative/pyn-common-ui'
 import { useRouter } from 'vue-router'
 import { createOrg } from '../api/orgs'
 import { refreshOrgs } from '../state/session-data.state'
@@ -19,7 +19,9 @@ const create = (name: string) =>
 </script>
 
 <template>
-  <PynViewHeader title="New organization" />
+  <PynViewHeader title="New organization">
+    <PynViewAction href="/_/orgs">Cancel</PynViewAction>
+  </PynViewHeader>
   <PynOrgForm
     :busy="busy"
     :error="error"

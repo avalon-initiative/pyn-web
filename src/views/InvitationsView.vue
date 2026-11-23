@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  PynEmptyState,
   PynOrgInvitations,
   PynViewError,
   PynViewHeader,
@@ -56,6 +57,11 @@ onMounted(async () => {
 <template>
   <PynViewHeader title="Invitations" />
   <PynViewError v-if="error && !loaded">{{ error }}</PynViewError>
+  <PynEmptyState
+    v-else-if="loaded && !invitations.length && !error"
+    title="No pending invitations"
+    description="When an organization invites you, the invitation shows up here."
+  />
   <PynOrgInvitations
     v-else-if="loaded"
     :invitations="invitations"
