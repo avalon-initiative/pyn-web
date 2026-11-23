@@ -2,10 +2,10 @@
 import {
   PynOrgHeader,
   PynOwnerFrozenNotice,
-  PynPageNotFound,
   PynUserHeader,
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
+import NotFoundView from './NotFoundView.vue'
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOrg, getOwnerFreeze } from '../api/orgs'
@@ -72,6 +72,6 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
       />
       <RouterView />
     </template>
-    <PynPageNotFound v-else />
+    <NotFoundView v-else />
   </template>
 </template>

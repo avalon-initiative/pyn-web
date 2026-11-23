@@ -51,6 +51,13 @@ import {
   startSessionRefresh,
 } from './state/session-data.state'
 import { activeNav, sideNavItems } from './state/shell.state'
+import { breadcrumbs } from './state/breadcrumbs.state'
+import {
+  dismissSecurityNotice,
+  loadSecurityNotice,
+  resetSecurityNotice,
+  securityNotice,
+} from './state/security-notice.state'
 import { selectAccountItem } from './state/extension.state'
 import type { AccountMenuItem } from './types/extension.types'
 import {
@@ -62,7 +69,7 @@ import {
   PynSideNav,
   PynTopBar,
   PynVersionFooter,
-  PynTwoFactorNag,
+  PynSecurityNotice,
   PynViewNotice,
   applyTheme,
   loadTheme,
@@ -79,6 +86,7 @@ import type {
   SecondFactorForm,
   SignInForm,
 } from '@avalon-initiative/pyn-common-ui'
+import { helpHint, recoveryHint } from './state/two-factor.state'
 import type { RegistrationInfo, SignInOptions } from './types/auth.types'
 
 withDefaults(defineProps<{ navItems?: NavItem[]; accountMenuItems?: AccountMenuItem[] }>(), {
@@ -106,6 +114,7 @@ const theme = ref<ThemeChoice>(loadTheme())
 applyTheme(theme.value)
 
 const publicPage = computed(() => route.matched.some((r) => r.meta.public === true))
+const trail = computed(() => breadcrumbs(route))
 const bare = computed(() => route.matched.some((r) => r.meta.bare === true))
 const slugs = computed(() => sessionRepos.value.map(repoSlug))
 const currentRepo = computed(() =>
@@ -136,6 +145,7 @@ onUnmounted(() => stopRefresh())
 
 const expire = () => {
   twoFactorDue.value = null
+  resetSecurityNotice()
   challenge.value = null
   deletion.value = null
   user.value = ''
@@ -161,6 +171,7 @@ async function begin(name: string) {
   ownProfile.value = me?.profile ?? {}
   user.value = name
   setupUsername.value = ''
+  if (!deletion.value) void loadSecurityNotice()
 }
 
 async function attempt(action: () => Promise<void>) {
@@ -373,7 +384,7 @@ onMounted(async () => {
         @manage-admins="leaveSetup('/_/admin/accounts')"
       />
     </main>
-    <PynShell v-else-if="ready && !user && publicPage" bare>
+    <PynShell v-else-if="ready && !user && publicPage" bare :breadcrumbs="trail">
       <template #top>
         <PynTopBar signed-out sign-in-href="/" :theme="theme" @theme="setTheme" />
       </template>
@@ -383,6 +394,8 @@ onMounted(async () => {
       <RouterView v-if="route.name === 'verify-email'" />
       <PynSecondFactor
         v-else-if="challenge"
+        :recovery-hint="recoveryHint"
+        :help-hint="helpHint"
         :passkeys="passkeysOffered"
         :busy="busy"
         :error="error"
@@ -423,7 +436,7 @@ onMounted(async () => {
       />
     </main>
     <template v-else-if="user">
-      <PynShell :bare="bare">
+      <PynShell :bare="bare" :breadcrumbs="trail">
         <template #top>
           <PynTopBar
             :user="user"
@@ -452,8 +465,15 @@ onMounted(async () => {
             :current-org="currentOrg"
           />
         </template>
+        <PynSecurityNotice
+          v-if="securityNotice && route.path !== SECURITY_PATH"
+          v-bind="securityNotice"
+          @dismiss="dismissSecurityNotice"
+        />
         <PynSecondFactor
           v-if="freshPrompt"
+          :recovery-hint="recoveryHint"
+          :help-hint="helpHint"
           :passkeys="freshPasskeys"
           :busy="busy"
           :error="error"
@@ -467,11 +487,6 @@ onMounted(async () => {
             {{ serverBuild?.version }}. Some pages may not work until it is updated.
           </PynViewNotice>
           <PynAccessSessionBanner :sessions="ownAccessSessions" />
-          <PynTwoFactorNag
-            v-if="twoFactorDue && route.path !== SECURITY_PATH"
-            :required="twoFactorDue"
-            :href="SECURITY_PATH"
-          />
           <RouterView />
         </template>
         <template #footer>

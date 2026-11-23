@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import {
-  PynAudit,
-  PynPageNotFound,
-  isOrgOwner,
-  orgAuditLabel,
-} from '@avalon-initiative/pyn-common-ui'
+import { PynAudit, isOrgOwner, orgAuditLabel } from '@avalon-initiative/pyn-common-ui'
+import NotFoundView from './NotFoundView.vue'
 import { computed, inject, onMounted, ref } from 'vue'
 import { listOrgAudit } from '../api/orgs'
 import { useAction } from '../state/action.state'
@@ -41,5 +37,5 @@ onMounted(() => {
     :error="error"
     @more="load(true)"
   />
-  <PynPageNotFound v-else />
+  <NotFoundView v-else />
 </template>
