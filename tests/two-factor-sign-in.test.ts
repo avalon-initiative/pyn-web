@@ -3,7 +3,7 @@ import {
   PynSetup,
   PynSignIn,
   PynTopBar,
-  PynTwoFactorNag,
+  PynSecurityNotice,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -271,7 +271,9 @@ describe('enforcement', () => {
       'GET /v1/me': () => reply(200, { id: 'a', user: 'wendy', two_factor_required: due }),
     })
     const { w } = await open()
-    expect(w.findComponent(PynTwoFactorNag).props('required')).toMatchObject({ by: 'server' })
+    const notice = w.findComponent(PynSecurityNotice)
+    expect(notice.props('required')).toBe(true)
+    expect(notice.props('dismissible')).toBe(false)
     expect(w.find('a[href="/_/settings/security"]').exists()).toBe(true)
   })
 
