@@ -1,4 +1,4 @@
-import { PynTopBar } from '@avalon-initiative/pyn-common-ui'
+import { PynShell, PynTopBar } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -134,6 +134,29 @@ describe('top bar data', () => {
     await router.push('/_/people')
     await flushPromises()
     expect(w.findComponent(PynTopBar).props('currentOwner')).toBeUndefined()
+  })
+
+  it('offers Explore in the signed-in menu', async () => {
+    const { w } = await openApp()
+    expect(w.findComponent(PynTopBar).props('extraLinks')).toContainEqual({
+      id: 'explore',
+      label: 'Explore',
+      href: '/_/explore',
+    })
+  })
+
+  it('gives the shell the full width only on the wide routes', async () => {
+    const { w, router } = await openApp('/')
+    expect(w.findComponent(PynShell).props('wide')).toBe(false)
+    await router.push('/acme/game/blob/a.txt')
+    await flushPromises()
+    expect(w.findComponent(PynShell).props('wide')).toBe(true)
+    await router.push('/acme/game/settings/policy')
+    await flushPromises()
+    expect(w.findComponent(PynShell).props('wide')).toBe(true)
+    await router.push('/_/locks')
+    await flushPromises()
+    expect(w.findComponent(PynShell).props('wide')).toBe(false)
   })
 
   it('renders no side navigation on any route and keeps old destinations reachable', async () => {

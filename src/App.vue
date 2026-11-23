@@ -136,6 +136,8 @@ watch(
   () => (signInRequested.value = false),
 )
 const trail = computed(() => breadcrumbs(route))
+const wide = computed(() => route.matched.some((r) => r.meta.wide === true))
+const exploreLinks = [{ id: 'explore', label: 'Explore', href: '/_/explore' }]
 const slugs = computed(() => sessionRepos.value.map(repoSlug))
 const owners = computed(() => topBarOwners(user.value, sessionOrgs.value))
 const extras = computed(() => topBarExtras(props.navItems, props.accountMenuItems))
@@ -437,7 +439,11 @@ onMounted(async () => {
         @manage-admins="leaveSetup('/_/admin/accounts')"
       />
     </main>
-    <PynShell v-else-if="ready && !user && publicPage && !signInRequested" :breadcrumbs="trail">
+    <PynShell
+      v-else-if="ready && !user && publicPage && !signInRequested"
+      :breadcrumbs="trail"
+      :wide="wide"
+    >
       <template #top>
         <PynTopBar
           signed-out
@@ -495,7 +501,7 @@ onMounted(async () => {
       />
     </main>
     <template v-else-if="user">
-      <PynShell :breadcrumbs="trail">
+      <PynShell :breadcrumbs="trail" :wide="wide">
         <template #top>
           <PynTopBar
             :user="user"
@@ -505,6 +511,7 @@ onMounted(async () => {
             :theme="theme"
             :admin="admin"
             :extra-account="extras"
+            :extra-links="exploreLinks"
             :owners="owners"
             :current-owner="currentOwner"
             :locks-held="locksHeld"

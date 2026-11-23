@@ -5,6 +5,7 @@ import {
   PynDashboardOrganizations,
   PynDashboardRepositories,
   PynRecentItems,
+  PynViewAction,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -90,6 +91,14 @@ describe('dashboard cards', () => {
       { id: 'n1', text: 'Second factors were reset.', href: '/_/settings/security' },
     ])
     expect(w.findComponent(PynRecentItems).exists()).toBe(true)
+  })
+
+  it('links to Explore beside the new-repository action', async () => {
+    stub()
+    const w = await mountDashboard()
+    const hrefs = w.findAllComponents(PynViewAction).map((a) => a.props('href'))
+    expect(hrefs).toContain('/_/explore')
+    expect(hrefs).toContain('/_/new')
   })
 
   it('shows the first-run state for an account with no repositories and no organizations', async () => {
