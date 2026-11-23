@@ -8,6 +8,7 @@ import type {
   WebhookDeliveryStatus,
 } from '../types/webhook.types'
 import { api, call } from './http'
+import type { Schemas } from './schema'
 
 const at = (id: number) => ({ params: { path: { id } } })
 
@@ -15,11 +16,22 @@ export const listWebhooks = () => call<Webhook[]>(api.GET('/v1/admin/webhooks'))
 
 export const getWebhook = (id: number) => call<Webhook>(api.GET('/v1/admin/webhooks/{id}', at(id)))
 
+type EventTypes = Schemas['WebhookEventType'][]
+
 export const createWebhook = (body: { name: string; url: string; event_types?: string[] }) =>
-  call<CreatedWebhook>(api.POST('/v1/admin/webhooks', { body }))
+  call<CreatedWebhook>(
+    api.POST('/v1/admin/webhooks', {
+      body: { ...body, event_types: body.event_types as EventTypes | undefined },
+    }),
+  )
 
 export const updateWebhook = (id: number, body: WebhookUpdate) =>
-  call<Webhook>(api.PATCH('/v1/admin/webhooks/{id}', { ...at(id), body }))
+  call<Webhook>(
+    api.PATCH('/v1/admin/webhooks/{id}', {
+      ...at(id),
+      body: { ...body, event_types: body.event_types as EventTypes | undefined },
+    }),
+  )
 
 export const deleteWebhook = (id: number) =>
   call<void>(api.DELETE('/v1/admin/webhooks/{id}', at(id)))

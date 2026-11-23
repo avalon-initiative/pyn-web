@@ -108,6 +108,7 @@ describe('AdminAccountsView deletion', () => {
     account_deletion: { window_days: 30, disabled_retention_days: 0 },
     storage: { kind: 'memory' as const, status: 'ok' as const },
     certificate: { state: 'unchecked' as const, names: [] },
+    email: { mailer: 'none' as const, verification: false },
     administrators: { active: 2, single: false },
   }
 
@@ -142,6 +143,7 @@ describe('AdminAccountsView deletion', () => {
         account_deletion: { window_days: 30, disabled_retention_days: 90 },
         storage: { kind: 'memory' as const, status: 'ok' as const },
         certificate: { state: 'unchecked' as const, names: [] },
+        email: { mailer: 'none' as const, verification: false },
         administrators: { active: 2, single: false },
       }),
     ).toContain('deleted automatically after 90 days')
