@@ -181,6 +181,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/organizations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_organizations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/orgs': {
     parameters: {
       query?: never
@@ -243,6 +259,22 @@ export interface paths {
     options?: never
     head?: never
     patch: operations['set_owner_limits']
+    trace?: never
+  }
+  '/v1/admin/repositories': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_repositories']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
   '/v1/admin/service-credentials': {
@@ -2076,6 +2108,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/policy': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['get_policy']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/policy/preview': {
     parameters: {
       query?: never
@@ -2715,6 +2764,19 @@ export interface components {
      * @enum {string}
      */
     AccountStatus: 'pending_verification' | 'pending_approval' | 'active' | 'disabled'
+    /** @description The policy in force at the default branch head. */
+    ActivePolicy: {
+      /** @description The default branch head the policy was read at; absent before the first commit. */
+      commit?: string | null
+      /** @description The mode of a path no rule covers. */
+      default_mode: components['schemas']['PolicyMode']
+      /** @description One entry per `path` query parameter, in request order. */
+      paths?: components['schemas']['PolicyPath'][]
+      rules: components['schemas']['PolicyRule'][]
+      source: components['schemas']['PolicySource']
+      /** @description Set when `.pyn/pyn.toml` is invalid at the head and the initial policy is shown instead. */
+      warning?: string | null
+    }
     /** @description A file or lock event from the audit log. */
     ActivityEntry: {
       /** @description checkout, release, checkin, restore or force_unlock. */
@@ -2751,7 +2813,7 @@ export interface components {
     }
     AddUserRequest: {
       password: string
-      role: string
+      role: components['schemas']['Role']
       username: string
     }
     /** @description A server administrator or service credential creating an organization for an existing user. */
@@ -2778,6 +2840,38 @@ export interface components {
        */
       purge_at: string | null
       user: string
+    }
+    /** @description An organization in the administrator's listing. */
+    AdminOrgEntry: {
+      /** Format: date-time */
+      created_at: string
+      id: string
+      /** Format: int64 */
+      member_count: number
+      name: string
+    }
+    /** @description One page of every organization on the server. */
+    AdminOrgPage: {
+      /** @description Pass as `after` to fetch the next page; null on the last page. */
+      next_after: string | null
+      /** @description Ordered by name. */
+      organizations: components['schemas']['AdminOrgEntry'][]
+    }
+    /** @description A repository in the administrator's listing. */
+    AdminRepoEntry: {
+      /** Format: date-time */
+      created_at: string
+      id: string
+      name: string
+      owner: string
+      visibility: components['schemas']['Visibility']
+    }
+    /** @description One page of every repository on the server, of any visibility. */
+    AdminRepoPage: {
+      /** @description Pass as `after` to fetch the next page; null on the last page. */
+      next_after: string | null
+      /** @description Ordered by owner, then name. */
+      repos: components['schemas']['AdminRepoEntry'][]
     }
     /** @description Server settings an administrator can read. */
     AdminSettings: {
@@ -3071,7 +3165,7 @@ export interface components {
        * @description How long the invitation can be used, in hours.
        */
       hours: number
-      role: string
+      role: components['schemas']['Role']
     }
     CreateOrgRequest: {
       /** @description Shares the namespace with user names: 2 to 39 lowercase letters, digits, `-` or `_`, not reserved. */
@@ -3386,7 +3480,7 @@ export interface components {
       id: string
       /** Format: date-time */
       revoked_at?: string | null
-      role: string
+      role: components['schemas']['Role']
       /** Format: date-time */
       used_at?: string | null
       used_by?: string | null
@@ -3532,7 +3626,7 @@ export interface components {
     Member: {
       identity?: components['schemas']['PublicIdentity'] | null
       /** @description The effective role: the highest of the direct grant, team grants and organization ownership. */
-      role: string
+      role: components['schemas']['Role']
       source: components['schemas']['MemberSource']
       user: string
     }
@@ -3733,7 +3827,11 @@ export interface components {
       avatar_url?: string | null
       /** @description At most 256 characters; null when unset. */
       description?: string | null
+      /** @description 1 to 80 characters, shown beside the name; null when unset. */
+      display_name?: string | null
       name: string
+      /** @description An http or https website link of at most 200 characters, without credentials; null when unset. */
+      url?: string | null
     }
     /**
      * @description A person's standing in an organization.
@@ -4022,6 +4120,26 @@ export interface components {
       links?: string[]
       location?: string | null
     }
+    /**
+     * @description The collaboration mode of a path.
+     * @enum {string}
+     */
+    PolicyMode: 'shared' | 'exclusive'
+    /** @description The mode of one requested path and the rule that decided it. */
+    PolicyPath: {
+      mode: components['schemas']['PolicyMode']
+      path: string
+      rule?: components['schemas']['PolicyPathRule'] | null
+    }
+    /** @description The entry of `rules` that decided a path. */
+    PolicyPathRule: {
+      /**
+       * Format: int32
+       * @description Position in `rules`.
+       */
+      index: number
+      pattern: string
+    }
     /** @description What a proposed policy would change in the repository, without applying it. */
     PolicyPreview: {
       /** @description Paths where `lockable` in `.gitattributes` (at the default branch tip) and the proposed policy's mode disagree. Advisory: the policy stays the authority. */
@@ -4039,6 +4157,17 @@ export interface components {
       /** @description The proposed contents of `.pyn/pyn.toml`. */
       content: string
     }
+    /** @description One path entry of the policy, in the order the file lists them (exclusive entries, then shared). */
+    PolicyRule: {
+      mode: components['schemas']['PolicyMode']
+      /** @description The entry as written: an exact path, a glob, or a folder with a trailing `/`. */
+      pattern: string
+    }
+    /**
+     * @description Where the active policy came from.
+     * @enum {string}
+     */
+    PolicySource: 'file' | 'initial'
     /** @description The optional, user-edited part of an account: what others see on its profile page. */
     Profile: {
       /**
@@ -4256,8 +4385,7 @@ export interface components {
       /** @description The id of `owner`, a user or an organization. */
       owner_id: string
       owner_identity?: components['schemas']['PublicIdentity'] | null
-      /** @description The caller's role in the repository; absent when they have none. */
-      role?: string | null
+      role?: components['schemas']['Role'] | null
       visibility: components['schemas']['Visibility']
     }
     RepoPage: {
@@ -4308,7 +4436,7 @@ export interface components {
     RepoTeam: {
       description: string
       name: string
-      role: string
+      role: components['schemas']['Role']
       slug: string
       /** @description Stable id of the team; never reused after a delete. */
       team_id: string
@@ -4499,9 +4627,14 @@ export interface components {
        */
       stranded?: components['schemas']['StrandedVersion'][]
     }
+    /**
+     * @description A role in a repository, lowest to highest.
+     * @enum {string}
+     */
+    Role: 'reader' | 'writer' | 'maintainer' | 'admin'
     RoleGrant: {
       permissions: string[]
-      role: string
+      role: components['schemas']['Role']
     }
     RotatedWebhookSecret: {
       /** Format: date-time */
@@ -4535,8 +4668,7 @@ export interface components {
       organization?: string | null
       /** @description `owner/name` of a personal repository. */
       repository?: string | null
-      /** @description A repository role (`reader`, `writer`, `maintainer`, `admin`) or an organization role (`member`, `owner`). */
-      role: string
+      role: components['schemas']['Role'] | components['schemas']['OrgRole']
     }
     /** @description A server invitation as an administrator sees it; the code is never part of it. */
     ServerInvitationInfo: {
@@ -4611,7 +4743,7 @@ export interface components {
       storage_bytes?: number | null
     }
     SetMemberRequest: {
-      role: string
+      role: components['schemas']['Role']
     }
     SetOrgRoleRequest: {
       role: components['schemas']['OrgRole']
@@ -4632,7 +4764,7 @@ export interface components {
       permissions: string[]
     }
     SetTeamRoleRequest: {
-      role: string
+      role: components['schemas']['Role']
     }
     SetTwoFactorRequest: {
       /**
@@ -4787,7 +4919,7 @@ export interface components {
     TeamRepo: {
       /** @description `owner/name`. */
       repo: string
-      role: string
+      role: components['schemas']['Role']
     }
     TokenInfo: {
       /** Format: date-time */
@@ -4913,9 +5045,13 @@ export interface components {
       recovery_codes_left: number
       required?: components['schemas']['TwoFactorRequired'] | null
     }
-    /** @description The new organization description; blank or left out clears it. */
+    /** @description The organization profile text; each field that is blank or left out is cleared. */
     UpdateOrgProfileRequest: {
       description?: string | null
+      /** @description 1 to 80 characters, no control characters. */
+      display_name?: string | null
+      /** @description http or https only, at most 200 characters, no user name or password. */
+      url?: string | null
     }
     /** @description The new profile text: every field is replaced, and one left out or blank is cleared. */
     UpdateProfileRequest: {
@@ -5666,6 +5802,51 @@ export interface operations {
       }
     }
   }
+  list_organizations: {
+    parameters: {
+      query?: {
+        /** @description only organizations whose name contains this text, case-insensitive; at most 64 characters */
+        q?: string
+        /** @description return organizations after this name */
+        after?: string
+        /** @description page size, default 50, max 200 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description every organization ordered by name */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminOrgPage']
+        }
+      }
+      /** @description invalid_request: a `q` over 64 characters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   admin_create_org: {
     parameters: {
       query?: never
@@ -5914,6 +6095,51 @@ export interface operations {
       }
       /** @description user_not_found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_repositories: {
+    parameters: {
+      query?: {
+        /** @description only repositories whose `owner/name` contains this text, case-insensitive; at most 64 characters */
+        q?: string
+        /** @description return repositories after this `owner/name` */
+        after?: string
+        /** @description page size, default 50, max 200 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description every repository, private ones included, ordered by owner then name */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminRepoPage']
+        }
+      }
+      /** @description invalid_request: a malformed `after` or a `q` over 64 characters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required */
+      403: {
         headers: {
           [name: string]: unknown
         }
@@ -9680,7 +9906,7 @@ export interface operations {
           'application/json': components['schemas']['OrgProfile']
         }
       }
-      /** @description invalid_request: the description is too long or has control characters */
+      /** @description invalid_request: a field is too long, has control characters, or the url is not a plain http or https address */
       400: {
         headers: {
           [name: string]: unknown
@@ -12429,6 +12655,42 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+    }
+  }
+  get_policy: {
+    parameters: {
+      query?: {
+        /** @description a path to report the mode and deciding rule for; repeatable, at most 20 */
+        path?: string[]
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ActivePolicy']
+        }
+      }
+      /** @description invalid_path, or invalid_request for more than 20 paths */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
       }
     }
   }

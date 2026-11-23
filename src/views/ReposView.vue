@@ -5,6 +5,7 @@ import {
   PynViewAction,
   PynViewError,
   PynViewHeader,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { listRepos } from '../api/repos'
@@ -30,7 +31,8 @@ onMounted(async () => {
     <PynViewAction href="/_/new" primary>New repository</PynViewAction>
   </PynViewHeader>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <template v-else-if="loaded">
+  <PynLoading v-else-if="!loaded" />
+  <template v-else>
     <PynRepoList v-if="repos.length" :repos="repos" />
     <PynEmptyState
       v-else

@@ -5,6 +5,7 @@ import {
   PynViewError,
   PynViewHeader,
   orgPath,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -63,6 +64,7 @@ onMounted(async () => {
     title="No pending invitations"
     description="When an organization invites you, the invitation shows up here."
   />
+  <PynLoading v-else-if="!loaded" />
   <PynOrgInvitations
     v-else-if="loaded"
     :invitations="invitations"

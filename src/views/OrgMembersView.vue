@@ -5,6 +5,7 @@ import {
   isOrgOwner,
   orgPath,
   type NewOrgMember,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -80,6 +81,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <PynLoading v-if="!loaded && !error" />
   <PynOrgMembers
     v-if="loaded"
     :members="members"

@@ -7,6 +7,7 @@ import {
   personGrantees,
   teamGrantees,
   ungrantedTeams,
+  PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { addUser, listMembers, listRoles, setMember } from '../api/repos'
@@ -117,4 +118,5 @@ onMounted(async () => {
     </PynMembers>
   </template>
   <p v-else-if="people.error.value" role="alert">{{ people.error.value }}</p>
+  <PynLoading v-else />
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PynRoles } from '@avalon-initiative/pyn-common-ui'
+import { PynRoles, PynLoading } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { listRoles, setRole } from '../api/repos'
 import { useAction } from '../state/action.state'
@@ -40,4 +40,5 @@ onMounted(async () => {
     @save="save"
   />
   <p v-else-if="error" role="alert">{{ error }}</p>
+  <PynLoading v-else />
 </template>
