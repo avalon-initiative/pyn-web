@@ -2,9 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized, RouteRecordRaw, RouterHistory } from 'vue-router'
 import { trackPrevious } from './state/navigation.state'
 import { scrollToHash } from './state/hash.state'
+import { passwordChangeGuard } from './state/password-change.state'
 import AdminAccessView from './views/AdminAccessView.vue'
 import AdminAccessSessionsView from './views/AdminAccessSessionsView.vue'
 import AdminAuditView from './views/AdminAuditView.vue'
+import AdminInvitationsView from './views/AdminInvitationsView.vue'
 import AdminAccountsView from './views/AdminAccountsView.vue'
 import AdminWebhooksView from './views/AdminWebhooksView.vue'
 import AdminTwoFactorView from './views/AdminTwoFactorView.vue'
@@ -74,6 +76,7 @@ export const routes: RouteRecordRaw[] = [
     children: [
       { path: '', redirect: '/_/admin/accounts' },
       { path: 'accounts', name: 'admin-accounts', component: AdminAccountsView },
+      { path: 'invitations', name: 'admin-invitations', component: AdminInvitationsView },
       { path: 'access', name: 'admin-access', component: AdminAccessView },
       { path: 'two-factor', name: 'admin-two-factor', component: AdminTwoFactorView },
       {
@@ -167,6 +170,7 @@ export const makeRouter = (
       if (to.hash) scrollToHash(to.hash)
     },
   })
+  router.beforeEach(passwordChangeGuard)
   trackPrevious(router)
   return router
 }

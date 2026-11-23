@@ -6,6 +6,11 @@ import type {
 import type { TwoFactorSetting } from '@avalon-initiative/pyn-common-ui'
 import type { Schemas } from './schema'
 import type { AccountMe, AdminSettings, UpdateStatus } from '../types/admin.types'
+import type {
+  CreatedServerInvitation,
+  ServerInvitation,
+  ServerInvitationRequest,
+} from '../types/server-invitation.types'
 import type { AuditPage } from '../types/repo.types'
 import { api, call } from './http'
 
@@ -65,3 +70,18 @@ export const setServerTwoFactor = (required: boolean, grace_days: number) =>
 
 export const resetTwoFactor = (user: string) =>
   call<void>(api.POST('/v1/admin/users/{user}/two-factor/reset', path(user)))
+
+export const listServerInvitations = () =>
+  call<ServerInvitation[]>(api.GET('/v1/admin/invitations'))
+
+export const createServerInvitation = (body: ServerInvitationRequest) =>
+  call<CreatedServerInvitation>(api.POST('/v1/admin/invitations', { body }))
+
+export const revokeServerInvitation = (id: string) =>
+  call<void>(api.DELETE('/v1/admin/invitations/{id}', { params: { path: { id } } }))
+
+export const addAccount = (username: string, password: string) =>
+  call<AccountInfo>(api.POST('/v1/admin/users', { body: { username, password } }))
+
+export const resendConfirmation = (user: string) =>
+  call<void>(api.POST('/v1/admin/users/{user}/resend-confirmation', path(user)))

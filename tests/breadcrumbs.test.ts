@@ -30,6 +30,7 @@ const table: [string, string, ...(string | undefined)[]][] = [
     'Access sessions',
   ],
   ['/_/admin/audit', 'admin-audit', 'Home', 'Administration', 'Audit log'],
+  ['/_/admin/invitations', 'admin-invitations', 'Home', 'Administration', 'Invitations'],
   ['/_/admin/webhooks', 'admin-webhooks', 'Home', 'Administration', 'Webhooks'],
   ['/_/settings/profile', 'profile-settings', 'Home', 'Settings', 'Profile'],
   ['/_/settings/emails', 'emails', 'Home', 'Settings', 'Email addresses'],

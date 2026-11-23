@@ -83,6 +83,7 @@ describe('admin area', () => {
     expect(layout.props('current')).toBe(current)
     expect(layout.props('items').map((i: { id: string }) => i.id)).toEqual([
       'accounts',
+      'invitations',
       'access',
       'audit',
       'webhooks',

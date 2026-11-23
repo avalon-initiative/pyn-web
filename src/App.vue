@@ -38,6 +38,7 @@ import {
   twoFactorDue,
 } from './state/two-factor.state'
 import { getPasskey, passkeyBrowserError, passkeysSupported } from './state/webauthn.state'
+import { passwordChangeRequired } from './state/password-change.state'
 import { onPendingDeletion } from './state/pending.state'
 import { ownProfile } from './state/own-profile.state'
 import { ownAccessSessions } from './state/access-session.state'
@@ -87,7 +88,7 @@ import type {
   SignInForm,
 } from '@avalon-initiative/pyn-common-ui'
 import { helpHint, recoveryHint } from './state/two-factor.state'
-import type { RegistrationInfo, SignInOptions } from './types/auth.types'
+import type { RegistrationInfo, Session, SignInOptions } from './types/auth.types'
 
 withDefaults(defineProps<{ navItems?: NavItem[]; accountMenuItems?: AccountMenuItem[] }>(), {
   navItems: () => [],
@@ -150,6 +151,7 @@ const expire = () => {
   deletion.value = null
   user.value = ''
   admin.value = false
+  passwordChangeRequired.value = false
   ownProfile.value = {}
 }
 provide(sessionKey, {
@@ -161,7 +163,8 @@ provide(sessionKey, {
 })
 
 /** Reads the admin flag before the user is set, so admin pages do not flash as not found. */
-async function begin(name: string) {
+async function begin(name: string, mustChangePassword?: boolean) {
+  if (mustChangePassword !== undefined) passwordChangeRequired.value = mustChangePassword
   const status = await fetchDeletionStatus().catch(() => null)
   recoveryDays.value = status?.window_days
   deletion.value = status?.pending ? status : null
@@ -172,7 +175,10 @@ async function begin(name: string) {
   user.value = name
   setupUsername.value = ''
   if (!deletion.value) void loadSecurityNotice()
+  if (passwordChangeRequired.value) await router.push({ name: 'password' })
 }
+
+const beginSession = (s: Session) => begin(s.user, s.password_change_required === true)
 
 async function attempt(action: () => Promise<void>) {
   busy.value = true
@@ -228,7 +234,7 @@ const submitSignIn = (form: SignInForm) =>
   attempt(async () => {
     pendingUser.value = form.username
     try {
-      await begin((await signIn(form)).user)
+      await beginSession(await signIn(form))
     } catch (e) {
       if (!needsSecondFactor(e)) throw e
       challenge.value = form
@@ -238,7 +244,7 @@ const submitSignIn = (form: SignInForm) =>
 const submitChallenge = (second: SecondFactorForm) =>
   attempt(async () => {
     if (!challenge.value) return
-    await begin((await signIn(challenge.value, second.code.trim())).user)
+    await beginSession(await signIn(challenge.value, second.code.trim()))
     challenge.value = null
   })
 
@@ -259,7 +265,7 @@ const signInWithPasskey = () =>
       const begun = await beginPasskeySignIn(challenge.value?.username)
       const session = await finishPasskeySignIn(begun.ceremony, await getPasskey(begun.public_key))
       challenge.value = null
-      await begin(session.user)
+      await beginSession(session)
     }),
   )
 
@@ -302,7 +308,7 @@ const join = (form: RegisterForm) =>
     if (refuseName(form.username)) return
     pendingUser.value = form.username
     const { status } = await register(form)
-    if (status === 'active') await begin((await signIn(form)).user)
+    if (status === 'active') await beginSession(await signIn(form))
     else
       notice.value = {
         status: status === 'disabled' ? 'account_disabled' : status,
@@ -361,7 +367,7 @@ onMounted(async () => {
   if (status && !status.initialised) setup.value = status
   await loadOptions()
   const session = await restoreSession().catch(() => null)
-  if (session) await begin(session.user)
+  if (session) await beginSession(session)
   ready.value = true
 })
 </script>
