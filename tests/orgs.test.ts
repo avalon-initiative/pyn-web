@@ -1,7 +1,6 @@
 import {
   PynOrgHeader,
   PynRepoForm,
-  PynSideNav,
   PynTopBar,
   PynOrgDelete,
   PynOrgForm,
@@ -12,7 +11,6 @@ import {
   orgTabs,
   ownerChoices,
   ruleSubjects,
-  mainNav,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -22,7 +20,6 @@ import { describeError, ApiError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { orgKey, sessionKey } from '../src/state/context.state'
 import { orgMembers, orgs, repoPolicy, teams } from './fixtures/org-data'
-import { sampleRepos } from './fixtures/shell-data'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
 import NewOrgView from '../src/views/NewOrgView.vue'
 import OrgSettingsView from '../src/views/OrgSettingsView.vue'
@@ -204,11 +201,7 @@ describe('owner picker and headers', () => {
     expect(w.emitted('update:owner')?.[0]).toEqual(['studio'])
   })
 
-  it('lists organizations in the sidebar and the create menu', async () => {
-    const side = mount(PynSideNav, {
-      props: { account: 'alice', items: mainNav, current: '', repos: sampleRepos, orgs },
-    })
-    expect(side.find('a[href="/studio"]').exists()).toBe(true)
+  it('offers organization creation in the create menu', async () => {
     const bar = mount(PynTopBar, { props: { user: 'alice', repos: [], theme: 'system' } })
     await bar.find('[aria-label="Create"]').trigger('click')
     expect(bar.find('a[href="/_/new-org"]').exists()).toBe(true)

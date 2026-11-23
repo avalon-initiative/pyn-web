@@ -5,6 +5,7 @@ import { listMyLocks, releaseLock } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { LOCKS_HINT } from '../state/empty.state'
 import { releaseEach } from '../state/my-locks.state'
+import { refreshTopBar } from '../state/top-bar.state'
 import type { MyLock, ReleaseFailure } from '@avalon-initiative/pyn-common-ui'
 
 const locks = ref<MyLock[]>([])
@@ -20,12 +21,14 @@ const release = (lock: MyLock) =>
   attempt(async () => {
     failures.value = await releaseEach([lock], (l) => releaseLock(l, l.path))
     await refresh()
+    void refreshTopBar()
   })
 
 const releaseAll = () =>
   attempt(async () => {
     failures.value = await releaseEach(locks.value, (l) => releaseLock(l, l.path))
     await refresh()
+    void refreshTopBar()
   })
 
 onMounted(async () => {

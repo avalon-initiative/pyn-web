@@ -10,7 +10,6 @@ import { ref } from 'vue'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
 import { sessionKey } from '../src/state/context.state'
-import { activeNav, sideNavItems } from '../src/state/shell.state'
 import { asStatus, replaceById, toViewDelivery } from '../src/state/webhooks.state'
 import AdminWebhooksView from '../src/views/AdminWebhooksView.vue'
 
@@ -57,11 +56,7 @@ describe('webhooks state', () => {
     expect(asStatus('bogus')).toBe('')
   })
 
-  it('reaches the Webhooks page through Server administration, not its own sidebar entry', () => {
-    expect(sideNavItems(true).some((i) => i.id === 'webhooks')).toBe(false)
-    expect(sideNavItems(true).some((i) => i.id === 'admin')).toBe(true)
-    expect(sideNavItems(false).some((i) => i.id === 'admin')).toBe(false)
-    expect(activeNav('/_/admin/webhooks')).toBe('admin')
+  it('reaches the Webhooks page through Server administration', () => {
     expect(makeRouter(createMemoryHistory()).resolve('/_/admin/webhooks').name).toBe(
       'admin-webhooks',
     )

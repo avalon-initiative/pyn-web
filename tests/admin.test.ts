@@ -11,7 +11,6 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { sessionKey } from '../src/state/context.state'
-import { activeNav } from '../src/state/shell.state'
 import { accounts } from './fixtures/admin-data'
 import AdminAccountsView from '../src/views/AdminAccountsView.vue'
 import { makeRouter } from '../src/router'
@@ -41,12 +40,6 @@ describe('admin state', () => {
     const items = navItems(true).filter((i) => i.href === '/_/admin')
     expect(items.map((i) => i.id)).toEqual(['admin'])
     expect(navItems(true).some((i) => i.id === 'accounts')).toBe(false)
-  })
-
-  it('marks the admin sidebar item for every admin path', () => {
-    for (const p of ['/_/admin', '/_/admin/accounts', '/_/admin/audit', '/_/admin/webhooks'])
-      expect(activeNav(p)).toBe('admin')
-    expect(activeNav('/_/settings/keys')).toBe('')
   })
 
   it('routes the page under /_/', () => {

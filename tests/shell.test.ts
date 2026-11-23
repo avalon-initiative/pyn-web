@@ -14,16 +14,9 @@ import {
 } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { activeNav } from '../src/state/shell.state'
 import { sampleRepos } from './fixtures/shell-data'
 
 describe('shell state', () => {
-  it('matches the active sidebar item by path', () => {
-    expect(activeNav('/')).toBe('home')
-    expect(activeNav('/alice/game')).toBe('')
-    expect(activeNav('/_/locks')).toBe('locks')
-  })
-
   it('matches repositories case-insensitively and returns nothing for an empty query', () => {
     expect(matchRepos(['alice/Game', 'bob/tools'], 'GAM')).toEqual(['alice/Game'])
     expect(matchRepos(['alice/game'], ' ')).toEqual([])

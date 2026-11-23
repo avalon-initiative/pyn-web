@@ -12,7 +12,6 @@ import { ApiError, describeError } from '../src/api/client'
 import { makeRouter } from '../src/router'
 import { orgKey, sessionKey } from '../src/state/context.state'
 import { pendingInvitations } from '../src/state/invitations.state'
-import { activeNav, sideNavItems } from '../src/state/shell.state'
 import { invitations, orgMembers, orgs } from './fixtures/org-data'
 import InvitationsView from '../src/views/InvitationsView.vue'
 import OrgAuditView from '../src/views/OrgAuditView.vue'
@@ -46,15 +45,8 @@ afterEach(() => {
 })
 
 describe('routing and navigation', () => {
-  it('has an invitations page and a side nav entry for it', () => {
+  it('has an invitations page', () => {
     expect(makeRouter(createMemoryHistory()).resolve('/_/invitations').name).toBe('invitations')
-    expect(sideNavItems(false).find((i) => i.id === 'invitations')?.href).toBe('/_/invitations')
-    expect(activeNav('/_/invitations')).toBe('invitations')
-  })
-
-  it('badges the invitations entry with the pending count', () => {
-    expect(sideNavItems(false, [], 3).find((i) => i.id === 'invitations')?.badge).toBe(3)
-    expect(sideNavItems(false).find((i) => i.id === 'invitations')?.badge).toBe(0)
   })
 })
 

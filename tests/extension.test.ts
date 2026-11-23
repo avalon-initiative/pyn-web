@@ -48,7 +48,8 @@ afterEach(() => {
 describe('createPynApp', () => {
   it('renders the standard shell with nothing registered', async () => {
     const { el } = await open('/')
-    expect(el.textContent).toContain('Home')
+    expect(el.querySelector('aside')).toBeNull()
+    expect(el.querySelector('#pyn-main')).not.toBeNull()
     expect(el.textContent).not.toContain('Reports')
     expect(el.querySelector('#sample')).toBeNull()
   })
@@ -57,11 +58,10 @@ describe('createPynApp', () => {
     const { el } = await open(`${EXTENSION_PREFIX}/sample`, {
       routes: [{ path: `${EXTENSION_PREFIX}/sample`, name: 'sample', component: Sample }],
     })
-    expect(el.querySelector('aside')).not.toBeNull()
     expect(el.querySelector('#sample')?.textContent).toBe('hello alice')
   })
 
-  it('lists a side-nav entry and an account-menu entry, and runs a menu button', async () => {
+  it('lists a nav entry and an account-menu entry in the account menu, and runs a menu button', async () => {
     const onSelect = vi.fn()
     const { el } = await open('/', {
       navItems: [{ id: 'reports', label: 'Reports', href: `${EXTENSION_PREFIX}/reports` }],
@@ -70,28 +70,15 @@ describe('createPynApp', () => {
         { id: 'help', label: 'Get help', onSelect },
       ],
     })
-    expect(el.querySelector(`aside a[href="${EXTENSION_PREFIX}/reports"]`)?.textContent).toContain(
-      'Reports',
-    )
     el.querySelector<HTMLElement>('[aria-label="Account menu"]')!.click()
     await flushPromises()
+    expect(el.querySelector(`a[href="${EXTENSION_PREFIX}/reports"]`)?.textContent).toBe('Reports')
     expect(el.querySelector(`a[href="${EXTENSION_PREFIX}/usage"]`)?.textContent).toBe(
       'Usage report',
     )
     const help = [...el.querySelectorAll('button')].find((b) => b.textContent === 'Get help')!
     help.click()
     expect(onSelect).toHaveBeenCalledOnce()
-  })
-
-  it('marks the extra nav entry current on its own pages', async () => {
-    const { el } = await open(`${EXTENSION_PREFIX}/reports/1`, {
-      routes: [{ path: `${EXTENSION_PREFIX}/reports/:id`, component: Sample }],
-      navItems: [{ id: 'reports', label: 'Reports', href: `${EXTENSION_PREFIX}/reports` }],
-    })
-    const current = [...el.querySelectorAll('aside [aria-current]')].map((a) =>
-      a.textContent?.trim(),
-    )
-    expect(current).toEqual(['Reports'])
   })
 })
 

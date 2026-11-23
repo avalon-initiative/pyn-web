@@ -14,7 +14,7 @@ const namesOf = (rs: readonly RouteRecordRaw[]): string[] =>
 export function createPynApp(ext: PynExtension = {}, history: RouterHistory = createWebHistory()) {
   validateExtension(ext, {
     routeNames: new Set(namesOf(builtInRoutes)),
-    navIds: new Set([...builtInNav(true).map((i) => i.id), 'webhooks', 'people']),
+    navIds: new Set([...builtInNav(true).map((i) => i.id), 'webhooks', 'people', 'my-locks']),
   })
   return createApp(App, {
     navItems: ext.navItems ?? [],
