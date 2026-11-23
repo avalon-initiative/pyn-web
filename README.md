@@ -66,7 +66,7 @@ See [docs/trust-boundary.md](docs/trust-boundary.md) for what the client sends a
 | `/_/orgs`                                                            | organizations you belong to                                                                         |
 | `/_/new`, `/_/new-org`                                               | create a repository or an organization                                                              |
 | `/_/locks`                                                           | locks you hold, across repositories                                                                 |
-| `/_/settings/{keys,tokens,identities}`                               | account settings (`/_/keys` and `/_/tokens` also work)                                              |
+| `/_/settings/{keys,tokens,identities}`                               | account settings (`/_/settings` opens Profile)                                                      |
 | `/_/admin/accounts`                                                  | server administration of accounts                                                                   |
 | `/_/admin/webhooks`                                                  | webhook subscriptions: create, edit, secrets and deliveries in a drawer (administrators)            |
 | `/:owner`                                                            | an owner's repositories; `/:owner/-/{members,teams,teams/:team,audit,settings}` for an organization |
