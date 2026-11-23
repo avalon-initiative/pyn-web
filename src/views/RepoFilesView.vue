@@ -6,6 +6,7 @@ import { fetchContent, fetchSummary, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useBranch } from '../state/branch.state'
+import { firstCommitSteps } from '../state/empty.state'
 import { useHashScroll } from '../state/hash.state'
 import {
   fileBody,
@@ -16,6 +17,7 @@ import {
   type RepoSummary,
   type TreeEntry,
   type TreeListing,
+  PynEmptyState,
   PynViewError,
   PynRepoLanding,
 } from '@avalon-initiative/pyn-common-ui'
@@ -34,6 +36,18 @@ const barSummary = computed(() =>
     : summary.value,
 )
 const missing = ref(false)
+const isEmpty = computed(
+  () =>
+    !!listing.value &&
+    !path.value &&
+    !branch.value &&
+    listing.value.entries.every((e) => e.name === '.pyn'),
+)
+const steps = computed(() =>
+  repo.value
+    ? firstCommitSteps(window.location.origin, user.value, `${repo.value.owner}/${repo.value.name}`)
+    : '',
+)
 const readme = ref<ReadmeDoc | null>(null)
 const now = ref(new Date())
 const { error, attempt } = useAction()
@@ -107,8 +121,13 @@ onUnmounted(() => clearInterval(timer))
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
+  <PynEmptyState
+    v-if="repo && isEmpty"
+    title="This repository only has its policy file so far"
+    :description="steps"
+  />
   <PynRepoLanding
-    v-if="repo"
+    v-if="repo && !isEmpty"
     :repo="repo"
     :path="path"
     :branch="branch"

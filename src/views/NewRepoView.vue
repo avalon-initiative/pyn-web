@@ -4,6 +4,7 @@ import {
   type RepoSettings,
   repoPath,
   ownerChoices,
+  PynViewAction,
   PynViewHeader,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
@@ -39,7 +40,9 @@ const create = (settings: RepoSettings) =>
 </script>
 
 <template>
-  <PynViewHeader title="New repository" />
+  <PynViewHeader title="New repository">
+    <PynViewAction href="/">Cancel</PynViewAction>
+  </PynViewHeader>
   <PynRepoForm
     :owner="owner"
     :owners="owners"

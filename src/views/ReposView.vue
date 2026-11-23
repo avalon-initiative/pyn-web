@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  PynEmptyState,
   PynRepoList,
   PynViewAction,
   PynViewError,
@@ -29,5 +30,14 @@ onMounted(async () => {
     <PynViewAction href="/_/new" primary>New repository</PynViewAction>
   </PynViewHeader>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <PynRepoList v-else-if="loaded" :repos="repos" />
+  <template v-else-if="loaded">
+    <PynRepoList v-if="repos.length" :repos="repos" />
+    <PynEmptyState
+      v-else
+      title="You are not in any repository yet"
+      description="Repositories you create or are invited to show up here."
+      primary-label="Create a repository"
+      primary-href="/_/new"
+    />
+  </template>
 </template>

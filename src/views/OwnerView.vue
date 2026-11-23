@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import {
   PynButton,
+  PynEmptyState,
   PynProfileHeader,
   PynProfileLayout,
   PynRepoList,
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
-import { inject, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getProfile } from '../api/profile'
 import type { PublicProfile } from '../api/profile'
@@ -23,6 +24,7 @@ const repos = ref<RepoInfo[]>([])
 const profile = ref<PublicProfile | null>(null)
 const loaded = ref(false)
 const { error, attempt } = useAction()
+const mine = computed(() => (org.value ? org.value.role === 'owner' : name.value === self.value))
 
 // An organization's page lists its repositories; a user's is the profile.
 watch(
@@ -68,7 +70,26 @@ watch(
           </template>
         </PynProfileHeader>
       </template>
+      <template v-if="!repos.length" #repositories>
+        <PynEmptyState
+          compact
+          :heading-level="3"
+          :title="mine ? 'You have no repositories yet' : `${name} has no repositories you can see`"
+          :primary-label="mine ? 'Create a repository' : undefined"
+          :primary-href="mine ? '/_/new' : undefined"
+        />
+      </template>
     </PynProfileLayout>
-    <PynRepoList v-else :repos="repos" :empty="`${name} has no repositories you can see.`" />
+    <PynRepoList v-else-if="repos.length" :repos="repos" />
+    <PynEmptyState
+      v-else
+      :title="
+        mine
+          ? 'This organization has no repositories yet'
+          : `${name} has no repositories you can see`
+      "
+      :primary-label="mine ? 'Create a repository' : undefined"
+      :primary-href="mine ? '/_/new' : undefined"
+    />
   </template>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  PynEmptyState,
   PynOrgList,
   sortOrgs,
   PynViewAction,
@@ -28,5 +29,14 @@ onMounted(async () => {
     <PynViewAction href="/_/new-org" primary>New organization</PynViewAction>
   </PynViewHeader>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <PynOrgList v-else-if="loaded" :orgs="orgs" />
+  <template v-else-if="loaded">
+    <PynOrgList v-if="orgs.length" :orgs="orgs" />
+    <PynEmptyState
+      v-else
+      title="You are not in any organization yet"
+      description="An organization lets a team share repositories and roles."
+      primary-label="Create an organization"
+      primary-href="/_/new-org"
+    />
+  </template>
 </template>
