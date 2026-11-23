@@ -82,6 +82,7 @@ onMounted(() => void Promise.all([repos.load(), orgs.load(), loadAttention()]))
   <PynDashboard v-else>
     <template #header>
       <PynViewHeader title="Dashboard">
+        <PynViewAction href="/_/explore">Explore</PynViewAction>
         <PynViewAction href="/_/new" primary>New repository</PynViewAction>
       </PynViewHeader>
     </template>

@@ -57,14 +57,14 @@ afterEach(() => vi.unstubAllGlobals())
 describe('repository routes', () => {
   const resolve = (path: string) => makeRouter(createMemoryHistory()).resolve(path)
 
-  it('marks the repository parent route bare and nothing else', () => {
-    const bare = (p: string) => resolve(p).matched.some((r) => r.meta.bare)
-    expect(bare('/acme/game')).toBe(true)
-    expect(bare('/acme/game/settings/members')).toBe(true)
-    expect(bare('/acme/game/blob/a.txt')).toBe(true)
-    expect(bare('/')).toBe(false)
-    expect(bare('/acme')).toBe(false)
-    expect(bare('/_/locks')).toBe(false)
+  it('marks only the code view and the policy pages wide', () => {
+    const wide = (p: string) => resolve(p).matched.some((r) => r.meta.wide === true)
+    expect(wide('/acme/game/blob/a.txt')).toBe(true)
+    expect(wide('/acme/game/policy')).toBe(true)
+    expect(wide('/acme/game/settings/policy')).toBe(true)
+    expect(wide('/acme/game')).toBe(false)
+    expect(wide('/acme/game/settings/members')).toBe(false)
+    expect(wide('/')).toBe(false)
   })
 
   it('keeps files, tree, blob, locks and history', () => {

@@ -132,15 +132,19 @@ export const routes: RouteRecordRaw[] = [
   {
     path: `/${ownerParam}/:name`,
     component: RepoView,
-    meta: { bare: true },
     children: [
       { path: '', name: 'files', component: RepoFilesView, meta: { public: true } },
       { path: 'tree/:path(.*)?', name: 'tree', component: RepoFilesView, meta: { public: true } },
-      { path: 'blob/:path(.+)', name: 'blob', component: RepoBlobView, meta: { public: true } },
+      {
+        path: 'blob/:path(.+)',
+        name: 'blob',
+        component: RepoBlobView,
+        meta: { public: true, wide: true },
+      },
       { path: 'locks', name: 'locks', component: RepoLocksView, meta: { public: true } },
       { path: 'history', name: 'history', component: RepoHistoryView, meta: { public: true } },
       { path: 'branches', name: 'branches', component: RepoBranchesView },
-      { path: 'policy', name: 'policy', component: RepoPolicyReadView },
+      { path: 'policy', name: 'policy', component: RepoPolicyReadView, meta: { wide: true } },
       ...['members', 'roles', 'invites', 'audit'].map((section) => ({
         path: section,
         redirect: settingsRedirect(section),
@@ -153,7 +157,12 @@ export const routes: RouteRecordRaw[] = [
           { path: 'members', name: 'settings-members', component: RepoMembersView },
           { path: 'roles', name: 'settings-roles', component: RepoRolesView },
           { path: 'invites', name: 'settings-invites', component: RepoInvitesView },
-          { path: 'policy', name: 'settings-policy', component: RepoPolicyView },
+          {
+            path: 'policy',
+            name: 'settings-policy',
+            component: RepoPolicyView,
+            meta: { wide: true },
+          },
           { path: 'storage', name: 'settings-storage', component: RepoStorageView },
           { path: 'audit', name: 'settings-audit', component: RepoAuditView },
         ],
