@@ -1,19 +1,41 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchHistory } from '../api/repos'
+import { createBranch, fetchHistory } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { useBranch } from '../state/branch.state'
+import { useBranchDialog } from '../state/branch-dialog.state'
 import { repoKey } from '../state/context.state'
+import { canWrite } from '../state/freeze.state'
 import type { Revision } from '@avalon-initiative/pyn-common-ui'
-import { PynHistory, historyQuery, repoPath } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynBranchDialog,
+  PynHistory,
+  historyQuery,
+  repoPath,
+} from '@avalon-initiative/pyn-common-ui'
 
-const { target, branches, branchesLoading, branchesError, selectBranch } = inject(repoKey)!
+const {
+  target,
+  permissions,
+  frozen,
+  branches,
+  branchesLoading,
+  branchesError,
+  selectBranch,
+  reloadBranches,
+} = inject(repoKey)!
 const route = useRoute()
 const router = useRouter()
 const branch = useBranch()
-// The picker shows only for a named branch, so the default branch is named too.
-const shownBranch = computed(() => branch.value ?? branches?.value.find((b) => b.isDefault)?.name)
+const creatable = computed(() => canWrite(permissions.value.includes('checkin'), frozen.value))
+const dialog = useBranchDialog({
+  create: async (name, from) => {
+    await createBranch(target.value, name, from)
+    await reloadBranches?.()
+    await selectBranch?.(name)
+  },
+})
 const path = ref(String(route.query.path ?? ''))
 const filter = ref(path.value ? '' : String(route.query.filter ?? ''))
 const revisions = ref<Revision[]>([])
@@ -63,10 +85,11 @@ onMounted(() => load())
   <PynHistory
     title="History"
     :revisions="revisions"
-    :branch="shownBranch"
+    :branch="branch"
     :branches="branches"
     :branches-loading="branchesLoading"
     :branches-error="branchesError || undefined"
+    :new-branch-button="creatable"
     :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :filter="filter"
     :path="path"
@@ -78,5 +101,16 @@ onMounted(() => load())
     @clear-path="apply('', '')"
     @more="load(true)"
     @select-branch="selectBranch?.($event)"
+    @new-branch="dialog.openCreate(branch)"
+  />
+  <PynBranchDialog
+    :open="dialog.open.value"
+    mode="create"
+    :from="dialog.from.value"
+    :branches="branches ?? []"
+    :busy="dialog.busy.value"
+    :error="dialog.error.value || undefined"
+    @close="dialog.close"
+    @create="dialog.create"
   />
 </template>
