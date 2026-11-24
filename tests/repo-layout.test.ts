@@ -127,6 +127,16 @@ describe('shell on repository and dashboard routes', () => {
     expect(w.findAllComponents(PynSideRail).length).toBeGreaterThanOrEqual(1)
   })
 
+  it('puts the repositories rail without its account block in the navigation drawer', async () => {
+    const { w } = await open('/')
+    const before = w.findAllComponents(PynSideRail).length
+    await w.find('[aria-label="Open navigation"]').trigger('click')
+    await flushPromises()
+    const rails = w.findAllComponents(PynSideRail)
+    expect(rails.length).toBe(before + 1)
+    expect(rails.some((r) => r.props('hideAccount') === true)).toBe(true)
+  })
+
   it('shows the repository shell with its tab bar', async () => {
     const { w } = await open('/acme/game')
     const shell = w.findComponent(PynRepoShell)
