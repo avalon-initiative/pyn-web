@@ -150,7 +150,7 @@ describe('PynSignIn', () => {
       .findAll('button')
       .find((b) => b.text() === 'I have an invitation')!
       .trigger('click')
-    expect(invite.findAll('input')).toHaveLength(4)
+    expect(invite.findAll('input')).toHaveLength(5)
     await fill(invite, ['wendy', 'a long password', 'a long password', 'pyni_x'])
     await invite.find('form').trigger('submit')
     expect(invite.emitted('register')?.[0]).toEqual([
@@ -162,7 +162,7 @@ describe('PynSignIn', () => {
       .findAll('button')
       .find((b) => b.text() === 'Create an account')!
       .trigger('click')
-    expect(open.findAll('input')).toHaveLength(3)
+    expect(open.findAll('input')).toHaveLength(4)
   })
 
   it('hides registration on closed servers and offers no token entry', () => {
