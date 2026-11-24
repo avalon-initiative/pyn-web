@@ -32,6 +32,8 @@ export interface RepoContext {
   branchesError?: Ref<string>
   /** Switches the page to a branch through the address. */
   selectBranch?: (name: string) => unknown
+  /** Rereads the branch list, e.g. after one was created, renamed or deleted. */
+  reloadBranches?: () => Promise<void>
   /** The branch comparison; the landing page places it under its toolbar, other pages above their content. */
   compare?: {
     props: ComputedRef<Omit<InstanceType<typeof PynBranchCompare>['$props'], 'onSelect'>>

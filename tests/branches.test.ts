@@ -85,8 +85,7 @@ describe('branch picker', () => {
     const pickers = async (path: string) =>
       (await open(path)).w.findAllComponents(PynBranchPicker).length
     expect(await pickers('/acme/game/history')).toBe(1)
-    expect(await pickers('/acme/game/blob/a.txt')).toBe(1)
-    for (const tab of ['locks', 'branches', 'policy']) {
+    for (const tab of ['blob/a.txt', 'locks', 'branches', 'policy']) {
       expect([tab, await pickers(`/acme/game/${tab}`)]).toEqual([tab, 0])
     }
   })
