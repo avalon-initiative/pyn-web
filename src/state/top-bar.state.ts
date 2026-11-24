@@ -1,17 +1,46 @@
 import { computed, ref } from 'vue'
-import type { NavItem, OrgInfo, OwnerOption } from '@avalon-initiative/pyn-common-ui'
+import { orgPath } from '@avalon-initiative/pyn-common-ui'
+import type { BellEntry, NavItem, OrgInfo, OwnerOption } from '@avalon-initiative/pyn-common-ui'
+import { acceptInvitation, declineInvitation } from '../api/orgs'
 import { listMyLocks } from '../api/repos'
-import { listNotices } from '../api/two-factor'
-import { pendingInvitations } from './invitations.state'
-import { refreshInvitations } from './session-data.state'
+import { dismissNotice, listNotices } from '../api/two-factor'
+import type { Notice } from '../types/two-factor.types'
+import { myInvitations } from './invitations.state'
+import { refreshInvitations, refreshOrgs, refreshRepos } from './session-data.state'
+import { SECURITY_PATH } from './two-factor.state'
 import type { AccountMenuItem } from '../types/extension.types'
 
 const HOUR_MS = 3_600_000
 
 const locksHeld = ref(0)
 const locksExpiring = ref(false)
-const notices = ref(0)
-const notifications = computed(() => pendingInvitations.value + notices.value)
+const notices = ref<Notice[]>([])
+const busyEntries = ref<string[]>([])
+
+const NOTICE = 'notice:'
+const INVITATION = 'invitation:'
+
+/** Security notices and pending invitations as bell entries, newest first. */
+export const bellEntries = computed<BellEntry[]>(() =>
+  [
+    ...notices.value.map((n) => ({
+      id: NOTICE + n.id,
+      title: n.detail,
+      at: n.created_at,
+      href: n.kind === 'two_factor_reset' ? SECURITY_PATH : undefined,
+      kind: 'notice' as const,
+      busy: busyEntries.value.includes(NOTICE + n.id),
+    })),
+    ...myInvitations.value.map((i) => ({
+      id: INVITATION + i.org,
+      title: `${i.invited_by} invited you to ${i.org} as ${i.role}`,
+      at: i.created_at,
+      href: '/_/invitations',
+      kind: 'invitation' as const,
+      busy: busyEntries.value.includes(INVITATION + i.org),
+    })),
+  ].sort((a, b) => b.at.localeCompare(a.at)),
+)
 
 async function refreshLocks(now: number) {
   try {
@@ -26,9 +55,9 @@ async function refreshLocks(now: number) {
 
 async function refreshNotices() {
   try {
-    notices.value = (await listNotices()).length
+    notices.value = await listNotices()
   } catch {
-    notices.value = 0
+    notices.value = []
   }
 }
 
@@ -41,10 +70,38 @@ export const refreshTopBar = () => Promise.all([loadTopBar(), refreshInvitations
 export function resetTopBar() {
   locksHeld.value = 0
   locksExpiring.value = false
-  notices.value = 0
+  notices.value = []
+  busyEntries.value = []
 }
 
-export const useTopBar = () => ({ locksHeld, locksExpiring, notifications })
+async function answer(id: string, action: () => Promise<void>) {
+  busyEntries.value = [...busyEntries.value, id]
+  try {
+    await action()
+  } catch {
+    // the lists reload below, so a gone or refused entry disappears
+  } finally {
+    busyEntries.value = busyEntries.value.filter((b) => b !== id)
+    await refreshTopBar()
+  }
+}
+
+/** Handlers for the bell's dismiss, accept and decline events; `go` opens a path. */
+export function bellActions(go: (path: string) => unknown) {
+  const org = (id: string) => id.slice(INVITATION.length)
+  return {
+    dismiss: (id: string) => answer(id, () => dismissNotice(id.slice(NOTICE.length))),
+    accept: (id: string) =>
+      answer(id, async () => {
+        await acceptInvitation(org(id))
+        void Promise.all([refreshOrgs(), refreshRepos()])
+        await go(orgPath(org(id)))
+      }),
+    decline: (id: string) => answer(id, () => declineInvitation(org(id))),
+  }
+}
+
+export const useTopBar = () => ({ locksHeld, locksExpiring, bellEntries })
 
 /** The person first, then their organizations. */
 export const topBarOwners = (user: string, orgs: OrgInfo[]): OwnerOption[] => [
