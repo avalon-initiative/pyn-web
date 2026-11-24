@@ -56,6 +56,9 @@ export const deleteAccount = (r: DeleteAccountRequest) =>
 
 export const fetchAdminSettings = () => call<AdminSettings>(api.GET('/v1/admin/settings'))
 
+export const sendTestEmail = () =>
+  call<Schemas['TestEmailResult']>(api.POST('/v1/admin/email/test'))
+
 export const fetchUpdateStatus = () => call<UpdateStatus>(api.GET('/v1/admin/update'))
 
 export const fetchAccessMode = () => call<Schemas['SetupStatus']>(api.GET('/v1/setup'))

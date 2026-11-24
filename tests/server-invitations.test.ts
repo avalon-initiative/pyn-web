@@ -2,7 +2,10 @@ import {
   PynAccounts,
   PynAddAccount,
   PynEmailStatus,
+  PynButton,
   PynServerInvitations,
+  PynSettingsRow,
+  PynViewError,
   PynViewNotice,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -12,6 +15,7 @@ import * as admin from '../src/api/admin'
 import { fetchRegistration } from '../src/api/auth'
 import { ApiError, describeError } from '../src/api/client'
 import { sessionKey } from '../src/state/context.state'
+import { emailFacts } from '../src/state/admin-settings.state'
 import { invitationTargets } from '../src/state/server-invitations.state'
 import { sessionOrgs, sessionRepos } from '../src/state/session-data.state'
 import AdminAccessView from '../src/views/AdminAccessView.vue'
@@ -235,7 +239,11 @@ describe('AdminAccountsView: pending verification and resend', () => {
 })
 
 describe('email status on Server access', () => {
-  const open = async (mailer: 'none' | 'log' | 'smtp', verification: boolean) => {
+  const open = async (
+    mailer: 'none' | 'log' | 'smtp',
+    verification: boolean,
+    extra: Record<string, unknown> = {},
+  ) => {
     vi.mocked(admin.fetchAccessMode).mockResolvedValue({
       initialised: true,
       access_mode: 'private',
@@ -243,7 +251,7 @@ describe('email status on Server access', () => {
       registration: 'invite',
     } as never)
     vi.mocked(admin.fetchAdminSettings).mockResolvedValue({
-      email: { mailer, verification },
+      email: { mailer, verification, ...extra },
     } as never)
     const w = mount(AdminAccessView, { global: { provide } })
     await flushPromises()
@@ -259,6 +267,74 @@ describe('email status on Server access', () => {
     const status = w.findComponent(PynEmailStatus)
     expect(status.props()).toEqual({ mailer, verification })
     expect(status.text()).toContain(label)
+  })
+
+  const rows = (w: Awaited<ReturnType<typeof open>>) =>
+    w
+      .findAllComponents(PynSettingsRow)
+      .map((r) => [r.props('title'), r.text().slice(r.props('title').length).trim()])
+  const sendButton = (w: Awaited<ReturnType<typeof open>>) =>
+    w.findAllComponents(PynButton).find((b) => b.props('label') === 'Send a test email')!
+
+  it('shows the last check, failure and delivery', async () => {
+    const w = await open('smtp', true, {
+      last_check: { at: new Date().toISOString(), error: 'sign-in refused' },
+      last_failure: { at: new Date().toISOString(), error: 'connection reset' },
+      last_sent_at: null,
+    })
+    expect(rows(w).slice(0, 3)).toEqual([
+      ['Connection check', 'Failed just now: sign-in refused'],
+      ['Last failure', 'just now: connection reset'],
+      ['Last sent', 'Nothing sent since the server started'],
+    ])
+  })
+
+  it('sends a test email and rereads the status', async () => {
+    const w = await open('smtp', true)
+    vi.mocked(admin.sendTestEmail).mockResolvedValue({ delivered: true, error: null })
+    vi.mocked(admin.fetchAdminSettings).mockResolvedValue({
+      email: { mailer: 'smtp', verification: true, last_sent_at: new Date().toISOString() },
+    } as never)
+    await sendButton(w).trigger('click')
+    await flushPromises()
+    expect(admin.sendTestEmail).toHaveBeenCalled()
+    expect(w.findComponent(PynViewNotice).text()).toContain('accepted for delivery')
+    expect(rows(w)[2]).toEqual(['Last sent', 'just now'])
+  })
+
+  it('shows why the mailer refused the test email', async () => {
+    const w = await open('smtp', true)
+    vi.mocked(admin.sendTestEmail).mockResolvedValue({ delivered: false, error: 'mailbox full' })
+    await sendButton(w).trigger('click')
+    await flushPromises()
+    const notice = w.findComponent(PynViewNotice)
+    expect(notice.props('tone')).toBe('danger')
+    expect(notice.text()).toContain('mailbox full')
+  })
+
+  it('shows the server message when no test email can be sent', async () => {
+    const w = await open('log', false)
+    vi.mocked(admin.sendTestEmail).mockRejectedValue(
+      new ApiError(400, 'invalid_request', 'the mailer sends nothing'),
+    )
+    await sendButton(w).trigger('click')
+    await flushPromises()
+    expect(w.findComponent(PynViewError).text()).toBe('the mailer sends nothing')
+  })
+
+  it('words a status with nothing recorded yet', () => {
+    expect(emailFacts({ mailer: 'smtp', verification: true }, new Date())).toEqual([
+      { title: 'Connection check', value: 'Not checked yet' },
+      { title: 'Last failure', value: 'None since the server started' },
+      { title: 'Last sent', value: 'Nothing sent since the server started' },
+    ])
+    const at = new Date().toISOString()
+    expect(
+      emailFacts(
+        { mailer: 'smtp', verification: true, last_check: { at, error: null } },
+        new Date(),
+      )[0].value,
+    ).toBe('Passed just now')
   })
 
   it('omits the panel when the settings cannot be read', async () => {
