@@ -1,7 +1,7 @@
 import {
   PynAddPerson,
   PynInvites,
-  PynLocks,
+  PynLocksPage,
   PynMembers,
   PynOrgDelete,
   PynOrgMembers,
@@ -21,6 +21,8 @@ import { getOwnerFreeze } from '../src/api/orgs'
 import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
 import { canWrite, useOwnerFreeze } from '../src/state/freeze.state'
 import { policyConflict } from '../src/state/policy.state'
+import { createMemoryHistory } from 'vue-router'
+import { makeRouter } from '../src/router'
 import RepoLocksView from '../src/views/RepoLocksView.vue'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
 import OrgSettingsView from '../src/views/OrgSettingsView.vue'
@@ -143,6 +145,7 @@ describe('gating', () => {
     const mountLocks = (frozen: boolean) =>
       mount(RepoLocksView, {
         global: {
+          plugins: [makeRouter(createMemoryHistory())],
           provide: {
             [sessionKey as symbol]: session,
             [repoKey as symbol]: {
@@ -158,8 +161,8 @@ describe('gating', () => {
           },
         },
       })
-    expect(mountLocks(false).findComponent(PynLocks).props('canForce')).toBe(true)
-    expect(mountLocks(true).findComponent(PynLocks).props('canForce')).toBe(false)
+    expect(mountLocks(false).findComponent(PynLocksPage).props('canForce')).toBe(true)
+    expect(mountLocks(true).findComponent(PynLocksPage).props('canForce')).toBe(false)
     vi.unstubAllGlobals()
   })
 
