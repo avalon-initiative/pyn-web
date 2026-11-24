@@ -52,14 +52,14 @@ function stubServer(calls: string[]) {
   )
 }
 
-async function open(path: string) {
+async function open(path: string, attachTo?: HTMLElement) {
   const calls: string[] = []
   stubServer(calls)
   const router = makeRouter(createMemoryHistory())
   await router.push(path)
   await router.isReady()
   const { default: App } = await import('../src/App.vue')
-  const w = mount(App, { global: { plugins: [router] } })
+  const w = mount(App, { attachTo, global: { plugins: [router] } })
   await flushPromises()
   await flushPromises()
   return { w, router, calls }
@@ -108,6 +108,31 @@ describe('branch picker', () => {
     w.findComponent(PynBranchPicker).vm.$emit('select', 'main')
     await flushPromises()
     expect(router.currentRoute.value.query).toEqual({})
+  })
+
+  it('switches branch through real pointer events on the mounted page', async () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const { w, router, calls } = await open('/acme/game', host)
+    await w.find('button[aria-haspopup="listbox"]').trigger('click')
+    await flushPromises()
+    const option = w.findAll('[role="option"]').find((o) => o.text().includes('feature'))!
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    option.element.dispatchEvent(down)
+    if (!down.defaultPrevented) {
+      const root = w.findComponent(PynBranchPicker).element
+      root.dispatchEvent(
+        new FocusEvent('focusout', { bubbles: true, relatedTarget: document.body }),
+      )
+      await flushPromises()
+    }
+    const target = w.findAll('[role="option"]').find((o) => o.text().includes('feature'))
+    await target?.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toEqual({ branch: 'feature' })
+    expect(ofPath(calls, '/v1/repos/acme/game/tree').pop()).toContain('branch=feature')
+    w.unmount()
+    host.remove()
   })
 
   it('opens a linked branch and reads it on every page', async () => {
