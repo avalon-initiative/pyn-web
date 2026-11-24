@@ -30,11 +30,13 @@ const refresh = async () => {
   locks.value = await listMyLocks()
 }
 
-const release = (row: LockListItem) =>
+const releaseMany = (picked: LockListItem[]) =>
   attempt(async () => {
-    const lock = locks.value.find((l) => `${l.owner}/${l.name}` === row.repo && l.path === row.path)
-    if (!lock) return
-    failures.value = await releaseEach([lock], (l) => releaseLock(l, l.path))
+    const chosen = picked.flatMap((row) =>
+      locks.value.filter((l) => `${l.owner}/${l.name}` === row.repo && l.path === row.path),
+    )
+    if (!chosen.length) return
+    failures.value = await releaseEach(chosen, (l) => releaseLock(l, l.path))
     await refresh()
     void refreshTopBar()
   })
@@ -60,8 +62,10 @@ onMounted(async () => {
     :locks="rows"
     :me="me"
     :busy="busy"
+    bulk
     :loading="!loaded"
     :error="error || undefined"
-    @release="release"
+    @release="releaseMany([$event])"
+    @release-many="releaseMany"
   />
 </template>
