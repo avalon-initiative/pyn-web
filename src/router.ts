@@ -30,7 +30,6 @@ import RepoAuditView from './views/RepoAuditView.vue'
 import RepoBranchesView from './views/RepoBranchesView.vue'
 import RepoFilesView from './views/RepoFilesView.vue'
 import RepoHistoryView from './views/RepoHistoryView.vue'
-import RepoInvitesView from './views/RepoInvitesView.vue'
 import RepoLocksView from './views/RepoLocksView.vue'
 import RepoMembersView from './views/RepoMembersView.vue'
 import RepoRolesView from './views/RepoRolesView.vue'
@@ -145,10 +144,11 @@ export const routes: RouteRecordRaw[] = [
       { path: 'history', name: 'history', component: RepoHistoryView, meta: { public: true } },
       { path: 'branches', name: 'branches', component: RepoBranchesView },
       { path: 'policy', name: 'policy', component: RepoPolicyReadView, meta: { wide: true } },
-      ...['members', 'roles', 'invites', 'audit'].map((section) => ({
+      ...['members', 'roles', 'audit'].map((section) => ({
         path: section,
         redirect: settingsRedirect(section),
       })),
+      { path: 'invites', redirect: settingsRedirect('members') },
       {
         path: 'settings',
         component: RepoSettingsLayout,
@@ -156,7 +156,7 @@ export const routes: RouteRecordRaw[] = [
           { path: '', name: 'settings', component: RepoGeneralView },
           { path: 'members', name: 'settings-members', component: RepoMembersView },
           { path: 'roles', name: 'settings-roles', component: RepoRolesView },
-          { path: 'invites', name: 'settings-invites', component: RepoInvitesView },
+          { path: 'invites', redirect: settingsRedirect('members') },
           {
             path: 'policy',
             name: 'settings-policy',
