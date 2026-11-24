@@ -35,3 +35,10 @@ export function describeNameError(e: unknown, name: string): string {
     return `"${name}" is already taken by a user or an organization.`
   return describeError(e)
 }
+
+/** Words `repo_exists` against the canonical name that was sent: names match ignoring case and spaces become hyphens. */
+export function describeRepoNameError(e: unknown, owner: string, name: string): string {
+  if (e instanceof ApiError && e.code === 'repo_exists' && name)
+    return `"${owner}/${name}" already exists. Repository names are not case sensitive, and spaces count as hyphens, so "Test Repo" and "test-repo" are the same.`
+  return describeError(e)
+}
