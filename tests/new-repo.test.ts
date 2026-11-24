@@ -56,6 +56,18 @@ describe('new repository form', () => {
     expect(w.findComponent(PynSettingsToggle).props('modelValue')).toBe(true)
   })
 
+  it('passes the outgoing name to the form while typing and none while empty', async () => {
+    const w = await mountView()
+    const form = w.findComponent(PynRepoForm)
+    expect(form.props('nameCanonical')).toBeFalsy()
+    form.vm.$emit('nameInput', 'Test Repo')
+    await flushPromises()
+    expect(form.props('nameCanonical')).toBe('test-repo')
+    form.vm.$emit('nameInput', '  ')
+    await flushPromises()
+    expect(form.props('nameCanonical')).toBeFalsy()
+  })
+
   it('sends starter_policy true by default and the canonical name', async () => {
     const w = await mountView()
     w.findComponent(PynRepoForm).vm.$emit('submit', {
