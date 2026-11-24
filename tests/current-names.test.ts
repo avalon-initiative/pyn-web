@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
-import { repoKey } from '../src/state/context.state'
+import { repoKey, sessionKey } from '../src/state/context.state'
 import RepoAuditView from '../src/views/RepoAuditView.vue'
 import RepoHistoryView from '../src/views/RepoHistoryView.vue'
 import RepoLocksView from '../src/views/RepoLocksView.vue'
@@ -24,6 +24,7 @@ async function view(component: object, body: unknown, url: string) {
     global: {
       plugins: [router],
       provide: {
+        [sessionKey as symbol]: { user: ref('bob') },
         [repoKey as symbol]: {
           target: ref({ owner: 'alice', name: 'game' }),
           permissions: ref(['read', 'view_audit']),

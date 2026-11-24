@@ -1,4 +1,4 @@
-import { PynLocks } from '@avalon-initiative/pyn-common-ui'
+import { PynLocksPage } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -9,6 +9,8 @@ import { signIn, signOut } from '../src/api/auth'
 import { forceUnlock, releaseLock } from '../src/api/repos'
 import { createToken } from '../src/api/tokens'
 import { repoKey, sessionKey } from '../src/state/context.state'
+import { createMemoryHistory } from 'vue-router'
+import { makeRouter } from '../src/router'
 import RepoLocksView from '../src/views/RepoLocksView.vue'
 
 const json = (body: unknown, status = 200) =>
@@ -130,6 +132,7 @@ describe('gated controls', () => {
     )
     return mount(RepoLocksView, {
       global: {
+        plugins: [makeRouter(createMemoryHistory())],
         provide: {
           // The user is the owner and a server admin: neither may widen what `permissions` says.
           [sessionKey as symbol]: { user: ref('acme'), admin: ref(true), expire: vi.fn() },
@@ -149,10 +152,10 @@ describe('gated controls', () => {
   it('derives the force-unlock control from the repository permissions answer only', async () => {
     const without = mountLocks(['read'], json({}))
     await flushPromises()
-    expect(without.findComponent(PynLocks).props('canForce')).toBe(false)
+    expect(without.findComponent(PynLocksPage).props('canForce')).toBe(false)
     const withIt = mountLocks(['read', 'force_unlock'], json({}))
     await flushPromises()
-    expect(withIt.findComponent(PynLocks).props('canForce')).toBe(true)
+    expect(withIt.findComponent(PynLocksPage).props('canForce')).toBe(true)
   })
 
   it.each([
@@ -165,9 +168,12 @@ describe('gated controls', () => {
     async (status, code, message) => {
       const w = mountLocks(['read', 'force_unlock'], json({ code, message }, status))
       await flushPromises()
-      const locks = w.findComponent(PynLocks)
+      const locks = w.findComponent(PynLocksPage)
       expect(locks.props('canForce')).toBe(true)
-      locks.vm.$emit('force-unlock', { path: 'a.bin', reason: 'stuck' })
+      locks.vm.$emit('forceRelease', {
+        lock: { path: 'a.bin', owner: 'bob', acquired_at: '', expires_at: '' },
+        reason: 'stuck',
+      })
       await flushPromises()
       expect(locks.props('error')).toBe(message)
     },

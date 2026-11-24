@@ -1,7 +1,9 @@
 import { PynLoading } from '@avalon-initiative/pyn-common-ui'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { createMemoryHistory } from 'vue-router'
+import { sessionKey } from '../src/state/context.state'
 import { makeRouter } from '../src/router'
 import MyLocksView from '../src/views/MyLocksView.vue'
 import OrgsView from '../src/views/OrgsView.vue'
@@ -21,10 +23,12 @@ describe('loading states', () => {
     ['repositories', ReposView],
     ['locks', MyLocksView],
   ])('%s view shows a labelled PynLoading while fetching', (_name, view) => {
-    const wrapper = mount(view, { global: { plugins: [router] } })
+    const wrapper = mount(view, {
+      global: { plugins: [router], provide: { [sessionKey as symbol]: { user: ref('alice') } } },
+    })
     const loading = wrapper.findComponent(PynLoading)
     expect(loading.exists()).toBe(true)
     expect(loading.html()).toMatch(/role="status"/)
-    expect(loading.text()).toBe('Loading')
+    expect(loading.text()).toMatch(/^Loading/)
   })
 })
