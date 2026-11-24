@@ -15,8 +15,11 @@ const { user, admin } = inject(sessionKey)!
 const route = useRoute()
 const router = useRouter()
 const isOwner = computed(() => isRepoOwner(target.value.owner, user.value, org.value))
+// Invitations are managed on Collaborators and teams.
 const items = computed(() =>
-  repoSettingsNav(permissions.value, isOwner.value, { serverAdmin: admin.value }),
+  repoSettingsNav(permissions.value, isOwner.value, { serverAdmin: admin.value }).filter(
+    (i) => i.section !== 'invites',
+  ),
 )
 const current = computed(() => route.path.split('/')[4] || 'settings')
 

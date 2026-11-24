@@ -12,6 +12,7 @@ import {
 import { computed, inject, onMounted, ref } from 'vue'
 import { addUser, listMembers, listRoles, setMember } from '../api/repos'
 import { listTeams, listRepoTeams, removeRepoTeam, setRepoTeam } from '../api/teams'
+import RepoInvitesView from './RepoInvitesView.vue'
 import { useAction } from '../state/action.state'
 import { repoKey } from '../state/context.state'
 import type { Member } from '@avalon-initiative/pyn-common-ui'
@@ -28,6 +29,7 @@ const adding = useAction()
 const teams = useAction()
 const granting = useAction()
 
+const invitable = computed(() => permissions.value.includes('manage_users'))
 const showTeams = computed(() => org.value !== null && permissions.value.includes('manage_users'))
 
 async function loadPeople() {
@@ -116,6 +118,7 @@ onMounted(async () => {
         @grant="(c) => grant(c, granting)"
       />
     </PynMembers>
+    <RepoInvitesView v-if="invitable" />
   </template>
   <p v-else-if="people.error.value" role="alert">{{ people.error.value }}</p>
   <PynLoading v-else />
