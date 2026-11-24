@@ -42,7 +42,7 @@ const section = computed(() => {
 })
 
 // The picker only applies where content is read per branch; the landing toolbar has its own.
-const showPicker = computed(() => route.name === 'blob' || route.name === 'history')
+const showPicker = computed(() => route.name === 'history')
 const landing = computed(() => route.name === 'files' || route.name === 'tree')
 const signedOut = computed(() => !user.value)
 const { freeze, frozen } = useOwnerFreeze(owner, (o) =>
@@ -177,6 +177,7 @@ provide(repoKey, {
   branchesLoading: picker.loading,
   branchesError: picker.error,
   selectBranch: picker.select,
+  reloadBranches: picker.reload,
   compare: { props: compareProps, show: showCompare, open: openChange },
   reload: async () => void (await load()),
 })

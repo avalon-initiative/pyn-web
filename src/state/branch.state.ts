@@ -89,5 +89,6 @@ export function useBranches(
     loading,
     error,
     select,
+    reload: load,
   }
 }

@@ -2,12 +2,13 @@
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
-import { checkout, fetchContent, fetchPolicy, fetchTree } from '../api/repos'
+import { checkout, createBranch, fetchContent, fetchPolicy, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
 import { useBranch } from '../state/branch.state'
 import { useHashScroll } from '../state/hash.state'
+import { ancestorFolders, toggled } from '../state/file-tree.state'
 import { ruleLine } from '../state/policy.state'
 import {
   PynFileView,
@@ -17,8 +18,10 @@ import {
   fileKind,
   folderParam,
   lineHash,
+  blobPath,
   parentOf,
   parseLineHash,
+  repoPath,
   treePath,
   VIEW_LIMIT,
   type FileBody,
@@ -27,7 +30,16 @@ import {
   PynViewError,
 } from '@avalon-initiative/pyn-common-ui'
 
-const { target, permissions, frozen } = inject(repoKey)!
+const {
+  target,
+  permissions,
+  frozen,
+  branches,
+  branchesLoading,
+  branchesError,
+  selectBranch,
+  reloadBranches,
+} = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const route = useRoute()
 const router = useRouter()
@@ -40,6 +52,14 @@ const rule = ref('')
 const lines = computed(() => parseLineHash(route.hash))
 const now = ref(new Date())
 const { error, attempt } = useAction()
+// Children by folder path ('' is the root); the panel gets them flattened.
+const loaded = ref<Record<string, TreeEntry[]>>({})
+const expanded = ref<string[]>([])
+const treeLoading = ref<string[]>([])
+const tree = computed(() => Object.values(loaded.value).flat())
+// The panel shows its branch picker only when it is told the current branch, the default one included.
+const shownBranch = computed(() => branch.value ?? branches?.value.find((b) => b.isDefault)?.name)
+const creatable = computed(() => canWrite(permissions.value.includes('checkin'), frozen.value))
 const lockable = computed(() => canWrite(permissions.value.includes('lock'), frozen.value))
 let loadedRevision: number | null = null
 let timer: ReturnType<typeof setInterval> | undefined
@@ -62,14 +82,25 @@ async function loadRule(p: string) {
   }
 }
 
+// Another open folder that fails to read keeps what it had: the file itself does not depend on it.
+async function loadFolder(folder: string, b?: string) {
+  const listing = await fetchTree(target.value, folder, b)
+  if (b === branch.value) loaded.value = { ...loaded.value, [folder]: listing.entries }
+  return listing
+}
+
 async function refresh() {
   now.value = new Date()
   const p = path.value
   const b = branch.value
+  expanded.value = [...new Set([...expanded.value, ...ancestorFolders(p)])]
+  const parent = parentOf(p)
+  const others = ['', ...expanded.value].filter((f) => f !== parent)
+  void Promise.allSettled(others.map((f) => loadFolder(f, b)))
   await attempt(async () => {
     let found: TreeEntry | undefined
     try {
-      const tree = await fetchTree(target.value, parentOf(p), b)
+      const tree = await loadFolder(parent, b)
       const hit = entryAt(tree.entries, p)
       if (hit?.kind === 'folder') {
         if (p === path.value) await router.replace(treePath(target.value, p, b))
@@ -93,6 +124,10 @@ async function refresh() {
   })
 }
 
+watch(branch, () => {
+  loaded.value = {}
+})
+
 watch([path, branch], () => {
   entry.value = null
   body.value = null
@@ -106,6 +141,27 @@ const lock = () =>
   attempt(async () => {
     await checkout(target.value, path.value, entry.value?.last_change?.id)
     await refresh()
+  })
+
+const toggleFolder = (folder: string) =>
+  attempt(async () => {
+    expanded.value = toggled(expanded.value, folder)
+    if (!expanded.value.includes(folder) || loaded.value[folder]) return
+    treeLoading.value = [...treeLoading.value, folder]
+    try {
+      await loadFolder(folder, branch.value)
+    } finally {
+      treeLoading.value = treeLoading.value.filter((f) => f !== folder)
+    }
+  })
+
+const open = (file: string) => router.push(blobPath(target.value, file, branch.value))
+
+const create = (name: string) =>
+  attempt(async () => {
+    await createBranch(target.value, name, branch.value)
+    await reloadBranches?.()
+    await selectBranch?.(name)
   })
 
 const selectLines = (r: LineRange) => router.push({ hash: lineHash(r) })
@@ -124,7 +180,7 @@ onUnmounted(() => clearInterval(timer))
     :owner="target.owner"
     :name="target.name"
     :path="path"
-    :branch="branch"
+    :branch="shownBranch"
     :entry="entry"
     :body="body"
     :missing="missing"
@@ -133,7 +189,19 @@ onUnmounted(() => clearInterval(timer))
     :now="now"
     :lines="lines"
     :lockable="lockable"
+    :tree="tree"
+    :expanded="expanded"
+    :tree-loading="treeLoading"
+    :branches="branches"
+    :branches-loading="branchesLoading"
+    :branches-error="branchesError || undefined"
+    :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
+    :creatable="creatable"
     @select-lines="selectLines"
     @lock="lock"
+    @toggle-folder="toggleFolder"
+    @open="open"
+    @select-branch="selectBranch?.($event)"
+    @create-branch="create"
   />
 </template>
