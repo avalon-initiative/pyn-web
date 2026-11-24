@@ -3,6 +3,7 @@ import {
   PynOrgDelete,
   PynOrgRepoPolicy,
   PynOrgSettings,
+  PynSettingsSection,
   PynTwoFactorRequirement,
   isOrgOwner,
   type RuleRef,
@@ -143,13 +144,15 @@ onMounted(() => {
       :error="configuring.error.value"
       @change="changeRequirement"
     />
-    <PynOrgDelete
-      :name="name"
-      :readonly="frozen"
-      :busy="removing.busy.value"
-      :error="removing.error.value"
-      @remove="remove"
-    />
+    <PynSettingsSection title="Danger zone" danger plain>
+      <PynOrgDelete
+        :name="name"
+        :readonly="frozen"
+        :busy="removing.busy.value"
+        :error="removing.error.value"
+        @remove="remove"
+      />
+    </PynSettingsSection>
   </PynViewStack>
   <NotFoundView v-else />
 </template>

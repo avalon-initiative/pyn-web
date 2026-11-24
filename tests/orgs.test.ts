@@ -375,3 +375,15 @@ describe('OrgSettingsView', () => {
     expect(calls).toContain('PUT /v1/orgs/studio/repo-policy')
   })
 })
+
+describe('organization settings routes', () => {
+  it.each([
+    ['members', 'org-settings-members'],
+    ['teams', 'org-settings-teams'],
+    ['usage', 'org-settings-usage'],
+    ['audit', 'org-settings-audit'],
+  ])('routes settings/%s to %s and keeps the old page', (section, name) => {
+    expect(resolve(`/studio/-/settings/${section}`).name).toBe(name)
+    expect(resolve(`/studio/-/${section}`).name).toMatch(/^(owner-usage|org-)/)
+  })
+})
