@@ -77,6 +77,51 @@ describe('repository locks page', () => {
     const force = calls.find((c) => c.url.endsWith('/force-unlock'))!
     expect(JSON.parse(force.body!)).toEqual({ path: 'b.umap', reason: 'left the studio' })
   })
+
+  it('turns on bulk selection and releases each chosen lock once, reporting failures per row', async () => {
+    const calls: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((u: string, init?: RequestInit) => {
+        if (init?.method !== 'POST') return json([lock('a.umap', 'alice'), lock('c.umap', 'alice')])
+        const path = JSON.parse(init.body as string).path
+        calls.push(path)
+        return path === 'c.umap'
+          ? Promise.resolve(
+              new Response(JSON.stringify({ code: 'not_found', message: 'gone' }), { status: 404 }),
+            )
+          : json({})
+      }),
+    )
+    const router = makeRouter(createMemoryHistory())
+    await router.push('/acme/game/locks')
+    const w = mount(RepoLocksView, {
+      global: {
+        plugins: [router],
+        provide: {
+          [sessionKey as symbol]: { user: ref('alice'), admin: ref(false), expire: vi.fn() },
+          [repoKey as symbol]: {
+            target: computed(() => ({ owner: 'acme', name: 'game' })),
+            permissions: ref(['read', 'lock']),
+            frozen: ref(false),
+            locks: ref(null),
+          },
+        },
+      },
+    })
+    await flushPromises()
+    const page = w.findComponent(PynLocksPage)
+    expect(page.props('bulk')).toBe(true)
+    page.vm.$emit('releaseMany', page.props('locks'))
+    await flushPromises()
+    expect(calls.sort()).toEqual(['a.umap', 'c.umap'])
+    expect(
+      page.props('locks').find((l: { path: string }) => l.path === 'c.umap')?.error,
+    ).toBeTruthy()
+    expect(
+      page.props('locks').find((l: { path: string }) => l.path === 'a.umap')?.error,
+    ).toBeUndefined()
+  })
 })
 
 describe('personal locks page', () => {
@@ -114,5 +159,39 @@ describe('personal locks page', () => {
     await flushPromises()
     const post = calls.find((c) => c.url === '/v1/repos/acme/game/release')!
     expect(JSON.parse(post.body!)).toEqual({ path: 'hero.png' })
+  })
+
+  it('releases the chosen locks once each from the bulk bar', async () => {
+    const posts: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((u: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          posts.push(`${u} ${init.body}`)
+          return json({})
+        }
+        return json([
+          { ...lock('a.png', 'acme'), name: 'game' },
+          { ...lock('b.png', 'acme'), name: 'game' },
+        ])
+      }),
+    )
+    const router = makeRouter(createMemoryHistory())
+    await router.push('/_/locks')
+    const w = mount(MyLocksView, {
+      global: {
+        plugins: [router],
+        provide: { [sessionKey as symbol]: { user: ref('alice'), admin: ref(false) } },
+      },
+    })
+    await flushPromises()
+    const page = w.findComponent(PynLocksPage)
+    expect(page.props('bulk')).toBe(true)
+    page.vm.$emit('releaseMany', page.props('locks'))
+    await flushPromises()
+    expect(posts.sort()).toEqual([
+      '/v1/repos/acme/game/release {"path":"a.png"}',
+      '/v1/repos/acme/game/release {"path":"b.png"}',
+    ])
   })
 })
