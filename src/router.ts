@@ -30,7 +30,6 @@ import RepoAuditView from './views/RepoAuditView.vue'
 import RepoBranchesView from './views/RepoBranchesView.vue'
 import RepoFilesView from './views/RepoFilesView.vue'
 import RepoHistoryView from './views/RepoHistoryView.vue'
-import RepoInvitesView from './views/RepoInvitesView.vue'
 import RepoLocksView from './views/RepoLocksView.vue'
 import RepoMembersView from './views/RepoMembersView.vue'
 import RepoRolesView from './views/RepoRolesView.vue'
@@ -43,6 +42,7 @@ import VerifyEmailView from './views/VerifyEmailView.vue'
 import NewOrgView from './views/NewOrgView.vue'
 import OrgAuditView from './views/OrgAuditView.vue'
 import OrgMembersView from './views/OrgMembersView.vue'
+import OrgSettingsLayout from './views/OrgSettingsLayout.vue'
 import OrgSettingsView from './views/OrgSettingsView.vue'
 import OrgTeamsView from './views/OrgTeamsView.vue'
 import OrgTeamView from './views/OrgTeamView.vue'
@@ -126,7 +126,17 @@ export const routes: RouteRecordRaw[] = [
       { path: '-/teams', name: 'org-teams', component: OrgTeamsView },
       { path: '-/teams/:team', name: 'org-team', component: OrgTeamView },
       { path: '-/audit', name: 'org-audit', component: OrgAuditView },
-      { path: '-/settings', name: 'org-settings', component: OrgSettingsView },
+      {
+        path: '-/settings',
+        component: OrgSettingsLayout,
+        children: [
+          { path: '', name: 'org-settings', component: OrgSettingsView },
+          { path: 'members', name: 'org-settings-members', component: OrgMembersView },
+          { path: 'teams', name: 'org-settings-teams', component: OrgTeamsView },
+          { path: 'usage', name: 'org-settings-usage', component: OwnerUsageView },
+          { path: 'audit', name: 'org-settings-audit', component: OrgAuditView },
+        ],
+      },
     ],
   },
   {
@@ -145,10 +155,11 @@ export const routes: RouteRecordRaw[] = [
       { path: 'history', name: 'history', component: RepoHistoryView, meta: { public: true } },
       { path: 'branches', name: 'branches', component: RepoBranchesView },
       { path: 'policy', name: 'policy', component: RepoPolicyReadView, meta: { wide: true } },
-      ...['members', 'roles', 'invites', 'audit'].map((section) => ({
+      ...['members', 'roles', 'audit'].map((section) => ({
         path: section,
         redirect: settingsRedirect(section),
       })),
+      { path: 'invites', redirect: settingsRedirect('members') },
       {
         path: 'settings',
         component: RepoSettingsLayout,
@@ -156,7 +167,7 @@ export const routes: RouteRecordRaw[] = [
           { path: '', name: 'settings', component: RepoGeneralView },
           { path: 'members', name: 'settings-members', component: RepoMembersView },
           { path: 'roles', name: 'settings-roles', component: RepoRolesView },
-          { path: 'invites', name: 'settings-invites', component: RepoInvitesView },
+          { path: 'invites', redirect: settingsRedirect('members') },
           {
             path: 'policy',
             name: 'settings-policy',

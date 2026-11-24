@@ -39,6 +39,10 @@ const ORG: Record<string, string> = {
   'org-teams': 'Teams',
   'org-audit': 'Audit log',
   'org-settings': 'Settings',
+  'org-settings-members': 'Members',
+  'org-settings-teams': 'Teams',
+  'org-settings-usage': 'Usage',
+  'org-settings-audit': 'Audit log',
 }
 
 const PERSONAL: Record<string, string> = {
@@ -63,7 +67,6 @@ const REPO_PAGES = new Set([
   'settings',
   'settings-members',
   'settings-roles',
-  'settings-invites',
   'settings-policy',
   'settings-storage',
   'settings-audit',
@@ -85,6 +88,9 @@ export function breadcrumbs(to: Where): Crumb[] {
   if (name === 'owner') return [HOME, last(owner)]
   if (name in ORG || name === 'org-team') {
     const trail = [HOME, { label: owner, href: orgPath(owner) }]
+    if (name.startsWith('org-settings-')) {
+      return [...trail, { label: 'Settings', href: orgPath(owner, 'settings') }, last(ORG[name])]
+    }
     if (name !== 'org-team') return [...trail, last(ORG[name])]
     return [...trail, { label: 'Teams', href: orgPath(owner, 'teams') }, last(text(to.params.team))]
   }
