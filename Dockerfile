@@ -13,9 +13,11 @@ LABEL org.opencontainers.image.title="pyn-web" \
       org.opencontainers.image.revision="${REVISION}"
 # The base entrypoint renders templates/*.template with these variables only, so nginx's own $variables are untouched
 ENV PYN_API_URL=http://pyn-core:7878 \
+    PYN_FONT_SET=default \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 \
     NGINX_ENVSUBST_FILTER="^(PYN_API_URL|NGINX_LOCAL_RESOLVERS)"
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --chmod=0755 docker/entrypoint/25-pyn-web-config.sh /docker-entrypoint.d/25-pyn-web-config.sh
 COPY docker/nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY dist /usr/share/nginx/html
 EXPOSE 8080
