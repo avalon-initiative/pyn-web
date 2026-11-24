@@ -91,7 +91,7 @@ describe('PynTeamDetail', () => {
 
   it('shows members and granted repositories with roles', () => {
     const w = mount(PynTeamDetail, { props })
-    expect(w.find('[data-members]').text()).toContain('bob')
+    expect(w.findAll('[data-member] strong').map((e) => e.text())).toEqual(['bob', 'carol'])
     const links = w.findAll('[data-repos] a').map((a) => a.attributes('href'))
     expect(links).toEqual(['/studio/game', '/studio/assets'])
     expect(w.findAll('[data-role]').map((e) => e.text())).toEqual(['writer', 'maintainer'])
@@ -99,6 +99,7 @@ describe('PynTeamDetail', () => {
 
   it('lets an owner add from the candidates and remove', async () => {
     const w = mount(PynTeamDetail, { props })
+    await w.find('button[aria-expanded]').trigger('click')
     await w.find('select').setValue('alice')
     await w.find('form').trigger('submit')
     expect(w.emitted('add')?.[0]).toEqual(['alice'])
@@ -231,6 +232,7 @@ describe('team views', () => {
     await flushPromises()
     expect(w.text()).toContain('Texture and model work.')
     const detail = w.findComponent(PynTeamDetail)
+    await detail.find('button[aria-expanded]').trigger('click')
     const select = detail.find('select')
     expect(select.findAll('option').map((o) => o.text())).toEqual(['Choose a member', 'alice'])
     await select.setValue('alice')
@@ -269,6 +271,7 @@ describe('team views', () => {
 
     current = { ...teams[0], id: 'team-artists-2', name: 'Artists again' }
     const detail = w.findComponent(PynTeamDetail)
+    await detail.find('button[aria-expanded]').trigger('click')
     await detail.find('select').setValue('alice')
     await detail.find('form').trigger('submit')
     await flushPromises()

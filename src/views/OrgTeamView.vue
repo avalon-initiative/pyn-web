@@ -60,6 +60,11 @@ const change = (action: () => Promise<void>) =>
 const add = (user: string) => change(() => addTeamMember(name.value, slug.value, user))
 const remove = (user: string) => change(() => removeTeamMember(name.value, slug.value, user))
 
+const removeMany = (users: string[]) =>
+  change(async () => {
+    for (const u of users) await removeTeamMember(name.value, slug.value, u)
+  })
+
 const save = (t: TeamFormValue) =>
   edit.attempt(async () => {
     await updateTeam(name.value, slug.value, { name: t.name, description: t.description })
@@ -102,6 +107,7 @@ watch(
       :error="members.error.value"
       @add="add"
       @remove="remove"
+      @remove-many="removeMany"
     />
     <template v-if="owner">
       <PynTeamForm
