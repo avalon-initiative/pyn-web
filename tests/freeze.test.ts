@@ -1,15 +1,12 @@
 import {
-  PynAddPerson,
-  PynInvites,
+  PynRepoCollaborators,
   PynLocksPage,
-  PynMembers,
   PynOrgDelete,
   PynOrgMembers,
   PynOrgRepoPolicy,
   PynOwnerFrozenNotice,
   PynRepoDelete,
   PynRepoForm,
-  PynTeamGrant,
 } from '@avalon-initiative/pyn-common-ui'
 import type { OwnerFreeze } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -26,7 +23,6 @@ import { makeRouter } from '../src/router'
 import RepoLocksView from '../src/views/RepoLocksView.vue'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
 import OrgSettingsView from '../src/views/OrgSettingsView.vue'
-import RepoInvitesView from '../src/views/RepoInvitesView.vue'
 import RepoMembersView from '../src/views/RepoMembersView.vue'
 import RepoGeneralView from '../src/views/RepoGeneralView.vue'
 import { orgs, repoPolicy } from './fixtures/org-data'
@@ -242,21 +238,10 @@ describe('gating', () => {
         global: { provide: provide(repoKey as symbol, repoCtx(frozen, orgs[0])), stubs: {} },
       })
       await flushPromises()
-      const lists = w.findAllComponents(PynMembers)
-      expect(lists).toHaveLength(2)
-      for (const c of [...lists, w.findComponent(PynAddPerson), w.findComponent(PynTeamGrant)]) {
-        expect(c.exists()).toBe(true)
-        expect(Boolean((c.props() as { readonly?: boolean }).readonly)).toBe(frozen)
-      }
-    })
-
-    it.each([true, false])('RepoInvitesView sets readonly to %s', async (frozen) => {
-      stubFetch()
-      const w = mount(RepoInvitesView, {
-        global: { provide: provide(repoKey as symbol, repoCtx(frozen)) },
-      })
-      await flushPromises()
-      expect(Boolean(w.findComponent(PynInvites).props('readonly'))).toBe(frozen)
+      const page = w.findComponent(PynRepoCollaborators)
+      expect(page.exists()).toBe(true)
+      expect(page.props('canManage')).toBe(!frozen)
+      expect(page.props('canManageVisibility')).toBe(!frozen)
     })
 
     it.each([true, false])('RepoGeneralView sets readonly to %s', async (frozen) => {

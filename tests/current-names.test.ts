@@ -17,7 +17,10 @@ const identity = {
 }
 
 async function view(component: object, body: unknown, url: string) {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(body)))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((u: string) => Promise.resolve(reply(String(u).endsWith('/invites') ? [] : body))),
+  )
   const router = makeRouter(createMemoryHistory())
   await router.push(url)
   const w = mount(component, {
