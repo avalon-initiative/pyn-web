@@ -111,7 +111,7 @@ watch(
           : `${name} has no repositories you can see`
       "
       :primary-label="mine ? 'Create a repository' : undefined"
-      :primary-href="mine ? '/_/new' : undefined"
+      :primary-href="mine ? `/_/new?owner=${encodeURIComponent(name)}` : undefined"
     />
   </template>
 </template>
