@@ -1,6 +1,8 @@
 import {
+  PynBranchBar,
   PynEmptyState,
   PynOrgList,
+  PynQuickSetup,
   PynRepoLanding,
   PynRepoList,
 } from '@avalon-initiative/pyn-common-ui'
@@ -13,7 +15,6 @@ import * as profileApi from '../src/api/profile'
 import * as reposApi from '../src/api/repos'
 import { makeRouter } from '../src/router'
 import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
-import { firstCommitSteps } from '../src/state/empty.state'
 import InvitationsView from '../src/views/InvitationsView.vue'
 import MyLocksView from '../src/views/MyLocksView.vue'
 import NewOrgView from '../src/views/NewOrgView.vue'
@@ -181,7 +182,7 @@ describe('invitations', () => {
 describe('repository with no files yet', () => {
   const entry = (name: string, kind: 'file' | 'folder') =>
     ({ name, path: name, kind, mode: 'shared' }) as never
-  const open = async (entries: never[], path = '') => {
+  const open = async (entries: never[], path = '', extra: Record<string, unknown> = {}) => {
     vi.mocked(reposApi.fetchTree).mockResolvedValue({ path, entries })
     vi.mocked(reposApi.fetchSummary).mockResolvedValue({
       default_branch: 'main',
@@ -190,7 +191,8 @@ describe('repository with no files yet', () => {
       shared_files: 0,
       locks: [],
       activity: [],
-    })
+      ...extra,
+    } as never)
     await router.push(path ? `/acme/castle-quest/tree/${path}` : '/acme/castle-quest')
     const provide = {
       ...session,
@@ -208,35 +210,40 @@ describe('repository with no files yet', () => {
     return w
   }
 
-  it('shows the documented commands when the root has only .pyn', async () => {
+  it('shows the quick setup with the address when the root has only .pyn', async () => {
     const w = await open([entry('.pyn', 'folder')])
-    const text = action(w).props('description')!
-    for (const cmd of [
-      'pyn config set --global server http://localhost',
-      'pyn login alice',
-      'pyn clone acme/castle-quest',
-      'pyn add',
-      'pyn commit -m',
-      'pyn push',
-    ])
-      expect(text).toContain(cmd)
-    expect(text).toBe(firstCommitSteps(window.location.origin, 'alice', 'acme/castle-quest'))
-    expect(action(w).props('title')).toContain('policy file')
+    const setup = w.findComponent(PynQuickSetup)
+    expect(setup.exists()).toBe(true)
+    expect(setup.props('httpsUrl')).toBe(`${window.location.origin}/acme/castle-quest`)
+    expect(setup.props('command')).toBe('pyn clone acme/castle-quest')
+    expect(w.findComponent(PynBranchBar).exists()).toBe(false)
+  })
+
+  it('caps the recent activity at five items', async () => {
+    const activity = Array.from({ length: 8 }, (_, i) => ({
+      id: i,
+      at: '2026-10-08T10:00:00Z',
+      actor: 'jamie',
+      action: 'checkin',
+      path: `f${i}`,
+    }))
+    const w = await open([entry('a', 'file')], '', { activity })
+    expect(w.findComponent(PynRepoLanding).props('summary')?.activity).toHaveLength(5)
   })
 
   it('also shows it for a completely empty root', async () => {
-    expect(action(await open([])).exists()).toBe(true)
+    expect((await open([])).findComponent(PynQuickSetup).exists()).toBe(true)
   })
 
   it('shows the landing page when anything else is in the root', async () => {
     const w = await open([entry('.pyn', 'folder'), entry('hero.png', 'file')])
-    expect(action(w).exists()).toBe(false)
+    expect(w.findComponent(PynQuickSetup).exists()).toBe(false)
     expect(w.findComponent(PynRepoLanding).exists()).toBe(true)
   })
 
   it('never triggers inside a subfolder', async () => {
     const w = await open([entry('.pyn', 'folder')], 'Content')
-    expect(action(w).exists()).toBe(false)
+    expect(w.findComponent(PynQuickSetup).exists()).toBe(false)
   })
 })
 

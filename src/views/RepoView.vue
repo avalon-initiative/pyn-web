@@ -16,7 +16,8 @@ import {
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
-import { getOrg, getOwnerFreeze } from '../api/orgs'
+import { getOrg, getOrgProfile, getOwnerFreeze } from '../api/orgs'
+import { getProfile } from '../api/profile'
 import { compareBranch, getRepo, listBranches, listLocks, repoMe } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { useBranch, useBranches } from '../state/branch.state'
@@ -42,6 +43,7 @@ const section = computed(() => {
 
 // The picker only applies where content is read per branch; the landing toolbar has its own.
 const showPicker = computed(() => route.name === 'blob' || route.name === 'history')
+const landing = computed(() => route.name === 'files' || route.name === 'tree')
 const signedOut = computed(() => !user.value)
 const { freeze, frozen } = useOwnerFreeze(owner, (o) =>
   signedOut.value ? Promise.reject(new Error('signed out')) : getOwnerFreeze(o),
@@ -52,6 +54,7 @@ const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
 const locks = ref<LockInfo[] | null>(null)
 const notFound = ref(false)
+const ownerAvatar = ref<string | null>(null)
 // A signed-out miss reads the same for a private and a missing repository.
 const gated = ref(false)
 const { error, attempt } = useAction()
@@ -66,6 +69,23 @@ const compareHead = computed(() =>
     : undefined,
 )
 const compare = useBranchCompare(target, compareHead, compareBranch)
+const showCompare = computed(
+  () =>
+    !!compareHead.value && !!(compare.result.value || compare.loading.value || compare.error.value),
+)
+const compareProps = computed(() => ({
+  base: compare.result.value?.base ?? picker.defaultName.value,
+  head: compare.result.value?.head ?? compareHead.value ?? '',
+  status: compare.result.value?.status ?? ('identical' as const),
+  ahead: compare.result.value?.ahead ?? 0,
+  behind: compare.result.value?.behind ?? 0,
+  countsCapped: compare.result.value?.counts_capped,
+  maxCommits: compare.result.value?.max_commits,
+  changes: compare.result.value ? compareChanges(compare.result.value) : [],
+  truncated: compare.result.value?.truncated,
+  loading: compare.loading.value,
+  error: compare.error.value || undefined,
+}))
 
 // A deleted path is not on the branch, so it opens on the default branch.
 function openChange(path: string) {
@@ -105,6 +125,20 @@ async function loadLocks() {
   }
 }
 
+// The picture only decorates the header: without it initials stand in.
+async function loadOwnerAvatar() {
+  const t = target.value
+  ownerAvatar.value = null
+  try {
+    const url = org.value
+      ? (await getOrgProfile(t.owner))?.avatar_url
+      : (await getProfile(t.owner))?.profile?.avatar_url
+    if (t === target.value) ownerAvatar.value = url ?? null
+  } catch {
+    // Initials stand in.
+  }
+}
+
 watch(
   target,
   () => {
@@ -112,6 +146,7 @@ watch(
     locks.value = null
     load().then(() => {
       if (permissions.value.includes('read')) void loadLocks()
+      if (repo.value) void loadOwnerAvatar()
     })
   },
   { immediate: true },
@@ -142,6 +177,7 @@ provide(repoKey, {
   branchesLoading: picker.loading,
   branchesError: picker.error,
   selectBranch: picker.select,
+  compare: { props: compareProps, show: showCompare, open: openChange },
   reload: async () => void (await load()),
 })
 
@@ -183,6 +219,7 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :current="section"
       :branch="branch"
       :owner-href="ownerHref"
+      :owner-avatar-url="ownerAvatar"
       :locked-count="locks?.length ?? 0"
       :lock-holders="lockHolders(locks ?? [])"
       :max-tabs="5"
@@ -215,20 +252,8 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       </PynViewSummary>
       <template v-else-if="!picker.pending.value">
         <PynBranchCompare
-          v-if="
-            compareHead && (compare.result.value || compare.loading.value || compare.error.value)
-          "
-          :base="compare.result.value?.base ?? picker.defaultName.value"
-          :head="compare.result.value?.head ?? compareHead"
-          :status="compare.result.value?.status ?? 'identical'"
-          :ahead="compare.result.value?.ahead ?? 0"
-          :behind="compare.result.value?.behind ?? 0"
-          :counts-capped="compare.result.value?.counts_capped"
-          :max-commits="compare.result.value?.max_commits"
-          :changes="compare.result.value ? compareChanges(compare.result.value) : []"
-          :truncated="compare.result.value?.truncated"
-          :loading="compare.loading.value"
-          :error="compare.error.value || undefined"
+          v-if="showCompare && !landing"
+          v-bind="compareProps"
           @select="openChange"
         />
         <RouterView />

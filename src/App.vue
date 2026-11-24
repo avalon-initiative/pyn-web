@@ -28,7 +28,7 @@ import { webRevision, webVersion } from './state/version.state'
 import { minServerVersion, serverTooOld } from './state/server-compat.state'
 import type { ServerBuild } from './types/version.types'
 import { blockedStatus } from './state/account.state'
-import { sessionKey } from './state/context.state'
+import { paletteKey, sessionKey } from './state/context.state'
 import { freshPrompt } from './state/fresh.state'
 import {
   SECURITY_PATH,
@@ -199,6 +199,7 @@ const expire = () => {
   passwordChangeRequired.value = false
   ownProfile.value = {}
 }
+provide(paletteKey, { show: palette.show })
 provide(sessionKey, {
   user,
   admin,

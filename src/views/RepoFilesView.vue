@@ -4,29 +4,38 @@ import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
 import { fetchContent, fetchSummary, fetchTree } from '../api/repos'
 import { useAction } from '../state/action.state'
-import { repoKey, sessionKey } from '../state/context.state'
+import { paletteKey, repoKey, sessionKey } from '../state/context.state'
 import { useBranch } from '../state/branch.state'
-import { firstCommitSteps } from '../state/empty.state'
 import { useHashScroll } from '../state/hash.state'
 import {
   fileBody,
   folderParam,
   repoPath,
+  railBranches,
   readmeEntry,
   VIEW_LIMIT,
   type ReadmeDoc,
   type RepoSummary,
   type TreeEntry,
   type TreeListing,
-  PynEmptyState,
   PynViewError,
+  PynBranchCompare,
   PynRepoLanding,
-  railBranches,
 } from '@avalon-initiative/pyn-common-ui'
 
-const { target, repo, permissions, locks, branches, branchesLoading, branchesError, selectBranch } =
-  inject(repoKey)!
+const {
+  target,
+  repo,
+  permissions,
+  locks,
+  branches,
+  branchesLoading,
+  branchesError,
+  selectBranch,
+  compare,
+} = inject(repoKey)!
 const user = inject(sessionKey)!.user
+const palette = inject(paletteKey, null)
 // The default branch first, then the most recently updated, at most five.
 const rail = computed(() =>
   railBranches(
@@ -35,6 +44,7 @@ const rail = computed(() =>
     ),
   ),
 )
+const ACTIVITY_MAX = 5
 const route = useRoute()
 const origin = window.location.origin
 const slug = computed(() => `${target.value.owner}/${target.value.name}`)
@@ -42,11 +52,15 @@ const path = computed(() => folderParam(route.params.path))
 const branch = useBranch()
 const listing = ref<TreeListing | null>(null)
 const summary = ref<RepoSummary | null>(null)
-// The branch bar names summary.default_branch; on a branch it names that branch instead.
+// The branch bar names summary.default_branch (on a branch, that branch); the rail shows five activity items.
 const barSummary = computed(() =>
-  summary.value && branch.value
-    ? { ...summary.value, default_branch: branch.value }
-    : summary.value,
+  summary.value
+    ? {
+        ...summary.value,
+        activity: summary.value.activity.slice(0, ACTIVITY_MAX),
+        ...(branch.value ? { default_branch: branch.value } : {}),
+      }
+    : null,
 )
 const missing = ref(false)
 const isEmpty = computed(
@@ -56,10 +70,9 @@ const isEmpty = computed(
     !branch.value &&
     listing.value.entries.every((e) => e.name === '.pyn'),
 )
-const steps = computed(() =>
-  repo.value
-    ? firstCommitSteps(window.location.origin, user.value, `${repo.value.owner}/${repo.value.name}`)
-    : '',
+// The policy file alone is not content: the landing shows the quick setup.
+const shown = computed(() =>
+  listing.value && isEmpty.value ? { ...listing.value, entries: [] } : listing.value,
 )
 const readme = ref<ReadmeDoc | null>(null)
 const now = ref(new Date())
@@ -135,17 +148,12 @@ onUnmounted(() => clearInterval(timer))
 
 <template>
   <PynViewError v-if="error">{{ error }}</PynViewError>
-  <PynEmptyState
-    v-if="repo && isEmpty"
-    title="This repository only has its policy file so far"
-    :description="steps"
-  />
   <PynRepoLanding
-    v-if="repo && !isEmpty"
+    v-if="repo"
     :repo="repo"
     :path="path"
     :branch="branch"
-    :listing="listing"
+    :listing="shown"
     :summary="barSummary"
     :branches="branches"
     :rail-branches="rail"
@@ -159,6 +167,13 @@ onUnmounted(() => clearInterval(timer))
     :missing="missing"
     :me="user"
     :now="now"
+    :about="{}"
+    go-to-file
     @select="selectBranch?.($event)"
-  />
+    @go-to-file="palette?.show()"
+  >
+    <template v-if="compare?.show.value" #compare>
+      <PynBranchCompare v-bind="compare.props.value" @select="compare.open" />
+    </template>
+  </PynRepoLanding>
 </template>
