@@ -5,6 +5,7 @@ import {
   PynInvites,
   PynLocks,
   PynMembers,
+  PynBranchDialog,
   PynMyLocks,
   PynRepoDelete,
   PynRepoForm,
@@ -383,7 +384,13 @@ describe('history view', () => {
     const w = mount(RepoHistoryView, {
       global: {
         plugins: [router],
-        provide: { [repoKey as symbol]: { target: ref({ owner: 'alice', name: 'game' }) } },
+        provide: {
+          [repoKey as symbol]: {
+            target: ref({ owner: 'alice', name: 'game' }),
+            permissions: ref(['checkin']),
+            frozen: ref(false),
+          },
+        },
       },
     })
     await flushPromises()
@@ -410,7 +417,7 @@ describe('history view', () => {
 
   it('wires the branch picker and leaves the author, range and browse controls off', async () => {
     const select = vi.fn()
-    const fn = vi.fn().mockResolvedValue(reply(page([1], null)))
+    const fn = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve(reply(page([1], null))))
     vi.stubGlobal('fetch', fn)
     const router = makeRouter(createMemoryHistory())
     await router.push('/alice/game/history')
@@ -420,8 +427,11 @@ describe('history view', () => {
         provide: {
           [repoKey as symbol]: {
             target: ref({ owner: 'alice', name: 'game' }),
+            permissions: ref(['checkin']),
+            frozen: ref(false),
             branches: ref([{ name: 'main', isDefault: true }]),
             selectBranch: select,
+            reloadBranches: vi.fn(() => Promise.resolve()),
           },
         },
       },
@@ -429,13 +439,24 @@ describe('history view', () => {
     await flushPromises()
     const history = w.findComponent(PynHistory)
     expect(history.props('title')).toBe('History')
-    expect(history.props('branch')).toBe('main')
+    expect(history.props('branch')).toBeUndefined()
+    expect(history.props('newBranchButton')).toBe(true)
     expect(history.props('branchesHref')).toBe('/alice/game/branches')
     expect(history.props('users')).toBeUndefined()
     expect(history.props('range')).toBeUndefined()
     expect(history.props('browseHref')).toBeUndefined()
     history.vm.$emit('selectBranch', 'feature')
     expect(select).toHaveBeenCalledWith('feature')
+
+    history.vm.$emit('newBranch')
+    await flushPromises()
+    const dialog = w.findComponent(PynBranchDialog)
+    expect(dialog.props('open')).toBe(true)
+    dialog.vm.$emit('create', { name: 'topic', from: 'main' })
+    await flushPromises()
+    const post = fn.mock.calls.find((c) => c[1]?.method === 'POST')!
+    expect(JSON.parse(post[1]!.body as string)).toEqual({ name: 'topic', start: 'main' })
+    expect(select).toHaveBeenCalledWith('topic')
   })
 
   it('shows only the subject of a multi-paragraph message until the body is expanded', async () => {

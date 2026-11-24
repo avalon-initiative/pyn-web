@@ -7,11 +7,14 @@ import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
 import { useBranch } from '../state/branch.state'
+import { useBranchDialog } from '../state/branch-dialog.state'
 import { useHashScroll } from '../state/hash.state'
-import { ancestorFolders, toggled } from '../state/file-tree.state'
+import { toggled } from '../state/file-tree.state'
 import { ruleLine } from '../state/policy.state'
 import {
+  PynBranchDialog,
   PynFileView,
+  ancestorFolders,
   contentUrl,
   entryAt,
   fileBody,
@@ -57,8 +60,6 @@ const loaded = ref<Record<string, TreeEntry[]>>({})
 const expanded = ref<string[]>([])
 const treeLoading = ref<string[]>([])
 const tree = computed(() => Object.values(loaded.value).flat())
-// The panel shows its branch picker only when it is told the current branch, the default one included.
-const shownBranch = computed(() => branch.value ?? branches?.value.find((b) => b.isDefault)?.name)
 const creatable = computed(() => canWrite(permissions.value.includes('checkin'), frozen.value))
 const lockable = computed(() => canWrite(permissions.value.includes('lock'), frozen.value))
 let loadedRevision: number | null = null
@@ -164,6 +165,14 @@ const create = (name: string) =>
     await selectBranch?.(name)
   })
 
+const dialog = useBranchDialog({
+  create: async (name, from) => {
+    await createBranch(target.value, name, from)
+    await reloadBranches?.()
+    await selectBranch?.(name)
+  },
+})
+
 const selectLines = (r: LineRange) => router.push({ hash: lineHash(r) })
 useHashScroll(() => body.value)
 
@@ -180,7 +189,7 @@ onUnmounted(() => clearInterval(timer))
     :owner="target.owner"
     :name="target.name"
     :path="path"
-    :branch="shownBranch"
+    :branch="branch"
     :entry="entry"
     :body="body"
     :missing="missing"
@@ -197,11 +206,23 @@ onUnmounted(() => clearInterval(timer))
     :branches-error="branchesError || undefined"
     :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :creatable="creatable"
+    :new-branch-button="creatable"
     @select-lines="selectLines"
     @lock="lock"
     @toggle-folder="toggleFolder"
     @open="open"
     @select-branch="selectBranch?.($event)"
     @create-branch="create"
+    @new-branch="dialog.openCreate(branch)"
+  />
+  <PynBranchDialog
+    :open="dialog.open.value"
+    mode="create"
+    :from="dialog.from.value"
+    :branches="branches ?? []"
+    :busy="dialog.busy.value"
+    :error="dialog.error.value || undefined"
+    @close="dialog.close"
+    @create="dialog.create"
   />
 </template>
