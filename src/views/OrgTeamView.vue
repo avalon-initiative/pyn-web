@@ -3,6 +3,7 @@ import {
   PynTeamDelete,
   PynTeamDetail,
   PynTeamForm,
+  PynSettingsSection,
   isOrgOwner,
   teamCandidates,
   teamPath,
@@ -110,13 +111,15 @@ watch(
         :error="edit.error.value"
         @submit="save"
       />
-      <PynTeamDelete
-        :key="team.id"
-        :slug="team.slug"
-        :busy="del.busy.value"
-        :error="del.error.value"
-        @remove="destroy"
-      />
+      <PynSettingsSection title="Danger zone" danger plain>
+        <PynTeamDelete
+          :key="team.id"
+          :slug="team.slug"
+          :busy="del.busy.value"
+          :error="del.error.value"
+          @remove="destroy"
+        />
+      </PynSettingsSection>
     </template>
   </template>
 </template>

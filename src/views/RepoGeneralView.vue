@@ -2,6 +2,7 @@
 import {
   PynRepoDelete,
   PynRepoForm,
+  PynSettingsSection,
   type RepoSettings,
   repoPath,
   repoSlug,
@@ -50,12 +51,14 @@ const remove = () =>
       :error="saving.error.value"
       @submit="save"
     />
-    <PynRepoDelete
-      :slug="repoSlug(repo)"
-      :readonly="frozen"
-      :busy="removing.busy.value"
-      :error="removing.error.value"
-      @remove="remove"
-    />
+    <PynSettingsSection title="Danger zone" danger plain>
+      <PynRepoDelete
+        :slug="repoSlug(repo)"
+        :readonly="frozen"
+        :busy="removing.busy.value"
+        :error="removing.error.value"
+        @remove="remove"
+      />
+    </PynSettingsSection>
   </PynViewStack>
 </template>
