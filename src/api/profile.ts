@@ -15,3 +15,8 @@ export const uploadAvatar = (file: File) =>
   call<Profile>(api.PUT('/v1/me/avatar', binaryBody(file, file.type)))
 
 export const removeAvatar = () => call<Profile>(api.DELETE('/v1/me/avatar'))
+
+export type StarredRepo = Schemas['StarredRepo']
+
+export const listStarred = (user: string) =>
+  call<StarredRepo[]>(api.GET('/v1/users/{user}/starred', { params: { path: { user } } }))

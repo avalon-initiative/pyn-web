@@ -1,27 +1,13 @@
 <script setup lang="ts">
-import {
-  PynOwnerUsage,
-  PynViewError,
-  repoPath,
-  splitRepo,
-  PynLoading,
-} from '@avalon-initiative/pyn-common-ui'
-import type { RepoUsage } from '@avalon-initiative/pyn-common-ui'
 import { inject } from 'vue'
-import { useRouter } from 'vue-router'
-import { getOwnerUsage } from '../api/usage'
 import { orgKey } from '../state/context.state'
-import { useOwnerUsage } from '../state/usage.state'
+import OwnerUsagePanel from './OwnerUsagePanel.vue'
+import OwnerView from './OwnerView.vue'
 
-const { name } = inject(orgKey)!
-const router = useRouter()
-const { usage, loaded, error } = useOwnerUsage(name, getOwnerUsage)
-
-const open = (row: RepoUsage) => router.push(repoPath(splitRepo(row.repository)))
+const { org } = inject(orgKey)!
 </script>
 
 <template>
-  <PynViewError v-if="error">{{ error }}</PynViewError>
-  <PynLoading v-else-if="!loaded" />
-  <PynOwnerUsage v-else-if="usage" :usage="usage" @open="open" />
+  <OwnerUsagePanel v-if="org" />
+  <OwnerView v-else />
 </template>
