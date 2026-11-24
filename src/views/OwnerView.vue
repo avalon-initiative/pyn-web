@@ -10,7 +10,7 @@ import {
   PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getProfile } from '../api/profile'
 import type { PublicProfile } from '../api/profile'
 import { listRepos } from '../api/repos'
@@ -23,6 +23,8 @@ import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 const { name, org } = inject(orgKey)!
 const self = inject(sessionKey)!.user
 const router = useRouter()
+const route = useRoute()
+const current = computed(() => (route.name === 'owner-repositories' ? 'repositories' : ''))
 const repos = ref<RepoInfo[]>([])
 const profile = ref<PublicProfile | null>(null)
 const loaded = ref(false)
@@ -66,9 +68,16 @@ watch(
   />
   <PynLoading v-else-if="!loaded" />
   <template v-else>
-    <PynProfileLayout v-if="profile" :repos="repos" :orgs="profile.organizations">
-      <template #header>
+    <PynProfileLayout
+      v-if="profile"
+      :username="profile.user"
+      :current="current"
+      :repos="repos"
+      :orgs="profile.organizations"
+    >
+      <template #profile>
         <PynProfileHeader
+          column
           :username="profile.user"
           :display-name="profile.profile.display_name"
           :avatar-url="profile.profile.avatar_url"
@@ -79,11 +88,6 @@ watch(
           :created-at="profile.created_at"
         >
           <template v-if="profile.user === self" #actions>
-            <PynButton
-              label="Usage"
-              variant="secondary"
-              @click="router.push(`/${profile.user}/-/usage`)"
-            />
             <PynButton
               label="Account settings"
               variant="secondary"

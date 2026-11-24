@@ -42,7 +42,10 @@ const options = (provide: Record<symbol, unknown> = session) => ({
 })
 const resolves = (href: string) =>
   router.resolve(href).name !== undefined && router.resolve(href).matched.length > 0
-const action = (w: ReturnType<typeof mount>) => w.findComponent(PynEmptyState)
+// The profile overview also renders the library's own Pinned placeholder.
+const action = (w: ReturnType<typeof mount>) =>
+  w.findAllComponents(PynEmptyState).find((e) => e.props('title') !== 'Pinned repositories') ??
+  w.findComponent(PynEmptyState)
 
 beforeEach(() => vi.resetAllMocks())
 

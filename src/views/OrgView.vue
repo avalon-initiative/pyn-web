@@ -29,7 +29,10 @@ const { freeze, frozen } = useOwnerFreeze(name, (o) =>
 const profile = ref<Schemas['OrgProfile'] | null>(null)
 const userAvatar = ref<string | null>(null)
 const loaded = ref(false)
-const userPage = computed(() => route.name === 'owner' || route.name === 'owner-usage')
+const userPage = computed(
+  () =>
+    route.name === 'owner' || route.name === 'owner-repositories' || route.name === 'owner-usage',
+)
 // The profile page carries its own identity block; the tabbed header is for Usage.
 const userHeader = computed(() => route.name === 'owner-usage')
 const { error, attempt } = useAction()
@@ -81,7 +84,7 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
         :current="section"
         :description="profile?.description"
         :avatar-url="profile?.avatar_url"
-        :max-tabs="6"
+        :max-tabs="7"
       />
       <RouterView />
     </template>

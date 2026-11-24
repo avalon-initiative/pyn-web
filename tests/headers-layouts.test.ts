@@ -244,7 +244,7 @@ describe('organization and owner headers', () => {
     const header = w.findComponent(PynOrgHeader)
     expect(header.props('description')).toBe('We make games')
     expect(header.props('avatarUrl')).toBe('/v1/orgs/studio/avatar?v=abc')
-    expect(header.props('maxTabs')).toBe(6)
+    expect(header.props('maxTabs')).toBe(7)
     expect(header.find('[data-description]').text()).toBe('We make games')
     expect(header.find('img').attributes('src')).toBe('/v1/orgs/studio/avatar?v=abc')
   })
@@ -377,8 +377,9 @@ describe('settings areas keep every section', () => {
       .map((a) => a.attributes('href'))
     expect(links).toEqual([
       '/studio',
-      '/studio/-/members',
+      '/studio/-/repositories',
       '/studio/-/teams',
+      '/studio/-/members',
       '/studio/-/usage',
       '/studio/-/audit',
       '/studio/-/settings',

@@ -2,6 +2,7 @@ import { PynProfileHeader, PynProfileLayout, PynRepoList } from '@avalon-initiat
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
+import { routeLocationKey } from 'vue-router'
 import { getProfile } from '../src/api/profile'
 import { orgKey, sessionKey } from '../src/state/context.state'
 import OwnerView from '../src/views/OwnerView.vue'
@@ -43,6 +44,7 @@ const mountView = (self: string, org: unknown = null, push = vi.fn()) =>
   mount(OwnerView, {
     global: {
       provide: {
+        [routeLocationKey as symbol]: { name: 'owner' },
         [sessionKey as symbol]: { user: ref(self) },
         [orgKey as symbol]: {
           name: computed(() => 'ada'),

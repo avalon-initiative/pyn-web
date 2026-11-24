@@ -122,6 +122,12 @@ export const routes: RouteRecordRaw[] = [
     component: OrgView,
     children: [
       { path: '', name: 'owner', component: OwnerView, meta: { public: true } },
+      {
+        path: '-/repositories',
+        name: 'owner-repositories',
+        component: OwnerView,
+        meta: { public: true },
+      },
       { path: '-/usage', name: 'owner-usage', component: OwnerUsageView },
       { path: '-/members', name: 'org-members', component: OrgMembersView },
       { path: '-/teams', name: 'org-teams', component: OrgTeamsView },
