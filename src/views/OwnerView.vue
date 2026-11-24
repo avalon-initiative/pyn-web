@@ -45,10 +45,7 @@ const current = computed(() => {
   const view = String(route.name ?? '').replace(/^owner-?/, '')
   return view === 'repositories' || view === 'stars' || view === 'usage' ? view : ''
 })
-<<<<<<< HEAD
 const newRepo = computed(() => `/_/new?owner=${encodeURIComponent(name.value)}`)
-=======
->>>>>>> origin/main
 const readers = { tree: fetchTree, content: fetchContent }
 
 // An organization's page is its home; a user's is the profile.
@@ -149,12 +146,9 @@ watch(
       <template v-if="readme" #readme>
         <PynReadme :readme="readme" :owner="name" :name="name" />
       </template>
-<<<<<<< HEAD
       <template v-if="mine && repos.length" #repositoryActions>
         <PynViewAction :href="newRepo" primary>New repository</PynViewAction>
       </template>
-=======
->>>>>>> origin/main
       <template v-if="!repos.length" #repositories>
         <PynEmptyState
           compact
@@ -169,15 +163,11 @@ watch(
         />
       </template>
     </PynOrgHome>
-<<<<<<< HEAD
     <PynRepoList v-else-if="repos.length" boxed :repos="repos">
       <template v-if="mine" #actions>
         <PynViewAction :href="newRepo" primary>New repository</PynViewAction>
       </template>
     </PynRepoList>
-=======
-    <PynRepoList v-else-if="repos.length" boxed :repos="repos" />
->>>>>>> origin/main
     <PynEmptyState
       v-else
       :title="
