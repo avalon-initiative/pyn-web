@@ -2,6 +2,7 @@ import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import type { AccountDeletionStatus } from '../api/account-deletion'
 import type { PynBranchCompare } from '@avalon-initiative/pyn-common-ui'
 import type { BranchSummary, LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RefKind, TagOption } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 export interface SessionContext {
@@ -32,10 +33,16 @@ export interface RepoContext {
   branches: ComputedRef<BranchSummary[]>
   branchesLoading?: Ref<boolean>
   branchesError?: Ref<string>
-  /** Switches the page to a branch through the address. */
-  selectBranch?: (name: string) => unknown
+  /** Switches the page to a branch through the address; a tag opens the tags page. */
+  selectBranch?: (name: string, kind?: RefKind) => unknown
   /** Rereads the branch list, e.g. after one was created, renamed or deleted. */
   reloadBranches?: () => Promise<void>
+  tags?: ComputedRef<TagOption[]>
+  tagsLoading?: Ref<boolean>
+  tagsError?: Ref<string>
+  /** The tags page. */
+  tagsHref?: ComputedRef<string>
+  reloadTags?: () => Promise<void>
   /** The branch comparison; the landing page places it under its toolbar, other pages above their content. */
   compare?: {
     props: ComputedRef<Omit<InstanceType<typeof PynBranchCompare>['$props'], 'onSelect'>>

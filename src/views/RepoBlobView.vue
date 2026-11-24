@@ -42,6 +42,10 @@ const {
   branchesError,
   selectBranch,
   reloadBranches,
+  tags,
+  tagsLoading,
+  tagsError,
+  tagsHref,
 } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const route = useRoute()
@@ -204,6 +208,10 @@ onUnmounted(() => clearInterval(timer))
     :branches="branches"
     :branches-loading="branchesLoading"
     :branches-error="branchesError || undefined"
+    :tags="tags"
+    :tags-loading="tagsLoading"
+    :tags-error="tagsError || undefined"
+    :tags-href="tagsHref"
     :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :creatable="creatable"
     :new-branch-button="creatable"
@@ -211,7 +219,7 @@ onUnmounted(() => clearInterval(timer))
     @lock="lock"
     @toggle-folder="toggleFolder"
     @open="open"
-    @select-branch="selectBranch?.($event)"
+    @select-branch="(name, kind) => selectBranch?.(name, kind)"
     @create-branch="create"
     @new-branch="dialog.openCreate(branch)"
   />

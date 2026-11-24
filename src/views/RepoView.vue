@@ -12,6 +12,7 @@ import {
   PynViewNotice,
   PynBranchCompare,
   blobPath,
+  repoPath,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -29,6 +30,7 @@ import {
   putWatch,
   repoMe,
 } from '../api/repos'
+import { listTags } from '../api/tags'
 import { useAction } from '../state/action.state'
 import { useBranch, useBranches } from '../state/branch.state'
 import { compareChanges, useBranchCompare } from '../state/compare.state'
@@ -40,7 +42,8 @@ import { useRepoWatch } from '../state/repo-watch.state'
 import { withPolicyTabs } from '../state/repo-tabs.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
-import type { LockInfo, OrgInfo, RepoFact } from '@avalon-initiative/pyn-common-ui'
+import { useTags } from '../state/tags.state'
+import type { LockInfo, OrgInfo, RefKind, RepoFact } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
@@ -70,6 +73,14 @@ const gated = ref(false)
 const { error, attempt } = useAction()
 const branch = useBranch()
 const picker = useBranches(target, listBranches)
+const tagList = useTags(target, listTags)
+const tagsHref = computed(() => repoPath(target.value, 'tags'))
+
+// Content is read by branch only, so a tag opens on the tags page.
+function selectRef(name: string, kind: RefKind = 'branch') {
+  if (kind === 'tag') return router.push({ path: tagsHref.value, query: { q: name } })
+  return picker.select(name)
+}
 const compareHead = computed(() =>
   picker.loaded.value &&
   !picker.unknown.value &&
@@ -203,8 +214,13 @@ provide(repoKey, {
   branches,
   branchesLoading: picker.loading,
   branchesError: picker.error,
-  selectBranch: picker.select,
+  selectBranch: selectRef,
   reloadBranches: picker.reload,
+  tags: tagList.options,
+  tagsLoading: tagList.loading,
+  tagsError: tagList.error,
+  tagsHref,
+  reloadTags: tagList.reload,
   compare: { props: compareProps, show: showCompare, open: openChange },
   reload: async () => void (await load()),
 })

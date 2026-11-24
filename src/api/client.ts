@@ -91,6 +91,9 @@ const FRIENDLY: Record<string, string> = {
     'Someone else holds locks on paths this pull request changes. They must release them, or someone who may force unlocks can merge.',
   merge_conflict: 'The branches conflict. Resolve the conflicts on the head branch, then merge.',
   merge_stale: 'The branches moved since this page loaded. Review the update, then merge again.',
+  tag_not_found: 'That tag does not exist. It may have been deleted.',
+  tag_exists:
+    'A tag with that name already exists, or the name is a folder of another tag. Tags never move.',
   not_fast_forward: 'The head branch cannot be fast-forwarded onto the base. Pick another method.',
 }
 

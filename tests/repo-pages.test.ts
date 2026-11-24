@@ -456,8 +456,8 @@ describe('history view', () => {
     expect(history.props('users')).toEqual(['alice'])
     expect(history.props('range')).toBe('all')
     expect(history.props('browseHref')).toBeUndefined()
-    history.vm.$emit('selectBranch', 'feature')
-    expect(select).toHaveBeenCalledWith('feature')
+    history.vm.$emit('selectBranch', 'feature', 'branch')
+    expect(select).toHaveBeenCalledWith('feature', 'branch')
 
     history.vm.$emit('newBranch')
     await flushPromises()

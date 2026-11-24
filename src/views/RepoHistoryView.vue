@@ -31,6 +31,10 @@ const {
   branchesError,
   selectBranch,
   reloadBranches,
+  tags,
+  tagsLoading,
+  tagsError,
+  tagsHref,
 } = inject(repoKey)!
 const route = useRoute()
 const router = useRouter()
@@ -135,6 +139,10 @@ onMounted(() => {
     :branches="branches"
     :branches-loading="branchesLoading"
     :branches-error="branchesError || undefined"
+    :tags="tags"
+    :tags-loading="tagsLoading"
+    :tags-error="tagsError || undefined"
+    :tags-href="tagsHref"
     :new-branch-button="creatable"
     :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :filter="filter"
@@ -151,7 +159,7 @@ onMounted(() => {
     @select-user="apply('', filter, $event)"
     @select-range="apply('', filter, author, $event)"
     @more="load(true)"
-    @select-branch="selectBranch?.($event)"
+    @select-branch="(name, kind) => selectBranch?.(name, kind)"
     @new-branch="dialog.openCreate(branch)"
   />
   <PynBranchDialog

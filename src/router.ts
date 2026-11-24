@@ -33,6 +33,7 @@ import RepoHistoryView from './views/RepoHistoryView.vue'
 import RepoLocksView from './views/RepoLocksView.vue'
 import RepoMembersView from './views/RepoMembersView.vue'
 import RepoRolesView from './views/RepoRolesView.vue'
+import RepoTagsView from './views/RepoTagsView.vue'
 import RepoGeneralView from './views/RepoGeneralView.vue'
 import RepoPolicyReadView from './views/RepoPolicyReadView.vue'
 import RepoPolicyView from './views/RepoPolicyView.vue'
@@ -170,6 +171,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'locks', name: 'locks', component: RepoLocksView, meta: { public: true } },
       { path: 'history', name: 'history', component: RepoHistoryView, meta: { public: true } },
       { path: 'branches', name: 'branches', component: RepoBranchesView },
+      { path: 'tags', name: 'tags', component: RepoTagsView, meta: { public: true } },
       { path: 'pulls', name: 'pulls', component: RepoPullsView, meta: { public: true } },
       ...(['', 'commits', 'checks', 'files'] as const).map((tab) => ({
         path: `pulls/:number(\\d+)${tab && `/${tab}`}`,
