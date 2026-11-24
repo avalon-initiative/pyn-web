@@ -408,6 +408,36 @@ describe('history view', () => {
     expect(w.text()).not.toContain('Load more')
   })
 
+  it('wires the branch picker and leaves the author, range and browse controls off', async () => {
+    const select = vi.fn()
+    const fn = vi.fn().mockResolvedValue(reply(page([1], null)))
+    vi.stubGlobal('fetch', fn)
+    const router = makeRouter(createMemoryHistory())
+    await router.push('/alice/game/history')
+    const w = mount(RepoHistoryView, {
+      global: {
+        plugins: [router],
+        provide: {
+          [repoKey as symbol]: {
+            target: ref({ owner: 'alice', name: 'game' }),
+            branches: ref([{ name: 'main', isDefault: true }]),
+            selectBranch: select,
+          },
+        },
+      },
+    })
+    await flushPromises()
+    const history = w.findComponent(PynHistory)
+    expect(history.props('title')).toBe('History')
+    expect(history.props('branch')).toBe('main')
+    expect(history.props('branchesHref')).toBe('/alice/game/branches')
+    expect(history.props('users')).toBeUndefined()
+    expect(history.props('range')).toBeUndefined()
+    expect(history.props('browseHref')).toBeUndefined()
+    history.vm.$emit('selectBranch', 'feature')
+    expect(select).toHaveBeenCalledWith('feature')
+  })
+
   it('shows only the subject of a multi-paragraph message until the body is expanded', async () => {
     const body = page([1], null)
     body.revisions[0].message = 'Fix the loader\n\nLonger explanation of the fix.'
