@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchHistory } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { useBranch } from '../state/branch.state'
 import { repoKey } from '../state/context.state'
 import type { Revision } from '@avalon-initiative/pyn-common-ui'
-import { PynHistory, historyQuery } from '@avalon-initiative/pyn-common-ui'
+import { PynHistory, historyQuery, repoPath } from '@avalon-initiative/pyn-common-ui'
 
-const { target } = inject(repoKey)!
+const { target, branches, branchesLoading, branchesError, selectBranch } = inject(repoKey)!
 const route = useRoute()
 const router = useRouter()
 const branch = useBranch()
+// The picker shows only for a named branch, so the default branch is named too.
+const shownBranch = computed(() => branch.value ?? branches?.value.find((b) => b.isDefault)?.name)
 const path = ref(String(route.query.path ?? ''))
 const filter = ref(path.value ? '' : String(route.query.filter ?? ''))
 const revisions = ref<Revision[]>([])
@@ -59,7 +61,13 @@ onMounted(() => load())
 
 <template>
   <PynHistory
+    title="History"
     :revisions="revisions"
+    :branch="shownBranch"
+    :branches="branches"
+    :branches-loading="branchesLoading"
+    :branches-error="branchesError || undefined"
+    :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :filter="filter"
     :path="path"
     :has-more="cursor !== null"
@@ -69,5 +77,6 @@ onMounted(() => load())
     @filter="apply('', $event)"
     @clear-path="apply('', '')"
     @more="load(true)"
+    @select-branch="selectBranch?.($event)"
   />
 </template>

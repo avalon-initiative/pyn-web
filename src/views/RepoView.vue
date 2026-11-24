@@ -9,7 +9,6 @@ import {
   PynViewError,
   PynViewSummary,
   PynViewAction,
-  PynBranchPicker,
   PynBranchCompare,
   blobPath,
 } from '@avalon-initiative/pyn-common-ui'
@@ -41,8 +40,6 @@ const section = computed(() => {
   return first === 'tree' || first === 'blob' ? '' : [first, ...rest].filter(Boolean).join('/')
 })
 
-// The picker only applies where content is read per branch; the landing toolbar has its own.
-const showPicker = computed(() => route.name === 'history')
 const landing = computed(() => route.name === 'files' || route.name === 'tree')
 const signedOut = computed(() => !user.value)
 const { freeze, frozen } = useOwnerFreeze(owner, (o) =>
@@ -227,16 +224,6 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :facts="facts"
       :hide-lock-strip="section === 'locks'"
     >
-      <template #actions>
-        <PynBranchPicker
-          v-if="permissions.includes('read') && showPicker"
-          :branches="picker.options.value"
-          :current="picker.current.value"
-          :loading="picker.loading.value"
-          :error="picker.error.value || undefined"
-          @select="picker.select"
-        />
-      </template>
       <PynSignInPrompt
         v-if="signedOut"
         message="Sign in to lock files, contribute or manage this repository."
