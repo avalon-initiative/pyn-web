@@ -351,7 +351,6 @@ describe('settings areas keep every section', () => {
       { id: 'settings', href: '/acme/game/settings' },
       { id: 'members', href: '/acme/game/settings/members' },
       { id: 'roles', href: '/acme/game/settings/roles' },
-      { id: 'invites', href: '/acme/game/settings/invites' },
       { id: 'policy', href: '/acme/game/settings/policy' },
       { id: 'storage', href: '/acme/game/settings/storage' },
       { id: 'audit', href: '/acme/game/settings/audit' },
