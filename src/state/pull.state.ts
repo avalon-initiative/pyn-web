@@ -9,6 +9,7 @@ import {
 } from '@avalon-initiative/pyn-common-ui'
 import type {
   ServerPull,
+  ServerRepoDiff,
   ServerPullCommit,
   ServerPullEvent,
   ServerPullSummary,
@@ -110,3 +111,11 @@ export function pullAbilities(
     canComment: canWrite(!!me && permissions.includes('read'), frozen),
   }
 }
+
+/** The size of a comparison, for the summary above the create form. */
+export const diffCounts = (d: ServerRepoDiff) => ({
+  files: d.files.length,
+  additions: d.files.reduce((n, f) => n + f.additions, 0),
+  deletions: d.files.reduce((n, f) => n + f.deletions, 0),
+  truncated: d.truncated,
+})

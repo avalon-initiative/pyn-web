@@ -23,3 +23,9 @@ export interface PullListQuery {
   before?: number
   limit?: number
 }
+
+export interface DiffQuery {
+  base?: string
+  head: string
+  merge_base?: boolean
+}

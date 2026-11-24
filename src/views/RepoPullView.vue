@@ -52,7 +52,7 @@ const TABS: Record<string, PullTab> = {
   'pull-files': 'files',
 }
 
-const { target, permissions, frozen, reloadBranches } = inject(repoKey)!
+const { target, permissions, frozen, reloadBranches, reloadPulls } = inject(repoKey)!
 const me = inject(sessionKey)!.user
 const route = useRoute()
 const number = computed(() => Number(route.params.number))
@@ -183,6 +183,7 @@ const onMerge = (m: PullMergeMethod) =>
       if (stale()) return
       await refresh(merged)
       void reloadBranches?.()
+      void reloadPulls?.()
     } catch (e) {
       // The page reloads so the locks, conflicts or moved branches behind the refusal show.
       if (!stale() && e instanceof ApiError && e.status === 409) await loadPull()
@@ -194,7 +195,9 @@ const onState = (action: typeof closePull) => {
   if (manage.busy.value) return
   return forPull(manage, async (stale) => {
     const p = await action(target.value, number.value)
-    if (!stale()) await refresh(p)
+    if (stale()) return
+    void reloadPulls?.()
+    await refresh(p)
   })
 }
 
@@ -227,7 +230,9 @@ const closeWithComment = (body: string) =>
     if (body.trim()) await postComment(body, stale)
     if (stale()) return
     const p = await closePull(target.value, number.value)
-    if (!stale()) await refresh(p)
+    if (stale()) return
+    void reloadPulls?.()
+    await refresh(p)
   })
 
 function setViewed(paths: string[]) {

@@ -1,4 +1,5 @@
 import type {
+  DiffQuery,
   FileLines,
   NewPull,
   PullComment,
@@ -55,6 +56,9 @@ export const reopenPull = (r: Repo, n: number) =>
 
 export const mergePull = (r: Repo, n: number, body: PullMerge) =>
   call<ServerPull>(api.POST('/v1/repos/{owner}/{name}/pulls/{number}/merge', { ...at(r, n), body }))
+
+export const compareDiff = (r: Repo, query: DiffQuery) =>
+  call<ServerRepoDiff>(api.GET('/v1/repos/{owner}/{name}/diff', { params: { path: r, query } }))
 
 export const fileLines = (r: Repo, path: string, rev: string, start: number, end: number) =>
   call<FileLines>(

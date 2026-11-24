@@ -43,6 +43,8 @@ export interface RepoContext {
   /** The tags page. */
   tagsHref?: ComputedRef<string>
   reloadTags?: () => Promise<void>
+  /** Rereads the open pull request count after a pull request opened, merged, closed or reopened. */
+  reloadPulls?: () => Promise<void>
   /** The branch comparison; the landing page places it under its toolbar, other pages above their content. */
   compare?: {
     props: ComputedRef<Omit<InstanceType<typeof PynBranchCompare>['$props'], 'onSelect'>>
