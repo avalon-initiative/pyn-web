@@ -21,10 +21,12 @@ import { getProfile } from '../api/profile'
 import {
   compareBranch,
   deleteStar,
+  deleteWatch,
   getRepo,
   listBranches,
   listLocks,
   putStar,
+  putWatch,
   repoMe,
 } from '../api/repos'
 import { useAction } from '../state/action.state'
@@ -34,6 +36,7 @@ import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import { refusedSignedOut } from '../state/public.state'
 import { useRepoStar } from '../state/repo-star.state'
+import { useRepoWatch } from '../state/repo-watch.state'
 import { withPolicyTabs } from '../state/repo-tabs.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
@@ -79,6 +82,14 @@ const star = useRepoStar(() => signedOut.value, requestSignIn, {
   put: () => putStar(target.value),
   remove: () => deleteStar(target.value),
 })
+const watching = useRepoWatch(() => signedOut.value, requestSignIn, {
+  put: (level) => putWatch(target.value, level),
+  remove: () => deleteWatch(target.value),
+})
+const social = computed(() => {
+  const s = { watch: watching.button.value, star: star.button.value }
+  return s.watch || s.star ? s : undefined
+})
 const compare = useBranchCompare(target, compareHead, compareBranch)
 const showCompare = computed(
   () =>
@@ -116,6 +127,7 @@ async function load() {
         : await Promise.all([getRepo(t), repoMe(t), getOrg(t.owner).catch(() => null)])
       repo.value = info
       star.sync(info)
+      watching.sync(info)
       permissions.value = me.permissions
       org.value = owningOrg
     } catch (e) {
@@ -156,6 +168,7 @@ watch(
   () => {
     repo.value = null
     star.sync(null)
+    watching.sync(null)
     locks.value = null
     load().then(() => {
       if (permissions.value.includes('read')) void loadLocks()
@@ -186,6 +199,7 @@ provide(repoKey, {
   frozen,
   locks,
   starCount: star.starCount,
+  watcherCount: watching.watcherCount,
   branches,
   branchesLoading: picker.loading,
   branchesError: picker.error,
@@ -239,10 +253,14 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :max-tabs="5"
       :facts="facts"
       :hide-lock-strip="section === 'locks'"
-      :social="star.button.value ? { star: star.button.value } : undefined"
-      @social="(kind) => kind === 'star' && star.toggle()"
+      :social="social"
+      @social="(kind) => (kind === 'star' ? star.toggle() : kind === 'watch' && watching.toggle())"
+      @social-menu="(kind, id) => kind === 'watch' && watching.choose(id)"
     >
       <PynViewNotice v-if="star.error.value" tone="danger">{{ star.error.value }}</PynViewNotice>
+      <PynViewNotice v-if="watching.error.value" tone="danger">{{
+        watching.error.value
+      }}</PynViewNotice>
       <PynSignInPrompt
         v-if="signedOut"
         message="Sign in to lock files, contribute or manage this repository."

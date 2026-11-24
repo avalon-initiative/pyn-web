@@ -44,6 +44,8 @@ export interface RepoContext {
   }
   /** The repository's star count, undefined until it is read. */
   starCount?: ComputedRef<number | undefined>
+  /** How many accounts watch the repository, undefined until it is read. */
+  watcherCount?: ComputedRef<number | undefined>
   reload: () => Promise<void>
 }
 

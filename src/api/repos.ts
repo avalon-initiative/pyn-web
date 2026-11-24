@@ -42,15 +42,24 @@ export const createRepo = (owner: string, s: RepoSettings, starterPolicy?: boole
   )
 
 export type StarFields = Pick<Schemas['RepoInfo'], 'star_count' | 'starred'>
+export type WatchFields = Pick<Schemas['RepoInfo'], 'watcher_count' | 'watching'>
 
 export const getRepo = (r: Repo) =>
-  call<RepoInfo & StarFields>(api.GET('/v1/repos/{owner}/{name}', at(r)))
+  call<RepoInfo & StarFields & WatchFields>(api.GET('/v1/repos/{owner}/{name}', at(r)))
 
 export const putStar = (r: Repo) =>
   call<Schemas['StarState']>(api.PUT('/v1/repos/{owner}/{name}/star', at(r)))
 
 export const deleteStar = (r: Repo) =>
   call<Schemas['StarState']>(api.DELETE('/v1/repos/{owner}/{name}/star', at(r)))
+
+export const putWatch = (r: Repo, level: Schemas['WatchLevel']) =>
+  call<Schemas['WatchState']>(
+    api.PUT('/v1/repos/{owner}/{name}/watch', { ...at(r), body: { level } }),
+  )
+
+export const deleteWatch = (r: Repo) =>
+  call<Schemas['WatchState']>(api.DELETE('/v1/repos/{owner}/{name}/watch', at(r)))
 
 export const updateRepo = (r: Repo, s: Partial<RepoSettings>) =>
   call<RepoInfo>(api.PATCH('/v1/repos/{owner}/{name}', { ...at(r), body: s }))
