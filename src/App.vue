@@ -569,7 +569,19 @@ onMounted(async () => {
             @shortcuts="palette.showHelp"
             @theme="setTheme"
             @sign-out="leave"
-          />
+          >
+            <template v-if="onDashboard" #drawer>
+              <PynSideRail
+                hide-account
+                :account="user"
+                :items="railItems"
+                current="home"
+                :repos="sessionRepos"
+                :orgs="sessionOrgs"
+                create-org-href="/_/new-org"
+              />
+            </template>
+          </PynTopBar>
         </template>
         <PynSecurityNotice
           v-if="securityNotice && route.path !== SECURITY_PATH"
