@@ -36,7 +36,16 @@ export const createRepo = (owner: string, s: RepoSettings) =>
     }),
   )
 
-export const getRepo = (r: Repo) => call<RepoInfo>(api.GET('/v1/repos/{owner}/{name}', at(r)))
+export type StarFields = Pick<Schemas['RepoInfo'], 'star_count' | 'starred'>
+
+export const getRepo = (r: Repo) =>
+  call<RepoInfo & StarFields>(api.GET('/v1/repos/{owner}/{name}', at(r)))
+
+export const putStar = (r: Repo) =>
+  call<Schemas['StarState']>(api.PUT('/v1/repos/{owner}/{name}/star', at(r)))
+
+export const deleteStar = (r: Repo) =>
+  call<Schemas['StarState']>(api.DELETE('/v1/repos/{owner}/{name}/star', at(r)))
 
 export const updateRepo = (r: Repo, s: Partial<RepoSettings>) =>
   call<RepoInfo>(api.PATCH('/v1/repos/{owner}/{name}', { ...at(r), body: s }))

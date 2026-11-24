@@ -9,6 +9,7 @@ import {
   PynViewError,
   PynViewSummary,
   PynViewAction,
+  PynViewNotice,
   PynBranchCompare,
   blobPath,
 } from '@avalon-initiative/pyn-common-ui'
@@ -17,13 +18,22 @@ import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
 import { getOrg, getOrgProfile, getOwnerFreeze } from '../api/orgs'
 import { getProfile } from '../api/profile'
-import { compareBranch, getRepo, listBranches, listLocks, repoMe } from '../api/repos'
+import {
+  compareBranch,
+  deleteStar,
+  getRepo,
+  listBranches,
+  listLocks,
+  putStar,
+  repoMe,
+} from '../api/repos'
 import { useAction } from '../state/action.state'
 import { useBranch, useBranches } from '../state/branch.state'
 import { compareChanges, useBranchCompare } from '../state/compare.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { useOwnerFreeze } from '../state/freeze.state'
 import { refusedSignedOut } from '../state/public.state'
+import { useRepoStar } from '../state/repo-star.state'
 import { withPolicyTabs } from '../state/repo-tabs.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
@@ -32,7 +42,7 @@ import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
 const route = useRoute()
 const router = useRouter()
-const { user, admin } = inject(sessionKey)!
+const { user, admin, requestSignIn } = inject(sessionKey)!
 const owner = computed(() => String(route.params.owner))
 const name = computed(() => String(route.params.name))
 const section = computed(() => {
@@ -65,6 +75,10 @@ const compareHead = computed(() =>
     ? branch.value
     : undefined,
 )
+const star = useRepoStar(() => signedOut.value, requestSignIn, {
+  put: () => putStar(target.value),
+  remove: () => deleteStar(target.value),
+})
 const compare = useBranchCompare(target, compareHead, compareBranch)
 const showCompare = computed(
   () =>
@@ -101,6 +115,7 @@ async function load() {
         ? [await getRepo(t), { permissions: ['read'] }, null]
         : await Promise.all([getRepo(t), repoMe(t), getOrg(t.owner).catch(() => null)])
       repo.value = info
+      star.sync(info)
       permissions.value = me.permissions
       org.value = owningOrg
     } catch (e) {
@@ -140,6 +155,7 @@ watch(
   target,
   () => {
     repo.value = null
+    star.sync(null)
     locks.value = null
     load().then(() => {
       if (permissions.value.includes('read')) void loadLocks()
@@ -169,6 +185,7 @@ provide(repoKey, {
   org,
   frozen,
   locks,
+  starCount: star.starCount,
   branches,
   branchesLoading: picker.loading,
   branchesError: picker.error,
@@ -222,7 +239,10 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :max-tabs="5"
       :facts="facts"
       :hide-lock-strip="section === 'locks'"
+      :social="star.button.value ? { star: star.button.value } : undefined"
+      @social="(kind) => kind === 'star' && star.toggle()"
     >
+      <PynViewNotice v-if="star.error.value" tone="danger">{{ star.error.value }}</PynViewNotice>
       <PynSignInPrompt
         v-if="signedOut"
         message="Sign in to lock files, contribute or manage this repository."
