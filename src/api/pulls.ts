@@ -1,6 +1,7 @@
 import type {
   FileLines,
   NewPull,
+  PullComment,
   PullListQuery,
   PullMerge,
   PullUpdate,
@@ -39,6 +40,11 @@ export const pullEvents = (r: Repo, n: number, after?: string, limit = 100) =>
     api.GET('/v1/repos/{owner}/{name}/pulls/{number}/events', {
       params: { path: { ...r, number: n }, query: { after, limit } },
     }),
+  )
+
+export const commentPull = (r: Repo, n: number, body: PullComment) =>
+  call<ServerPullEvent>(
+    api.POST('/v1/repos/{owner}/{name}/pulls/{number}/comments', { ...at(r, n), body }),
   )
 
 export const closePull = (r: Repo, n: number) =>

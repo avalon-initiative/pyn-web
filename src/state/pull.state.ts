@@ -23,6 +23,7 @@ export const toPullSummary = (p: ServerPullSummary, href?: string): PullRequestS
   number: p.number,
   title: p.title,
   state: p.state,
+  draft: p.draft,
   author: p.author,
   base: p.base,
   head: p.head,
@@ -94,7 +95,7 @@ export function pullListView(all: PullRequestSummary[], query: string) {
   return { status, counts, rows }
 }
 
-/** What the viewer may do; merge and open need checkin, edit, close and reopen the author or checkin. */
+/** What the viewer may do; merge needs checkin, manage the author or checkin, comment a signed-in reader. */
 export function pullAbilities(
   permissions: string[],
   me: string,
@@ -105,5 +106,7 @@ export function pullAbilities(
   return {
     canMerge: canWrite(checkin, frozen),
     canManage: canWrite(checkin || (!!me && me === author), frozen),
+    canOverrideLocks: canWrite(checkin && permissions.includes('force_unlock'), frozen),
+    canComment: canWrite(!!me && permissions.includes('read'), frozen),
   }
 }

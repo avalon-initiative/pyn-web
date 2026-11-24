@@ -33,9 +33,8 @@ const lastNo = (h: ServerDiffHunk, side: 'old' | 'new'): number => {
   return count ? start + count - 1 : start
 }
 
-// The trailing control and the last hunk's down control emit the same event; the trailing lines win.
-const isTrailing = (hunks: ServerDiffHunk[], e: DiffExpand) =>
-  e.direction === 'down' && e.hunk === hunks.length - 1 && hunks[e.hunk]!.hidden_after > 0
+// `after` is the control below the last hunk, `before` the gap above `hunk`.
+const isLast = (hunks: ServerDiffHunk[], e: DiffExpand) => e.hunk === hunks.length - 1
 
 /** The new-side lines an expand loads, inclusive; null when nothing is hidden there. */
 export function expandRange(
@@ -45,7 +44,8 @@ export function expandRange(
 ): { start: number; end: number } | null {
   const h = file.hunks[e.hunk]
   if (!h) return null
-  if (isTrailing(file.hunks, e)) {
+  if (e.position === 'after') {
+    if (!isLast(file.hunks, e) || !h.hidden_after) return null
     const start = lastNo(h, 'new') + 1
     return { start, end: start + Math.min(step, h.hidden_after) - 1 }
   }
@@ -88,7 +88,8 @@ export function applyExpand(
       new_no: start + j,
       text,
     }))
-  if (isTrailing(hunks, e)) {
+  if (e.position === 'after') {
+    if (!isLast(hunks, e)) return file
     h.lines.push(...context(lastNo(h, 'old') - lastNo(h, 'new')))
     h.old_lines += k
     h.new_lines += k

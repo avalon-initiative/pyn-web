@@ -1,4 +1,8 @@
-import { PynPullRequestList, PynPullRequestPage } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynCommentForm,
+  PynPullRequestList,
+  PynPullRequestPage,
+} from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
@@ -96,6 +100,9 @@ describe('pull request mapping', () => {
     const s = toPullSummary(summary(3, 'merged', { merged_at: '2026-11-02T10:00:00Z' }) as never)
     expect(s).toMatchObject({ number: 3, state: 'merged', review: 'none', additions: 0 })
     expect(s.href).toBeUndefined()
+    expect(s.draft).toBe(false)
+    expect(toPullSummary(summary(4, 'open', { draft: true }) as never).draft).toBe(true)
+    expect(toPull(detail({ draft: true }) as never).draft).toBe(true)
   })
 
   it('maps the detail and leaves review fields unset', () => {
@@ -146,13 +153,25 @@ describe('pull request abilities', () => {
     expect(pullAbilities(['read'], 'bob', 'bob', false)).toEqual({
       canMerge: false,
       canManage: true,
+      canOverrideLocks: false,
+      canComment: true,
     })
     expect(pullAbilities(['read', 'checkin'], 'al', 'bob', false).canMerge).toBe(true)
     expect(pullAbilities(['read'], 'al', 'bob', false).canManage).toBe(false)
     expect(pullAbilities(['read', 'checkin'], 'bob', 'bob', true)).toEqual({
       canMerge: false,
       canManage: false,
+      canOverrideLocks: false,
+      canComment: false,
     })
+  })
+
+  it('lets checkin with force_unlock merge over locks, and only a signed-in reader comment', () => {
+    expect(pullAbilities(['read', 'checkin', 'force_unlock'], 'al', 'bob', false)).toMatchObject({
+      canOverrideLocks: true,
+    })
+    expect(pullAbilities(['read', 'force_unlock'], 'al', 'bob', false).canOverrideLocks).toBe(false)
+    expect(pullAbilities(['read'], '', 'bob', false).canComment).toBe(false)
   })
 })
 
@@ -204,7 +223,22 @@ describe('diff expand', () => {
     expect(t.hunks[0]!.header).toBe('@@ -11,2 +11,3 @@ fn')
   })
 
-  it('loads the trailing lines after the last hunk, also from its own down control', () => {
+  it('loads the gap above the last hunk from its own controls despite trailing lines', () => {
+    const f = file()
+    const down = { path: f.path, hunk: 1, direction: 'down' as const, position: 'before' as const }
+    expect(expandRange(f, down, 3)).toEqual({ start: 13, end: 15 })
+  })
+
+  it('ignores an after control that is not below the last hunk or has nothing hidden', () => {
+    const f = file()
+    const after = { path: f.path, hunk: 0, direction: 'down' as const, position: 'after' as const }
+    expect(expandRange(f, after)).toBeNull()
+    expect(applyExpand(f, after, 13, ['x'])).toBe(f)
+    f.hunks[1]!.hidden_after = 0
+    expect(expandRange(f, { ...after, hunk: 1 })).toBeNull()
+  })
+
+  it('loads the trailing lines after the last hunk', () => {
     const f = file()
     const down = { path: f.path, hunk: 1, direction: 'down' as const, position: 'after' as const }
     expect(expandRange(f, down)).toEqual({ start: 22, end: 26 })
@@ -388,24 +422,178 @@ describe('pull request page', () => {
     ])
   })
 
-  it('hides merge from a reader and from a draft, and marks a draft ready', async () => {
-    const reader = await mountAt('/acme/game/pulls/7', RepoPullView, routes(detail()), {
+  it('hides merge and editing from a reader', async () => {
+    const { w } = await mountAt('/acme/game/pulls/7', RepoPullView, routes(detail()), {
       permissions: ['read'],
     })
-    expect(reader.w.findComponent(PynPullRequestPage).props('canMerge')).toBe(false)
-    expect(reader.w.findComponent(PynPullRequestPage).props('canManage')).toBe(false)
+    const page = w.findComponent(PynPullRequestPage)
+    expect(page.props('canMerge')).toBe(false)
+    expect(page.props('canManage')).toBe(false)
+    expect(page.props('editable')).toBe(false)
+    expect(page.props('canOverrideLocks')).toBe(false)
+  })
+
+  it('shows a draft in the notices and marks it ready from the merge box', async () => {
+    let answer!: (r: Response) => void
     const { w, calls } = await mountAt(
       '/acme/game/pulls/7',
       RepoPullView,
-      routes(detail({ draft: true })),
+      routes(detail({ draft: true }), (u, init) =>
+        init?.method === 'PATCH' ? new Promise<Response>((r) => (answer = r)) : undefined,
+      ),
       { user: 'bob', permissions: ['read'] },
     )
-    expect(w.findComponent(PynPullRequestPage).props('canMerge')).toBe(false)
-    await w.find('[data-ready]').trigger('click')
+    const page = w.findComponent(PynPullRequestPage)
+    expect(page.props('pull').draft).toBe(true)
+    expect(page.props('canMarkReady')).toBe(true)
+    expect(w.text()).toContain('This pull request is a draft')
+    page.vm.$emit('ready')
     await flushPromises()
+    expect(page.props('merging')).toBe(true)
     const patch = calls.find((c) => c.method === 'PATCH')!
     expect(patch.url).toBe('/v1/repos/acme/game/pulls/7')
     expect(patch.body).toEqual({ draft: false })
+    answer(new Response(JSON.stringify(detail({ draft: false }))))
+    await flushPromises()
+    expect(page.props('merging')).toBe(false)
+    expect(page.props('pull').draft).toBe(false)
+    expect(w.text()).not.toContain('This pull request is a draft')
+  })
+
+  it('lets a checkin with force_unlock merge over locks', async () => {
+    const { w } = await mountAt('/acme/game/pulls/7', RepoPullView, routes(detail()), {
+      permissions: ['read', 'checkin', 'force_unlock'],
+    })
+    expect(w.findComponent(PynPullRequestPage).props('canOverrideLocks')).toBe(true)
+  })
+
+  it('saves the title and the description', async () => {
+    const { w, calls } = await mountAt(
+      '/acme/game/pulls/7',
+      RepoPullView,
+      routes(detail(), (u, init) =>
+        init?.method === 'PATCH'
+          ? detail(JSON.parse(String(init.body)) as Record<string, string>)
+          : undefined,
+      ),
+    )
+    const page = w.findComponent(PynPullRequestPage)
+    expect(page.props('editable')).toBe(true)
+    page.vm.$emit('saveTitle', 'Better')
+    await flushPromises()
+    expect(calls.at(-1)).toMatchObject({ method: 'PATCH', body: { title: 'Better' } })
+    expect(page.props('pull').title).toBe('Better')
+    page.vm.$emit('saveBody', 'More')
+    await flushPromises()
+    expect(calls.at(-1)).toMatchObject({ method: 'PATCH', body: { body: 'More' } })
+    expect(page.props('pull').body).toBe('More')
+  })
+
+  it('shows a refused title on the editor', async () => {
+    const { w } = await mountAt(
+      '/acme/game/pulls/7',
+      RepoPullView,
+      routes(detail(), (u, init) =>
+        init?.method === 'PATCH'
+          ? new Response(JSON.stringify({ code: 'invalid_request', message: 'bad title' }), {
+              status: 400,
+            })
+          : undefined,
+      ),
+    )
+    const page = w.findComponent(PynPullRequestPage)
+    page.vm.$emit('saveTitle', '')
+    await flushPromises()
+    expect(page.props('titleError')).toBeTruthy()
+    expect(page.props('titleSaving')).toBe(false)
+    page.vm.$emit('editTitle')
+    await flushPromises()
+    expect(page.props('titleError')).toBeUndefined()
+  })
+
+  const comment = { id: '2', kind: 'comment', actor: who('al'), at: '2026-11-02T11:00:00Z' }
+
+  it('posts a comment, adds it to the timeline and clears the form', async () => {
+    const { w, calls } = await mountAt(
+      '/acme/game/pulls/7',
+      RepoPullView,
+      routes(detail(), (u, init) =>
+        init?.method === 'POST' ? { ...comment, body: 'Looks good' } : undefined,
+      ),
+    )
+    const form = w.findComponent(PynCommentForm)
+    expect(form.props('canClose')).toBe(true)
+    form.vm.$emit('update:modelValue', 'Looks good')
+    form.vm.$emit('submit', 'Looks good')
+    await flushPromises()
+    expect(calls.at(-1)).toMatchObject({
+      method: 'POST',
+      url: '/v1/repos/acme/game/pulls/7/comments',
+      body: { body: 'Looks good' },
+    })
+    expect(form.props('modelValue')).toBe('')
+    const page = w.findComponent(PynPullRequestPage)
+    expect(page.props('events')).toHaveLength(2)
+    expect(page.props('pull').comments).toBe(1)
+  })
+
+  it('keeps the draft when a comment is refused', async () => {
+    const { w } = await mountAt(
+      '/acme/game/pulls/7',
+      RepoPullView,
+      routes(detail(), (u, init) =>
+        init?.method === 'POST'
+          ? new Response(JSON.stringify({ code: 'invalid_request', message: 'empty' }), {
+              status: 400,
+            })
+          : undefined,
+      ),
+    )
+    const form = w.findComponent(PynCommentForm)
+    form.vm.$emit('update:modelValue', 'x')
+    form.vm.$emit('submit', 'x')
+    await flushPromises()
+    expect(form.props('modelValue')).toBe('x')
+    expect(form.props('error')).toBeTruthy()
+  })
+
+  it('comments and then closes for close with comment', async () => {
+    const { w, calls } = await mountAt(
+      '/acme/game/pulls/7',
+      RepoPullView,
+      routes(detail(), (u, init) =>
+        init?.method !== 'POST'
+          ? undefined
+          : u.endsWith('/comments')
+            ? { ...comment, body: 'Done' }
+            : detail({ state: 'closed' }),
+      ),
+    )
+    w.findComponent(PynCommentForm).vm.$emit('close', 'Done')
+    await flushPromises()
+    expect(calls.filter((c) => c.method === 'POST').map((c) => c.url)).toEqual([
+      '/v1/repos/acme/game/pulls/7/comments',
+      '/v1/repos/acme/game/pulls/7/close',
+    ])
+    expect(w.findComponent(PynPullRequestPage).props('pull').state).toBe('closed')
+    expect(w.findComponent(PynCommentForm).props('canClose')).toBe(false)
+  })
+
+  it('closes without a comment when the text is empty, and hides the form when signed out', async () => {
+    const { w, calls } = await mountAt(
+      '/acme/game/pulls/7',
+      RepoPullView,
+      routes(detail(), (u, init) =>
+        init?.method === 'POST' ? detail({ state: 'closed' }) : undefined,
+      ),
+    )
+    w.findComponent(PynCommentForm).vm.$emit('close', '  ')
+    await flushPromises()
+    expect(calls.filter((c) => c.method === 'POST').map((c) => c.url)).toEqual([
+      '/v1/repos/acme/game/pulls/7/close',
+    ])
+    const out = await mountAt('/acme/game/pulls/7', RepoPullView, routes(detail()), { user: '' })
+    expect(out.w.findComponent(PynCommentForm).exists()).toBe(false)
   })
 
   it('merges with the method and the commits the page loaded', async () => {
@@ -511,7 +699,7 @@ describe('pull request page', () => {
     await flushPromises()
     expect(page.props('viewed')).toEqual(['src/a.rs'])
     expect(readViewed('acme/game#7')).toEqual({ 'src/a.rs': 'n1' })
-    page.vm.$emit('expand', { path: 'src/a.rs', hunk: 1, direction: 'down' })
+    page.vm.$emit('expand', { path: 'src/a.rs', hunk: 1, direction: 'down', position: 'after' })
     await flushPromises()
     expect(calls.at(-1)!.url).toBe(
       `/v1/repos/acme/game/lines?path=src%2Fa.rs&rev=${'h'.repeat(40)}&start=22&end=26`,
