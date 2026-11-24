@@ -3188,6 +3188,12 @@ export interface components {
        *     policy lets them. Defaults to the caller.
        */
       owner?: string | null
+      starter_default?: components['schemas']['Mode'] | null
+      /**
+       * @description Defaults to `true`: the first commit holds `.pyn/pyn.toml` with the starter policy (shared by default, exclusive
+       *     rules for object and binary files). `false` leaves the repository empty, under the server's initial policy.
+       */
+      starter_policy?: boolean | null
       visibility?: components['schemas']['Visibility'] | null
     }
     CreateServerInvitationRequest: {
