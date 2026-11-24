@@ -347,7 +347,10 @@ describe('PynHistory', () => {
     vi.advanceTimersByTime(400)
     expect(w.emitted('filter')).toEqual([['*.uasset']])
     vi.useRealTimers()
-    await w.find('button').trigger('click')
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Load more')!
+      .trigger('click')
     expect(w.emitted('more')).toHaveLength(1)
   })
 
@@ -401,7 +404,7 @@ describe('history view', () => {
       .trigger('click')
     await flushPromises()
     expect(fn.mock.calls[1][0]).toBe('/v1/repos/alice/game/history?before=c1')
-    expect(w.findAll('li').map((li) => li.text().slice(0, 2))).toEqual(['r3', 'r2', 'r1'])
+    expect(w.findAll('li').map((li) => li.find('code').text())).toEqual(['r3', 'r2', 'r1'])
     expect(w.text()).not.toContain('Load more')
   })
 
