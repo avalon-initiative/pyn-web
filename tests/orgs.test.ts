@@ -57,9 +57,17 @@ describe('org state', () => {
 
   it('shows tabs by role', () => {
     const sections = (r: Parameters<typeof orgTabs>[0]) => orgTabs(r).map((t) => t.section)
-    expect(sections(null)).toEqual([''])
-    expect(sections('member')).toEqual(['', 'members', 'teams'])
-    expect(sections('owner')).toEqual(['', 'members', 'teams', 'usage', 'audit', 'settings'])
+    expect(sections(null)).toEqual(['', 'repositories'])
+    expect(sections('member')).toEqual(['', 'repositories', 'teams', 'members'])
+    expect(sections('owner')).toEqual([
+      '',
+      'repositories',
+      'teams',
+      'members',
+      'usage',
+      'audit',
+      'settings',
+    ])
   })
 
   it('offers yourself and every organization you belong to', () => {
@@ -173,8 +181,9 @@ describe('PynOrgHeader', () => {
     expect(w.find('[data-kind]').text()).toBe('organization')
     expect(w.findAll('nav a').map((a) => a.attributes('href'))).toEqual([
       '/studio',
-      '/studio/-/members',
+      '/studio/-/repositories',
       '/studio/-/teams',
+      '/studio/-/members',
     ])
   })
 })
