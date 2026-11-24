@@ -48,6 +48,9 @@ export const repoMe = (r: Repo) => call<Me>(api.GET('/v1/repos/{owner}/{name}/me
 export const listBranches = (r: Repo) =>
   call<Branch[]>(api.GET('/v1/repos/{owner}/{name}/branches', at(r)))
 
+export const createBranch = (r: Repo, name: string, start?: string) =>
+  call<Branch>(api.POST('/v1/repos/{owner}/{name}/branches', { ...at(r), body: { name, start } }))
+
 export const fetchPolicy = (r: Repo, paths: string[] = []) =>
   call<ActivePolicy>(
     api.GET('/v1/repos/{owner}/{name}/policy', { params: { path: r, query: { path: paths } } }),

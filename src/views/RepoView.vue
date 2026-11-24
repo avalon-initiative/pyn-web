@@ -174,6 +174,7 @@ provide(repoKey, {
   branchesLoading: picker.loading,
   branchesError: picker.error,
   selectBranch: picker.select,
+  reloadBranches: picker.reload,
   compare: { props: compareProps, show: showCompare, open: openChange },
   reload: async () => void (await load()),
 })
