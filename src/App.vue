@@ -73,6 +73,7 @@ import {
   PynAccountPendingDeletion,
   PynCommandPalette,
   PynShell,
+  PynSideRail,
   PynShortcutsHelp,
   PynSecondFactor,
   PynSignIn,
@@ -140,6 +141,8 @@ watch(
 )
 const trail = computed(() => breadcrumbs(route))
 const wide = computed(() => route.matched.some((r) => r.meta.wide === true))
+const onDashboard = computed(() => route.name === 'dashboard')
+const railItems: NavItem[] = [{ id: 'home', label: 'Home', href: '/' }]
 const exploreLinks = [{ id: 'explore', label: 'Explore', href: '/_/explore' }]
 const slugs = computed(() => sessionRepos.value.map(repoSlug))
 const owners = computed(() => topBarOwners(user.value, sessionOrgs.value))
@@ -522,6 +525,18 @@ onMounted(async () => {
     </main>
     <template v-else-if="user">
       <PynShell :breadcrumbs="trail" :wide="wide">
+        <template v-if="onDashboard" #side>
+          <PynSideRail
+            :account="user"
+            :display-name="ownProfile.display_name"
+            :avatar-url="ownProfile.avatar_url"
+            :items="railItems"
+            current="home"
+            :repos="sessionRepos"
+            :orgs="sessionOrgs"
+            create-org-href="/_/new-org"
+          />
+        </template>
         <template #top>
           <PynTopBar
             :user="user"
@@ -544,7 +559,20 @@ onMounted(async () => {
             @shortcuts="palette.showHelp"
             @theme="setTheme"
             @sign-out="leave"
-          />
+          >
+            <template v-if="onDashboard" #drawer>
+              <PynSideRail
+                :account="user"
+                :display-name="ownProfile.display_name"
+                :avatar-url="ownProfile.avatar_url"
+                :items="railItems"
+                current="home"
+                :repos="sessionRepos"
+                :orgs="sessionOrgs"
+                create-org-href="/_/new-org"
+              />
+            </template>
+          </PynTopBar>
         </template>
         <PynSecurityNotice
           v-if="securityNotice && route.path !== SECURITY_PATH"

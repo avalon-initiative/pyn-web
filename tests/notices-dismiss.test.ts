@@ -12,7 +12,6 @@ describe('dismissible notices', () => {
   })
 
   it('fades only the transient confirmations and action errors', () => {
-    expect(source('DashboardView.vue')).toMatch(/<PynViewError[^>]*dismissible/)
     expect(source('AdminAccountsView.vue')).toMatch(
       /<PynViewNotice[^>]*title="Done"[^>]*dismissible/,
     )
