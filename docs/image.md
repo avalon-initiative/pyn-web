@@ -12,6 +12,7 @@ bodies are not limited or buffered, responses are streamed, and the timeouts are
 docker run --detach --publish 127.0.0.1:8080:8080 \
   --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d:uid=101,gid=101 --cap-drop ALL \
   --env PYN_API_URL=http://pyn-core:7878 \
+  --env PYN_FONT_SET=default \
   ghcr.io/avalon-initiative/pyn-web:v<X.Y.Z>
 ```
 
@@ -20,9 +21,22 @@ what it writes to: `/tmp` for nginx's temporary files, and `/etc/nginx/conf.d` (
 
 ## Settings
 
-| Variable      | Default                | Meaning                                                                                                                                      |
-| ------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PYN_API_URL` | `http://pyn-core:7878` | Address of the server (`scheme://host:port`, no path): one upstream. Resolved per request, so recreating the API container needs no restart. |
+| Variable             | Default                | Meaning                                                                                                                                                                                                                                                       |
+| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PYN_API_URL`        | `http://pyn-core:7878` | Address of the server (`scheme://host:port`, no path): one upstream. Resolved per request, so recreating the API container needs no restart.                                                                                                                  |
+| `PYN_FONT_SET`       | `default`              | Font set of the app: `default` (Geist), `arcade` (Pixelify Sans headings) or `system` (no font download). An unknown id is ignored with a console warning and the default applies.                                                                            |
+| `PYN_ICON_PACK_FILE` | none                   | Path to a JSON file inside the container (mount it read-only) mapping icon names to SVG inner markup, Lucide-style element nodes or a Lucide icon object. A name missing from the pack falls back to the bundled icons. Trusted input: it is drawn as markup. |
+
+The font set and icon pack are read once when the container starts: change the variable or the file and restart the container, there is no server API for them. They reach the browser through `/config.json`, a small file the start-up script renders next to the configuration, and the app reads it before it mounts. A static host that serves `dist/` itself can place its own `config.json` at the web root:
+
+```json
+{
+  "font_set": "arcade",
+  "icon_pack": { "repo": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"3\" />" }
+}
+```
+
+Both keys are optional, and a missing, unreadable or invalid file leaves the defaults in place. The faces ship inside the app and are served from its own origin.
 
 There is nothing else to set. Several servers are a load balancer's job, not this container's.
 
@@ -32,6 +46,7 @@ There is nothing else to set. Several servers are a load balancer's job, not thi
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `/v1/...`             | The API, streamed (no request or response buffering).                                                                    |
 | `/healthz`, `/readyz` | The API, unchanged status and body, `Cache-Control: no-store`, not buffered. The app's fallback page never answers them. |
+| `/config.json`        | The host configuration rendered at start (`font_set`, `icon_pack`), never cached.                                        |
 | `/nginx-health`       | The container itself (`ok`), for its `HEALTHCHECK`. It does not depend on the API.                                       |
 | anything else         | The app; unknown paths get `index.html` so client routes work.                                                           |
 
