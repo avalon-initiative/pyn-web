@@ -3,6 +3,7 @@ import {
   PynTeamDetail,
   PynTeamForm,
   PynTeamGrant,
+  PynRepoCollaborators,
   PynTeamList,
   isEditable,
   personGrantees,
@@ -330,33 +331,32 @@ describe('team views', () => {
         },
       })
 
-    it('shows sources and the team section, and grants and revokes', async () => {
+    it('lists direct grants, org-derived access, invites, and grants and revokes teams', async () => {
       const calls = stub(routes)
       const w = mountView(true)
       await flushPromises()
-      expect(w.text()).toContain('Comes from owning the organization')
       expect(calls).toContain('GET /v1/repos/studio/game/invites')
       expect(calls).toContain('GET /v1/repos/studio/game/teams')
-      const grant = w.findComponent(PynTeamGrant)
+      const page = w.findComponent(PynRepoCollaborators)
       expect(
-        grant
-          .find('select')
-          .findAll('option')
-          .map((o) => o.text()),
-      ).toEqual(['qa'])
-      await grant.find('form').trigger('submit')
+        page.props('rows').map((r: { name: string; kind: string }) => `${r.kind}:${r.name}`),
+      ).toEqual(['person:bob', 'team:artists'])
+      expect(page.props('teams')).toEqual(['qa'])
+      page.vm.$emit('grant', { name: 'qa', role: 'writer' })
       await flushPromises()
       expect(calls).toContain('PUT /v1/repos/studio/game/teams/qa')
-      await w.find('button[aria-label="Revoke artists"]').trigger('click')
+      page.vm.$emit('revoke', 'artists')
       await flushPromises()
       expect(calls).toContain('DELETE /v1/repos/studio/game/teams/artists')
+      await w.find('[role=tab][aria-selected=false]').trigger('click')
+      expect(w.text()).toContain('Comes from owning the organization')
     })
 
     it('has no team section for a user-owned repository', async () => {
       const calls = stub(routes)
       const w = mountView(false)
       await flushPromises()
-      expect(w.text()).not.toContain('Grant a team')
+      expect(w.findComponent(PynRepoCollaborators).props('teams')).toEqual([])
       expect(calls.some((c) => c.includes('/teams'))).toBe(false)
     })
 
@@ -368,9 +368,25 @@ describe('team views', () => {
       )
       const w = mountView(true)
       await flushPromises()
-      await w.findComponent(PynTeamGrant).find('form').trigger('submit')
+      w.findComponent(PynRepoCollaborators).vm.$emit('grant', { name: 'qa', role: 'writer' })
       await flushPromises()
-      expect(w.findComponent(PynTeamGrant).find('[role=alert]').text()).toBe('missing permission')
+      expect(w.findComponent(PynRepoCollaborators).props('grantError')).toBe('missing permission')
+    })
+
+    it('creates and revokes invitations inside the page', async () => {
+      const calls = stub((k) =>
+        k === 'POST /v1/repos/studio/game/invites' ? json({ code: 'pyni_x' }) : routes(k),
+      )
+      const w = mountView(true)
+      await flushPromises()
+      const page = w.findComponent(PynRepoCollaborators)
+      page.vm.$emit('createInvite', { role: 'reader', hours: 24 })
+      await flushPromises()
+      expect(calls).toContain('POST /v1/repos/studio/game/invites')
+      expect(page.props('inviteCode')).toBe('pyni_x')
+      page.vm.$emit('revokeInvite', 'i1')
+      await flushPromises()
+      expect(calls).toContain('DELETE /v1/repos/studio/game/invites/i1')
     })
   })
 })
