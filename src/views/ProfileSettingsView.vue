@@ -11,10 +11,9 @@ import { sessionKey } from '../state/context.state'
 
 const session = inject(sessionKey)!
 const profile = ref<Profile>({})
-const form = computed(() => ({
-  ...profile.value,
-  visibility: profile.value.visibility ?? undefined,
-}))
+const form = computed(() => ({ ...profile.value, visibility: undefined }))
+// An unset visibility means everything shows; passing it keeps the Visibility section on the form.
+const visibility = computed(() => profile.value.visibility ?? {})
 const keep = (next: Profile) => (ownProfile.value = profile.value = next)
 const success = ref('')
 const avatarError = ref('')
@@ -44,6 +43,7 @@ async function changeAvatar(change: () => Promise<Profile>) {
 <template>
   <PynProfileForm
     :profile="form"
+    :visibility="visibility"
     :user="session.user.value"
     :avatar-url="profile.avatar_url ?? undefined"
     :busy="busy"
