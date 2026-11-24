@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { PynLocksPage, repoPath } from '@avalon-initiative/pyn-common-ui'
-import type { LockInfo, LockView } from '@avalon-initiative/pyn-common-ui'
+import type { LockInfo, LockListItem, LockView } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { forceUnlock, listLocks, releaseLock } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
+import { releaseEach } from '../state/my-locks.state'
 
 const VIEWS: LockView[] = ['all', 'mine', 'expiring', 'stale']
 
@@ -15,6 +16,7 @@ const me = inject(sessionKey)!.user
 const route = useRoute()
 const locks = ref<LockInfo[]>([])
 const query = ref('')
+const failures = ref<Record<string, string>>({})
 const loading = ref(true)
 const { busy, error, attempt } = useAction()
 const canForce = computed(() => canWrite(permissions.value.includes('force_unlock'), frozen.value))
@@ -31,9 +33,21 @@ const load = () =>
 
 const release = (lock: LockInfo) =>
   attempt(async () => {
+    failures.value = {}
     await releaseLock(target.value, lock.path)
     locks.value = shared.value = await listLocks(target.value)
   })
+
+const releaseMany = (picked: LockListItem[]) =>
+  attempt(async () => {
+    const failed = await releaseEach(picked, (l) => releaseLock(target.value, l.path))
+    failures.value = Object.fromEntries(failed.map((f) => [f.lock.path, f.message]))
+    locks.value = shared.value = await listLocks(target.value)
+  })
+
+const rows = computed<LockListItem[]>(() =>
+  locks.value.map((l) => (failures.value[l.path] ? { ...l, error: failures.value[l.path] } : l)),
+)
 
 const forceRelease = (f: { lock: LockInfo; reason: string }) =>
   attempt(async () => {
@@ -50,7 +64,8 @@ onMounted(async () => {
 <template>
   <PynLocksPage
     v-model:query="query"
-    :locks="locks"
+    :locks="rows"
+    bulk
     :me="me || undefined"
     :view="view"
     :hrefs="hrefs"
@@ -59,6 +74,7 @@ onMounted(async () => {
     :loading="loading"
     :error="error || undefined"
     @release="release"
+    @release-many="releaseMany"
     @force-release="forceRelease"
   />
 </template>
