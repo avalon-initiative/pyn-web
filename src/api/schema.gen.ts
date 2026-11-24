@@ -133,6 +133,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/admin/email/test': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['send_test_email']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/admin/invitations': {
     parameters: {
       query?: never
@@ -3758,6 +3774,13 @@ export interface components {
       /** @description Shown to administrators; not to the account holder. */
       reason?: string | null
     }
+    /** @description A check of the mailer's connection and sign-in. */
+    EmailCheck: {
+      /** Format: date-time */
+      at: string
+      /** @description What is wrong, in plain words; null when the check passed. Never carries a credential. */
+      error: string | null
+    }
     /** @description A refused send. The error never carries a recipient address or a credential. */
     EmailFailure: {
       /** Format: date-time */
@@ -3766,6 +3789,7 @@ export interface components {
     }
     /** @description Whether the server sends email. */
     EmailSettings: {
+      last_check?: components['schemas']['EmailCheck'] | null
       last_failure?: components['schemas']['EmailFailure'] | null
       /**
        * Format: date-time
@@ -5566,6 +5590,13 @@ export interface components {
       repo: string
       role: components['schemas']['Role']
     }
+    /** @description How the test message went. */
+    TestEmailResult: {
+      /** @description The mailer accepted the message for delivery. */
+      delivered: boolean
+      /** @description Why it was refused; null when delivered. Never carries the address or a credential. */
+      error: string | null
+    }
     TokenInfo: {
       /** Format: date-time */
       created_at: string
@@ -6299,6 +6330,44 @@ export interface operations {
         }
       }
       /** @description server_admin_required: service credentials cannot read the log */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  send_test_email: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description a test message went to the administrator's primary verified address; `delivered` says whether the mailer accepted it, and the outcome also shows in the email status of the settings */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TestEmailResult']
+        }
+      }
+      /** @description invalid_request: the mailer sends nothing (none or log), or the account has no verified address */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description server_admin_required, or service_scope_required for a service credential without manage_accounts */
       403: {
         headers: {
           [name: string]: unknown
