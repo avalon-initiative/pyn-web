@@ -1,4 +1,6 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import type { OrgInvitation } from '@avalon-initiative/pyn-common-ui'
 
-/** Number of the signed-in user's pending invitations, part of the top bar notification count. */
-export const pendingInvitations = ref(0)
+/** The signed-in user's pending invitations. */
+export const myInvitations = ref<OrgInvitation[]>([])
+export const pendingInvitations = computed(() => myInvitations.value.length)
