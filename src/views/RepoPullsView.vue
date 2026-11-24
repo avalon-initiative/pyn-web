@@ -5,7 +5,8 @@ import { computed, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listPulls } from '../api/pulls'
 import { useAction } from '../state/action.state'
-import { repoKey } from '../state/context.state'
+import { repoKey, sessionKey } from '../state/context.state'
+import { canWrite } from '../state/freeze.state'
 import {
   PULL_PAGE_SIZE,
   pullListView,
@@ -17,7 +18,13 @@ import {
 // The list filters in the browser, so it reads at most this many pages of the newest.
 const MAX_PAGES = 10
 
-const { target } = inject(repoKey)!
+const { target, permissions, frozen } = inject(repoKey)!
+const signedIn = inject(sessionKey)!.user
+const newHref = computed(() =>
+  signedIn.value && canWrite(permissions.value.includes('checkin'), frozen.value)
+    ? repoPath(target.value, 'pulls/new')
+    : undefined,
+)
 const route = useRoute()
 const router = useRouter()
 const all = ref<PullRequestSummary[]>([])
@@ -95,6 +102,7 @@ watch(
     :loading="loading"
     :error="error || undefined"
     :filtered="query.trim() !== `is:${view.status}`"
+    :new-href="newHref"
     @update:status="setStatus"
     @update:page="page = $event"
   />

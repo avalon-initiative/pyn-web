@@ -30,6 +30,7 @@ import {
   putWatch,
   repoMe,
 } from '../api/repos'
+import { listPulls } from '../api/pulls'
 import { listTags } from '../api/tags'
 import { useAction } from '../state/action.state'
 import { useBranch, useBranches } from '../state/branch.state'
@@ -66,6 +67,7 @@ const repo = ref<RepoInfo | null>(null)
 const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
 const locks = ref<LockInfo[] | null>(null)
+const openPulls = ref<number | undefined>(undefined)
 const notFound = ref(false)
 const ownerAvatar = ref<string | null>(null)
 // A signed-out miss reads the same for a private and a missing repository.
@@ -160,6 +162,17 @@ async function loadLocks() {
   }
 }
 
+// One page of open pull requests; the tab shows at most a page's worth.
+async function loadPullCount() {
+  const t = target.value
+  try {
+    const { pulls } = await listPulls(t, { state: 'open', limit: 100 })
+    if (t === target.value) openPulls.value = pulls.length
+  } catch {
+    // The count is a convenience: no badge without it.
+  }
+}
+
 // The picture only decorates the header: without it initials stand in.
 async function loadOwnerAvatar() {
   const t = target.value
@@ -181,8 +194,12 @@ watch(
     star.sync(null)
     watching.sync(null)
     locks.value = null
+    openPulls.value = undefined
     load().then(() => {
-      if (permissions.value.includes('read')) void loadLocks()
+      if (permissions.value.includes('read')) {
+        void loadLocks()
+        void loadPullCount()
+      }
       if (repo.value) void loadOwnerAvatar()
     })
   },
@@ -221,6 +238,7 @@ provide(repoKey, {
   tagsError: tagList.error,
   tagsHref,
   reloadTags: tagList.reload,
+  reloadPulls: loadPullCount,
   compare: { props: compareProps, show: showCompare, open: openChange },
   reload: async () => void (await load()),
 })
@@ -265,6 +283,7 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :owner-href="ownerHref"
       :owner-avatar-url="ownerAvatar"
       :locked-count="locks?.length ?? 0"
+      :pull-count="openPulls"
       :lock-holders="lockHolders(locks ?? [])"
       :max-tabs="5"
       :facts="facts"

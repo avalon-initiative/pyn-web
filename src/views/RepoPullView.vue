@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  PynButton,
+  PynCommentForm,
   PynLoading,
   PynPullRequestPage,
   PynViewError,
@@ -20,6 +20,7 @@ import { useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
 import {
   closePull,
+  commentPull,
   fileLines,
   getPull,
   mergePull,
@@ -51,7 +52,7 @@ const TABS: Record<string, PullTab> = {
   'pull-files': 'files',
 }
 
-const { target, permissions, frozen, reloadBranches } = inject(repoKey)!
+const { target, permissions, frozen, reloadBranches, reloadPulls } = inject(repoKey)!
 const me = inject(sessionKey)!.user
 const route = useRoute()
 const number = computed(() => Number(route.params.number))
@@ -74,6 +75,12 @@ const filesAction = useAction()
 const expand = useAction()
 const merge = useAction()
 const manage = useAction()
+const ready = useAction()
+const titleAction = useAction()
+const bodyAction = useAction()
+const comment = useAction()
+const draft = ref('')
+const actions = [page, filesAction, expand, merge, manage, ready, titleAction, bodyAction, comment]
 const abilities = computed(() =>
   pullAbilities(permissions.value, me.value, server.value?.author.user, frozen.value),
 )
@@ -143,7 +150,8 @@ watch(
     viewed.value = []
     filter.value = ''
     method.value = 'allow'
-    for (const a of [page, filesAction, expand, merge, manage]) a.error.value = ''
+    draft.value = ''
+    for (const a of actions) a.error.value = ''
     await loadPull()
     if (server.value) await loadTab()
   },
@@ -175,6 +183,7 @@ const onMerge = (m: PullMergeMethod) =>
       if (stale()) return
       await refresh(merged)
       void reloadBranches?.()
+      void reloadPulls?.()
     } catch (e) {
       // The page reloads so the locks, conflicts or moved branches behind the refusal show.
       if (!stale() && e instanceof ApiError && e.status === 409) await loadPull()
@@ -186,14 +195,44 @@ const onState = (action: typeof closePull) => {
   if (manage.busy.value) return
   return forPull(manage, async (stale) => {
     const p = await action(target.value, number.value)
-    if (!stale()) await refresh(p)
+    if (stale()) return
+    void reloadPulls?.()
+    await refresh(p)
   })
 }
 
 const markReady = () =>
-  forPull(manage, async (stale) => {
+  forPull(ready, async (stale) => {
     const p = await updatePull(target.value, number.value, { draft: false })
     if (!stale()) server.value = p
+  })
+
+// The page's editors close when the saved value comes back on the pull request.
+const save = (action: Action, change: { title: string } | { body: string }) =>
+  forPull(action, async (stale) => {
+    const p = await updatePull(target.value, number.value, change)
+    if (!stale()) server.value = p
+  })
+
+async function postComment(body: string, stale: () => boolean) {
+  const event = await commentPull(target.value, number.value, { body })
+  if (stale()) return
+  draft.value = ''
+  if (events.value) events.value = [...events.value, toPullEvent(event)]
+  if (server.value) server.value = { ...server.value, comments: server.value.comments + 1 }
+}
+
+const onComment = (body: string) => forPull(comment, (stale) => postComment(body, stale))
+
+// The comment is posted first, so a refused comment leaves the pull request open.
+const closeWithComment = (body: string) =>
+  forPull(comment, async (stale) => {
+    if (body.trim()) await postComment(body, stale)
+    if (stale()) return
+    const p = await closePull(target.value, number.value)
+    if (stale()) return
+    void reloadPulls?.()
+    await refresh(p)
   })
 
 function setViewed(paths: string[]) {
@@ -223,17 +262,6 @@ const pageError = computed(() => page.error.value || undefined)
   <template v-else>
     <PynViewError v-if="pageError">{{ pageError }}</PynViewError>
     <PynViewError v-if="manage.error.value">{{ manage.error.value }}</PynViewError>
-    <PynViewNotice v-if="server?.draft && pull.state === 'open'" tone="info" title="Draft">
-      This pull request is a draft and cannot be merged until it is marked ready for review.
-      <PynButton
-        v-if="abilities.canManage"
-        label="Ready for review"
-        variant="secondary"
-        :disabled="manage.busy.value"
-        data-ready
-        @click="markReady"
-      />
-    </PynViewNotice>
     <PynViewError v-if="tab === 'files' && expand.error.value">{{
       expand.error.value
     }}</PynViewError>
@@ -256,15 +284,42 @@ const pageError = computed(() => page.error.value || undefined)
       :viewed="viewed"
       :files-loading="tab === 'files' && !diff && !filesAction.error.value"
       :files-error="filesAction.error.value || undefined"
-      :can-merge="abilities.canMerge && !server?.draft"
+      :editable="abilities.canManage"
+      :title-saving="titleAction.busy.value"
+      :title-error="titleAction.error.value || undefined"
+      :body-saving="bodyAction.busy.value"
+      :body-error="bodyAction.error.value || undefined"
+      :can-merge="abilities.canMerge"
+      :can-mark-ready="abilities.canManage"
+      :can-override-locks="abilities.canOverrideLocks"
       :can-manage="abilities.canManage"
-      :merging="merge.busy.value"
-      :merge-error="merge.error.value || undefined"
+      :merging="merge.busy.value || ready.busy.value"
+      :merge-error="merge.error.value || ready.error.value || undefined"
       @merge="onMerge"
+      @ready="markReady"
+      @edit-title="titleAction.error.value = ''"
+      @save-title="(title) => save(titleAction, { title })"
+      @save-body="(body) => save(bodyAction, { body })"
       @close="onState(closePull)"
       @reopen="onState(reopenPull)"
       @expand="onExpand"
       @update:viewed="setViewed"
-    />
+    >
+      <template #notices>
+        <PynViewNotice v-if="pull.draft && pull.state === 'open'" tone="info" title="Draft">
+          This pull request is a draft and cannot be merged until it is marked ready for review.
+        </PynViewNotice>
+      </template>
+      <template v-if="abilities.canComment" #comment>
+        <PynCommentForm
+          v-model="draft"
+          :busy="comment.busy.value || manage.busy.value"
+          :error="comment.error.value || undefined"
+          :can-close="abilities.canManage && pull.state === 'open'"
+          @submit="onComment"
+          @close="closeWithComment"
+        />
+      </template>
+    </PynPullRequestPage>
   </template>
 </template>

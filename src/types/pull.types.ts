@@ -13,6 +13,7 @@ export type FileLines = Schemas['FileLines']
 export type NewPull = Schemas['CreatePullRequest']
 export type PullUpdate = Schemas['UpdatePullRequest']
 export type PullMerge = Schemas['MergePullRequest']
+export type PullComment = Schemas['CommentPullRequest']
 
 export interface PullListQuery {
   state?: Schemas['PullRequestState']
@@ -21,4 +22,10 @@ export interface PullListQuery {
   author?: string
   before?: number
   limit?: number
+}
+
+export interface DiffQuery {
+  base?: string
+  head: string
+  merge_base?: boolean
 }

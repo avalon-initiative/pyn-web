@@ -1,6 +1,8 @@
 import type {
+  DiffQuery,
   FileLines,
   NewPull,
+  PullComment,
   PullListQuery,
   PullMerge,
   PullUpdate,
@@ -41,6 +43,11 @@ export const pullEvents = (r: Repo, n: number, after?: string, limit = 100) =>
     }),
   )
 
+export const commentPull = (r: Repo, n: number, body: PullComment) =>
+  call<ServerPullEvent>(
+    api.POST('/v1/repos/{owner}/{name}/pulls/{number}/comments', { ...at(r, n), body }),
+  )
+
 export const closePull = (r: Repo, n: number) =>
   call<ServerPull>(api.POST('/v1/repos/{owner}/{name}/pulls/{number}/close', at(r, n)))
 
@@ -49,6 +56,9 @@ export const reopenPull = (r: Repo, n: number) =>
 
 export const mergePull = (r: Repo, n: number, body: PullMerge) =>
   call<ServerPull>(api.POST('/v1/repos/{owner}/{name}/pulls/{number}/merge', { ...at(r, n), body }))
+
+export const compareDiff = (r: Repo, query: DiffQuery) =>
+  call<ServerRepoDiff>(api.GET('/v1/repos/{owner}/{name}/diff', { params: { path: r, query } }))
 
 export const fileLines = (r: Repo, path: string, rev: string, start: number, end: number) =>
   call<FileLines>(
