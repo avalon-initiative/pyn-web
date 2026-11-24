@@ -48,6 +48,10 @@ function server(url: string) {
     locks = []
     return new Response(null, { status: 204 })
   }
+  if (url.startsWith('/v1/me/notices/') && !url.endsWith('/notices/')) {
+    notices = []
+    return new Response(null, { status: 204 })
+  }
   if (url.endsWith('/decline')) return new Response(null, { status: 204 })
   if (url.endsWith('/accept')) {
     pending = []
@@ -109,7 +113,7 @@ describe('top bar data', () => {
     )
     expect(bar.props('locksHeld')).toBe(2)
     expect(bar.props('locksExpiring')).toBe(true)
-    expect(bar.props('notifications')).toBe(invitations.length + 1)
+    expect(bar.props('notificationEntries')).toHaveLength(invitations.length + 1)
     expect(bar.props('repos')).toEqual(sampleRepos.map((r) => `${r.owner}/${r.name}`))
     expect(bar.find('[data-locks]').text()).toContain('2')
     expect(bar.find('[data-bell] [data-badge]').text()).toBe(String(invitations.length + 1))
@@ -202,7 +206,7 @@ describe('top bar data', () => {
     const { w } = await openApp('/_/people')
     const bar = w.findComponent(PynTopBar)
     expect(bar.props('locksHeld')).toBe(0)
-    expect(bar.props('notifications')).toBe(0)
+    expect(bar.props('notificationEntries')).toHaveLength(0)
     expect(bar.find('[data-locks]').exists()).toBe(false)
     expect(w.find('[role=alert]').exists()).toBe(false)
   })
@@ -261,10 +265,65 @@ describe('count refresh', () => {
     pending = invitations
     const { w } = await openApp('/_/invitations')
     const bar = w.findComponent(PynTopBar)
-    expect(bar.props('notifications')).toBe(invitations.length)
+    expect(bar.props('notificationEntries')).toHaveLength(invitations.length)
     const accept = w.findAll('button').find((b) => /accept/i.test(b.text()))!
     await accept.trigger('click')
     await flushPromises()
-    expect(bar.props('notifications')).toBe(0)
+    expect(bar.props('notificationEntries')).toHaveLength(0)
+  })
+
+  describe('bell entries', () => {
+    const bellOf = (w: VueWrapper) => w.findComponent(PynTopBar)
+
+    it('lists notices and invitations with stable ids and links', async () => {
+      pending = invitations
+      notices = [{ ...notice, kind: 'two_factor_reset', detail: 'Your second factors were reset.' }]
+      const { w } = await openApp()
+      const entries = bellOf(w as unknown as VueWrapper).props('notificationEntries')!
+      expect(entries.map((e) => e.id).sort()).toEqual(
+        ['invitation:modding-club', 'invitation:studio', 'notice:n1'].sort(),
+      )
+      const n = entries.find((e) => e.id === 'notice:n1')!
+      expect(n).toMatchObject({
+        kind: 'notice',
+        title: 'Your second factors were reset.',
+        href: '/_/settings/security',
+        busy: false,
+      })
+      const i = entries.find((e) => e.id === 'invitation:studio')!
+      expect(i).toMatchObject({
+        kind: 'invitation',
+        href: '/_/invitations',
+        at: invitations[0].created_at,
+      })
+      expect(i.title).toContain('studio')
+    })
+
+    it('dismisses a notice through the API and drops it', async () => {
+      notices = [notice]
+      const { w } = await openApp()
+      bellOf(w as unknown as VueWrapper).vm.$emit('dismissNotification', 'notice:n1')
+      await flushPromises()
+      expect(calls).toContain('DELETE /v1/me/notices/n1')
+      expect(bellOf(w as unknown as VueWrapper).props('notificationEntries')).toHaveLength(0)
+    })
+
+    it('accepts an invitation and opens the organization', async () => {
+      pending = invitations
+      const { w, router } = await openApp()
+      bellOf(w as unknown as VueWrapper).vm.$emit('acceptNotification', 'invitation:studio')
+      await flushPromises()
+      expect(calls).toContain('POST /v1/me/invitations/studio/accept')
+      expect(router.currentRoute.value.path).toBe('/studio')
+      expect(bellOf(w as unknown as VueWrapper).props('notificationEntries')).toHaveLength(0)
+    })
+
+    it('declines an invitation through the API', async () => {
+      pending = invitations
+      const { w } = await openApp()
+      bellOf(w as unknown as VueWrapper).vm.$emit('declineNotification', 'invitation:studio')
+      await flushPromises()
+      expect(calls).toContain('POST /v1/me/invitations/studio/decline')
+    })
   })
 })

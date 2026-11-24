@@ -4,7 +4,7 @@ import type { OrgInfo, RepoInfo } from '@avalon-initiative/pyn-common-ui'
 import { listMyInvitations, listMyOrgs } from '../api/orgs'
 import { listRepos } from '../api/repos'
 import { clearOwnAccessSessions, refreshOwnAccessSessions } from './access-session.state'
-import { pendingInvitations } from './invitations.state'
+import { myInvitations } from './invitations.state'
 import { sortRepos } from './repo.state'
 
 export const SESSION_FAST_MS = 60_000
@@ -32,9 +32,9 @@ export async function refreshOrgs() {
 
 export async function refreshInvitations() {
   try {
-    pendingInvitations.value = (await listMyInvitations()).length
+    myInvitations.value = await listMyInvitations()
   } catch {
-    pendingInvitations.value = 0
+    myInvitations.value = []
   }
 }
 
@@ -44,7 +44,7 @@ export const refreshAllSession = () => Promise.all([refreshOwnAccessSessions(), 
 export function clearSessionData() {
   sessionRepos.value = []
   sessionOrgs.value = []
-  pendingInvitations.value = 0
+  myInvitations.value = []
   clearOwnAccessSessions()
 }
 
