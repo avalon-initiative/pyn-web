@@ -88,6 +88,7 @@ jobs:
           done
           test -n "$ready"
           curl -fsS http://127.0.0.1:8080/some/client/route | grep -q '<div id="app">'
+          curl -fsS http://127.0.0.1:8080/config.json | grep -q '"font_set":"default"'
           headers=$(curl -fsS -D - -o /dev/null http://127.0.0.1:8080/)
           grep -qi 'content-security-policy' <<<"$headers"
           grep -qi 'cache-control: no-cache' <<<"$headers"

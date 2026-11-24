@@ -59,6 +59,14 @@ server {
         include snippets/security-headers.conf;
     }
 
+    # Written at start from PYN_FONT_SET and PYN_ICON_PACK_FILE; the app falls back to its defaults when it is missing.
+    location = /config.json {
+        alias /etc/nginx/conf.d/config.json;
+        default_type application/json;
+        add_header Cache-Control "no-cache" always;
+        include snippets/security-headers.conf;
+    }
+
     # Vite names these files by content hash.
     location /assets/ {
         try_files $uri =404;
