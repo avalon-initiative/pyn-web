@@ -57,7 +57,7 @@ function stubServer(
       if (path === '/v1/repos/acme/game') return json({ ...repoInfo, owner: 'acme', name: 'game' })
       if (path === '/v1/repos/acme/game/me') return json({ permissions })
       if (path === '/v1/repos/acme/game/branches')
-        return json([branch('main', true), branch('feature')])
+        return json([branch('main', true), { ...branch('feature'), ahead: 3, behind: 1 }])
       if (path === '/v1/repos/acme/game/compare')
         return json({
           base: 'main',
@@ -165,7 +165,7 @@ describe('policy tab', () => {
 })
 
 describe('branches page', () => {
-  it('lists branches with the default marked and ahead/behind from compare', async () => {
+  it('lists branches with the default marked and ahead/behind from the list', async () => {
     const { w, calls } = await open('/acme/game/branches')
     const items = w.findComponent(PynBranchesPage).props('branches')
     expect(items).toEqual([
@@ -178,16 +178,7 @@ describe('branches page', () => {
         compareHref: '/acme/game?branch=feature',
       }),
     ])
-    expect(calls.filter((c) => c.startsWith('/v1/repos/acme/game/compare'))).toHaveLength(1)
-  })
-
-  it('keeps the list when a compare fails', async () => {
-    const { w } = await open('/acme/game/branches', ['read'], {
-      '/v1/repos/acme/game/compare': { code: 'internal', message: 'boom' },
-    })
-    const items = w.findComponent(PynBranchesPage).props('branches')
-    expect(items.map((b: { name: string }) => b.name)).toEqual(['main', 'feature'])
-    expect(items[1].ahead).toBeUndefined()
+    expect(calls.filter((c) => c.startsWith('/v1/repos/acme/game/compare'))).toHaveLength(0)
   })
 
   it('links the overview panel to the page', async () => {
