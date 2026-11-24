@@ -27,7 +27,6 @@ export function useTags(
   read: (t: { owner: string; name: string }) => Promise<Tag[]>,
 ) {
   const tags = ref<Tag[]>([])
-  const loaded = ref(false)
   const loading = ref(true)
   const error = ref('')
   const options = computed<TagOption[]>(() =>
@@ -40,7 +39,6 @@ export function useTags(
       const list = await read(t)
       if (t !== target.value) return
       tags.value = newestFirst(list)
-      loaded.value = true
       error.value = ''
     } catch (e) {
       if (t === target.value) error.value = describeError(e)
@@ -53,12 +51,11 @@ export function useTags(
     target,
     () => {
       tags.value = []
-      loaded.value = false
       loading.value = true
       void load()
     },
     { immediate: true },
   )
 
-  return { tags, options, loaded, loading, error, reload: load }
+  return { tags, options, loading, error, reload: load }
 }
