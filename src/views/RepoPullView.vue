@@ -80,6 +80,7 @@ const titleAction = useAction()
 const bodyAction = useAction()
 const comment = useAction()
 const draft = ref('')
+const actions = [page, filesAction, expand, merge, manage, ready, titleAction, bodyAction, comment]
 const abilities = computed(() =>
   pullAbilities(permissions.value, me.value, server.value?.author.user, frozen.value),
 )
@@ -150,18 +151,7 @@ watch(
     filter.value = ''
     method.value = 'allow'
     draft.value = ''
-    for (const a of [
-      page,
-      filesAction,
-      expand,
-      merge,
-      manage,
-      ready,
-      titleAction,
-      bodyAction,
-      comment,
-    ])
-      a.error.value = ''
+    for (const a of actions) a.error.value = ''
     await loadPull()
     if (server.value) await loadTab()
   },
