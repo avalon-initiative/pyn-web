@@ -2,6 +2,7 @@ import {
   PynEmptyState,
   PynOrgList,
   PynRepoLanding,
+  PynRepoForm,
   PynRepoList,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -122,6 +123,7 @@ describe('owner page', () => {
     const owner = mount(OwnerView, options(ctx('studio', orgs[0])))
     await flushPromises()
     expect(action(owner).props('primaryLabel')).toBe('Create a repository')
+    expect(action(owner).props('primaryHref')).toBe('/_/new?owner=studio')
     const member = mount(OwnerView, options(ctx('modding-club', orgs[1])))
     await flushPromises()
     expect(action(member).props('primaryLabel')).toBeUndefined()
@@ -241,6 +243,18 @@ describe('repository with no files yet', () => {
 })
 
 describe('create forms', () => {
+  it('preselect the organization named in the address', async () => {
+    vi.mocked(orgsApi.listMyOrgs).mockResolvedValue(orgs)
+    const owned = async (q: string) => {
+      await router.push(`/_/new?owner=${q}`)
+      const w = mount(NewRepoView, options())
+      await flushPromises()
+      return w.findComponent(PynRepoForm).props('owner')
+    }
+    expect(await owned('studio')).toBe('studio')
+    expect(await owned('someone-else')).toBe('alice')
+  })
+
   it('link Cancel back to a real list', () => {
     for (const [view, href] of [
       [NewRepoView, '/'],
