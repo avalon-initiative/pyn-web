@@ -41,11 +41,6 @@ export const pullEvents = (r: Repo, n: number, after?: string, limit = 100) =>
     }),
   )
 
-export const commentPull = (r: Repo, n: number, body: string) =>
-  call<ServerPullEvent>(
-    api.POST('/v1/repos/{owner}/{name}/pulls/{number}/comments', { ...at(r, n), body: { body } }),
-  )
-
 export const closePull = (r: Repo, n: number) =>
   call<ServerPull>(api.POST('/v1/repos/{owner}/{name}/pulls/{number}/close', at(r, n)))
 
