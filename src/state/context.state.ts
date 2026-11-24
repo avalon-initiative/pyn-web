@@ -10,6 +10,8 @@ export interface SessionContext {
   admin: Ref<boolean>
   /** Called when the server says the session is gone. */
   expire: () => void
+  /** Asks a signed-out visitor to sign in; absent where there is no sign-in page. */
+  requestSignIn?: () => void
   /** The effective deletion recovery window in days, once the shell has read it. */
   recoveryDays?: Ref<number | undefined>
   /** Called when the account's deletion has just been scheduled. */
@@ -40,6 +42,8 @@ export interface RepoContext {
     show: ComputedRef<boolean>
     open: (path: string) => void
   }
+  /** The repository's star count, undefined until it is read. */
+  starCount?: ComputedRef<number | undefined>
   reload: () => Promise<void>
 }
 

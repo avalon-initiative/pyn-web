@@ -32,6 +32,7 @@ const {
   branchesError,
   selectBranch,
   compare,
+  starCount,
 } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const palette = inject(paletteKey, null)
@@ -156,7 +157,7 @@ onUnmounted(() => clearInterval(timer))
     :missing="missing"
     :me="user"
     :now="now"
-    :about="{}"
+    :about="{ stars: starCount }"
     go-to-file
     @select="selectBranch?.($event)"
     @go-to-file="palette?.show()"
