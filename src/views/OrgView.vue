@@ -2,14 +2,12 @@
 import {
   PynOrgHeader,
   PynOwnerFrozenNotice,
-  PynUserHeader,
   PynViewError,
   PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
 import NotFoundView from './NotFoundView.vue'
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { getProfile } from '../api/profile'
 import { getOrg, getOrgProfile, getOwnerFreeze } from '../api/orgs'
 import { ApiError } from '../api/client'
 import { useAction } from '../state/action.state'
@@ -27,14 +25,10 @@ const { freeze, frozen } = useOwnerFreeze(name, (o) =>
   user.value ? getOwnerFreeze(o) : Promise.reject(new Error('signed out')),
 )
 const profile = ref<Schemas['OrgProfile'] | null>(null)
-const userAvatar = ref<string | null>(null)
 const loaded = ref(false)
-const userPage = computed(
-  () =>
-    route.name === 'owner' || route.name === 'owner-repositories' || route.name === 'owner-usage',
+const userPage = computed(() =>
+  ['owner', 'owner-repositories', 'owner-stars', 'owner-usage'].includes(String(route.name)),
 )
-// The profile page carries its own identity block; the tabbed header is for Usage.
-const userHeader = computed(() => route.name === 'owner-usage')
 const { error, attempt } = useAction()
 
 // A name that is not an organization is a user: only the profile page applies.
@@ -49,8 +43,6 @@ async function load() {
     } catch (e) {
       if (!(e instanceof ApiError && e.code === 'org_not_found')) throw e
       org.value = null
-      userAvatar.value =
-        (await getProfile(name.value).catch(() => null))?.profile?.avatar_url ?? null
     }
   })
 }
@@ -60,7 +52,6 @@ watch(
   async () => {
     org.value = null
     profile.value = null
-    userAvatar.value = null
     loaded.value = false
     await load()
     loaded.value = true
@@ -89,13 +80,6 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
       <RouterView />
     </template>
     <template v-else-if="userPage">
-      <PynUserHeader
-        v-if="userHeader"
-        :name="name"
-        :self="name === user"
-        :avatar-url="userAvatar"
-        :current="section === 'usage' ? 'usage' : ''"
-      />
       <RouterView />
     </template>
     <NotFoundView v-else />

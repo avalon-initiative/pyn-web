@@ -89,14 +89,14 @@ describe('OwnerView on a user', () => {
     expect(layout.props('repos')).toHaveLength(2)
     expect(layout.props('orgs')).toHaveLength(1)
     expect(layout.props('activityEntries')).toBeUndefined()
-    expect(w.text()).not.toContain('Account settings')
+    expect(w.text()).not.toContain('Edit profile')
   })
 
   it('offers account settings on the own profile', async () => {
     stub()
     const w = mountView('ada')
     await flushPromises()
-    expect(w.text()).toContain('Account settings')
+    expect(w.text()).toContain('Edit profile')
   })
 })
 

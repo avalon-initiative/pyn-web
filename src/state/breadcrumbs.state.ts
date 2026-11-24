@@ -35,6 +35,7 @@ const ADMIN: Record<string, string> = {
 
 const ORG: Record<string, string> = {
   'owner-repositories': 'Repositories',
+  'owner-stars': 'Stars',
   'owner-usage': 'Usage',
   'org-members': 'Members',
   'org-teams': 'Teams',
