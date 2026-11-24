@@ -313,6 +313,8 @@ const pageError = computed(() => page.error.value || undefined)
       <template v-if="abilities.canComment" #comment>
         <PynCommentForm
           v-model="draft"
+          heading="Add a comment"
+          card
           :busy="comment.busy.value || manage.busy.value"
           :error="comment.error.value || undefined"
           :can-close="abilities.canManage && pull.state === 'open'"
