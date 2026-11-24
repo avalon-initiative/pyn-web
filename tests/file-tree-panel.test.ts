@@ -1,10 +1,10 @@
-import { PynFileView } from '@avalon-initiative/pyn-common-ui'
+import { PynFileView, ancestorFolders } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
-import { ancestorFolders, toggled } from '../src/state/file-tree.state'
+import { toggled } from '../src/state/file-tree.state'
 import { repoKey, sessionKey } from '../src/state/context.state'
 import RepoBlobView from '../src/views/RepoBlobView.vue'
 
@@ -119,9 +119,9 @@ describe('file view tree panel', () => {
     expect(calls.filter((c) => c.url.includes('path=docs')).length).toBe(fetched)
   })
 
-  it('names the default branch so the panel shows its picker', async () => {
+  it('leaves the branch unset on the default branch', async () => {
     const { w } = await open('/acme/game/blob/README.md')
-    expect(w.findComponent(PynFileView).props('branch')).toBe('main')
+    expect(w.findComponent(PynFileView).props('branch')).toBeUndefined()
     expect(
       (await open('/acme/game/blob/README.md?branch=dev')).w
         .findComponent(PynFileView)

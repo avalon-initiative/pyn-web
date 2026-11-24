@@ -211,9 +211,9 @@ describe('branch-aware file page', () => {
     expect(w.find('img[src*="/content"]').attributes('src')).toContain('branch=feature')
   })
 
-  it('names the default branch, which the panel picker needs to show', async () => {
+  it('links the default branch without a branch parameter', async () => {
     const { w } = await open('/acme/game/blob/dir/pic.png')
-    expect(hrefs(w)).toContain('/acme/game/tree/dir?branch=main')
+    expect(hrefs(w)).toContain('/acme/game/tree/dir')
   })
 })
 
