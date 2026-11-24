@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PynProfileForm } from '@avalon-initiative/pyn-common-ui'
 import type { ProfileValues } from '@avalon-initiative/pyn-common-ui'
-import { inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
 import { fetchMe } from '../api/admin'
 import { removeAvatar, saveProfile, uploadAvatar } from '../api/profile'
 import type { Profile } from '../api/profile'
@@ -11,6 +11,10 @@ import { sessionKey } from '../state/context.state'
 
 const session = inject(sessionKey)!
 const profile = ref<Profile>({})
+const form = computed(() => ({
+  ...profile.value,
+  visibility: profile.value.visibility ?? undefined,
+}))
 const keep = (next: Profile) => (ownProfile.value = profile.value = next)
 const success = ref('')
 const avatarError = ref('')
@@ -39,7 +43,7 @@ async function changeAvatar(change: () => Promise<Profile>) {
 
 <template>
   <PynProfileForm
-    :profile="profile"
+    :profile="form"
     :user="session.user.value"
     :avatar-url="profile.avatar_url ?? undefined"
     :busy="busy"
