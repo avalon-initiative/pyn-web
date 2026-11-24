@@ -26,9 +26,8 @@ const { freeze, frozen } = useOwnerFreeze(name, (o) =>
 )
 const profile = ref<Schemas['OrgProfile'] | null>(null)
 const loaded = ref(false)
-const userPage = computed(
-  () =>
-    route.name === 'owner' || route.name === 'owner-repositories' || route.name === 'owner-usage',
+const userPage = computed(() =>
+  ['owner', 'owner-repositories', 'owner-stars', 'owner-usage'].includes(String(route.name)),
 )
 const { error, attempt } = useAction()
 

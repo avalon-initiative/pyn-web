@@ -272,6 +272,8 @@ describe('owner navigation', () => {
           children: [
             { path: '', name: 'owner', component: stub },
             { path: '-/usage', name: 'owner-usage', component: stub },
+            { path: '-/stars', name: 'owner-stars', component: stub },
+            { path: '-/repositories', name: 'owner-repositories', component: stub },
           ],
         },
       ],
@@ -296,5 +298,12 @@ describe('owner navigation', () => {
     expect(owner.findComponent(PynOrgHeader).props('current')).toBe('usage')
     const member = await mountOrgView('/acme', 'alice', 'member')
     expect(hrefs(member)).not.toContain('/acme/-/usage')
+  })
+
+  it('shows every profile tab of a user as a page', async () => {
+    for (const tab of ['', '-/repositories', '-/stars', '-/usage']) {
+      const w = await mountOrgView(`/alice/${tab}`.replace(/\/$/, ''), 'alice', null)
+      expect(w.text()).not.toContain('not found')
+    }
   })
 })
