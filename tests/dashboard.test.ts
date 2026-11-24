@@ -1,11 +1,8 @@
 import {
-  PynAttention,
-  PynDashboardCard,
+  PynDashboardActivity,
   PynDashboardFirstRun,
-  PynDashboardOrganizations,
-  PynDashboardRepositories,
-  PynRecentItems,
-  PynViewAction,
+  PynDashboardLocks,
+  PynDashboardNotices,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -23,7 +20,7 @@ import {
 } from '../src/state/recent.state'
 import { sessionOrgs } from '../src/state/session-data.state'
 import DashboardView from '../src/views/DashboardView.vue'
-import { invitations, orgs } from './fixtures/org-data'
+import { orgs } from './fixtures/org-data'
 import { sampleRepos } from './fixtures/shell-data'
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
@@ -33,7 +30,6 @@ const LOCK = {
   path: 'art/hero.psd',
   expires_at: '2099-01-01T00:00:00Z',
 }
-const NOTICE = { id: 'n1', kind: 'two_factor_reset', detail: 'Second factors were reset.' }
 
 type Answers = Record<string, () => Response>
 const calls: string[] = []
@@ -42,8 +38,6 @@ function stub(over: Answers = {}) {
     'GET /v1/repos': () => json(sampleRepos),
     'GET /v1/me/orgs': () => json(orgs),
     'GET /v1/me/locks': () => json([LOCK]),
-    'GET /v1/me/invitations': () => json(invitations),
-    'GET /v1/me/notices': () => json([NOTICE]),
     ...over,
   }
   vi.stubGlobal(
@@ -78,34 +72,34 @@ afterEach(() => {
   calls.length = 0
 })
 
-describe('dashboard cards', () => {
-  it('fills each card from its own request', async () => {
+describe('dashboard panels', () => {
+  it('fills the locks panels from the locks request', async () => {
     stub()
     const w = await mountDashboard()
-    expect(w.findComponent(PynDashboardRepositories).props('repos')).toHaveLength(3)
-    expect(w.findComponent(PynDashboardOrganizations).props('orgs')).toHaveLength(2)
-    const attention = w.findComponent(PynAttention)
-    expect(attention.props('locks')).toEqual([LOCK])
-    expect(attention.props('invitations')).toHaveLength(invitations.length)
-    expect(attention.props('notices')).toEqual([
-      { id: 'n1', text: 'Second factors were reset.', href: '/_/settings/security' },
-    ])
-    expect(w.findComponent(PynRecentItems).exists()).toBe(true)
+    const panels = w.findAllComponents(PynDashboardLocks)
+    expect(panels.map((p) => p.props('kind') ?? 'held')).toEqual(['held', 'expiring'])
+    for (const p of panels) {
+      expect(p.props('locks')).toEqual([LOCK])
+      expect(p.props('viewAllHref')).toBe('/_/locks')
+    }
+    expect(calls.filter((c) => c === 'GET /v1/me/locks')).toHaveLength(1)
   })
 
-  it('links to Explore beside the new-repository action', async () => {
+  it('shows empty activity and notices without asking the server', async () => {
     stub()
     const w = await mountDashboard()
-    const hrefs = w.findAllComponents(PynViewAction).map((a) => a.props('href'))
-    expect(hrefs).toContain('/_/explore')
-    expect(hrefs).toContain('/_/new')
+    expect(w.findComponent(PynDashboardActivity).props('entries')).toEqual([])
+    expect(w.findComponent(PynDashboardNotices).props('notices')).toEqual([])
+    expect(
+      calls.filter((c) => !['GET /v1/repos', 'GET /v1/me/orgs', 'GET /v1/me/locks'].includes(c)),
+    ).toEqual([])
   })
 
   it('shows the first-run state for an account with no repositories and no organizations', async () => {
     stub({ 'GET /v1/repos': () => json([]), 'GET /v1/me/orgs': () => json([]) })
     const w = await mountDashboard()
     expect(w.findComponent(PynDashboardFirstRun).exists()).toBe(true)
-    expect(w.findComponent(PynAttention).exists()).toBe(false)
+    expect(w.findComponent(PynDashboardLocks).exists()).toBe(false)
   })
 
   it('keeps the dashboard when only one of the two lists is empty', async () => {
@@ -114,51 +108,22 @@ describe('dashboard cards', () => {
     expect(w.findComponent(PynDashboardFirstRun).exists()).toBe(false)
   })
 
-  it('refreshes the cards after accepting an invitation', async () => {
-    let accepted = false
-    stub({
-      'POST /v1/me/invitations/studio/accept': () => {
-        accepted = true
-        return json(orgs[0])
-      },
-      'GET /v1/me/invitations': () => json(accepted ? [] : invitations),
-    })
-    const w = await mountDashboard()
-    const before = calls.filter((c) => c === 'GET /v1/me/invitations').length
-    const attention = w.findComponent(PynAttention)
-    const event = new MouseEvent('click', { cancelable: true })
-    attention.vm.$emit('accept', invitations[0].org, event)
-    await flushPromises()
-    expect(event.defaultPrevented).toBe(true)
-    expect(calls).toContain(`POST /v1/me/invitations/${invitations[0].org}/accept`)
-    expect(calls.filter((c) => c === 'GET /v1/me/invitations').length).toBeGreaterThan(before)
-    expect(calls.filter((c) => c === 'GET /v1/me/orgs').length).toBeGreaterThan(1)
-  })
-
-  it('fails one card without blanking the page, and retries it', async () => {
+  it('fails the locks panels without blanking the page, and retries them', async () => {
     let down = true
     stub({
-      'GET /v1/me/orgs': () => (down ? json({ code: 'oops', message: 'down' }, 500) : json(orgs)),
+      'GET /v1/me/locks': () =>
+        down ? json({ code: 'oops', message: 'down' }, 500) : json([LOCK]),
     })
     const w = await mountDashboard()
-    const card = w.findComponent(PynDashboardOrganizations)
-    expect(card.props('error')).toBeTruthy()
-    expect(w.findComponent(PynDashboardRepositories).props('repos')).toHaveLength(3)
-    expect(w.findComponent(PynDashboardRepositories).props('error')).toBeFalsy()
+    const [held, expiring] = w.findAllComponents(PynDashboardLocks)
+    expect(held.props('error')).toBeTruthy()
+    expect(expiring.props('error')).toBeTruthy()
+    expect(w.findComponent(PynDashboardActivity).exists()).toBe(true)
     down = false
-    card.vm.$emit('retry')
+    held.vm.$emit('retry')
     await flushPromises()
-    expect(w.findComponent(PynDashboardOrganizations).props('error')).toBeFalsy()
-    expect(w.findComponent(PynDashboardOrganizations).props('orgs')).toHaveLength(2)
-  })
-
-  it('shows an attention failure on that card only', async () => {
-    stub({ 'GET /v1/me/locks': () => json({ code: 'oops', message: 'down' }, 500) })
-    const w = await mountDashboard()
-    const cards = w.findAllComponents(PynDashboardCard)
-    const attention = cards.find((c) => c.props('heading') === 'Needs your attention')
-    expect(attention?.props('error')).toBeTruthy()
-    expect(w.findComponent(PynDashboardRepositories).props('repos')).toHaveLength(3)
+    expect(w.findComponent(PynDashboardLocks).props('error')).toBeFalsy()
+    expect(w.findComponent(PynDashboardLocks).props('locks')).toEqual([LOCK])
   })
 })
 

@@ -159,9 +159,9 @@ describe('top bar data', () => {
     expect(w.findComponent(PynShell).props('wide')).toBe(false)
   })
 
-  it('renders no side navigation on any route and keeps old destinations reachable', async () => {
+  it('renders no side navigation outside the dashboard and keeps old destinations reachable', async () => {
     const { w, router } = await openApp()
-    for (const p of ['/', '/_/locks', '/acme/game', '/_/orgs'])
+    for (const p of ['/_/locks', '/acme/game', '/_/orgs'])
       expect(
         await router.push(p).then(() => w.findComponent(PynShell).vm.$slots.side),
       ).toBeUndefined()

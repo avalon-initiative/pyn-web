@@ -1,4 +1,9 @@
-import { PynRepoSettings, PynRepoShell, PynShell } from '@avalon-initiative/pyn-common-ui'
+import {
+  PynRepoSettings,
+  PynRepoShell,
+  PynShell,
+  PynSideRail,
+} from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
@@ -112,9 +117,10 @@ describe('shell on repository and dashboard routes', () => {
     expect(w.find('header').exists()).toBe(true)
   })
 
-  it('shows no sidebar on dashboard routes', async () => {
+  it('shows the side rail on the dashboard, in the page and in the drawer', async () => {
     const { w } = await open('/')
-    expect(w.findComponent(PynShell).vm.$slots.side).toBeUndefined()
+    expect(w.findComponent(PynShell).vm.$slots.side).toBeDefined()
+    expect(w.findAllComponents(PynSideRail).length).toBeGreaterThanOrEqual(1)
   })
 
   it('shows the repository shell with its tab bar', async () => {
