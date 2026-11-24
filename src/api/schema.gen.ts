@@ -1190,6 +1190,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/watching': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_watching']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/oidc/authorize': {
     parameters: {
       query?: never
@@ -1879,6 +1895,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/history/authors': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['history_authors']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/invites': {
     parameters: {
       query?: never
@@ -2398,6 +2431,22 @@ export interface paths {
     put?: never
     post?: never
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/watch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_watch']
+    put: operations['put_watch']
+    post?: never
+    delete: operations['delete_watch']
     options?: never
     head?: never
     patch?: never
@@ -3515,6 +3564,11 @@ export interface components {
       /** Format: date-time */
       fresh_until: string
     }
+    /** @description The accounts that wrote revisions on a branch, for a history author filter. */
+    HistoryAuthors: {
+      /** @description Account names as written in the revisions (what `author` filters on), sorted; a renamed account's older revisions keep its old name. */
+      authors: string[]
+    }
     HistoryPage: {
       /** @description Pass as `before` to fetch the next page (the next newer one with `path`, the next older one without); null on the last page. */
       next_cursor: string | null
@@ -4453,6 +4507,12 @@ export interface components {
       /** @description Whether the caller starred it; false for a signed-out caller. */
       starred: boolean
       visibility: components['schemas']['Visibility']
+      /**
+       * Format: int64
+       * @description How many accounts watch the repository at `all` or `locks`. Anyone who can read the repository sees it.
+       */
+      watcher_count: number
+      watching: components['schemas']['WatchLevel'] | null
     }
     RepoPage: {
       /** @description Pass as `after` to fetch the next page; null on the last page. */
@@ -4840,6 +4900,10 @@ export interface components {
        */
       grace_days?: number | null
       required: boolean
+    }
+    /** @description Body of `PUT /v1/repos/{owner}/{name}/watch`. */
+    SetWatchRequest: {
+      level: components['schemas']['WatchLevel']
     }
     SetupCompleted: {
       /** @description The first administrator, who can now sign in with the password. */
@@ -5248,6 +5312,27 @@ export interface components {
      * @enum {string}
      */
     Visibility: 'public' | 'private'
+    /**
+     * @description What a watcher hears about: every event of the repository, only its lock events, or nothing at all.
+     * @enum {string}
+     */
+    WatchLevel: 'all' | 'locks' | 'ignore'
+    /** @description The caller's watch level on a repository and how many accounts watch it. */
+    WatchState: {
+      level: components['schemas']['WatchLevel'] | null
+      /** Format: int64 */
+      watchers: number
+    }
+    /** @description One repository in the caller's list of watched repositories. */
+    WatchedRepo: {
+      level: components['schemas']['WatchLevel']
+      repo: components['schemas']['RepoInfo']
+      /**
+       * Format: date-time
+       * @description When the level was last set.
+       */
+      updated_at: string
+    }
     Webhook: {
       /** Format: date-time */
       created_at: string
@@ -9090,6 +9175,34 @@ export interface operations {
       }
     }
   }
+  list_watching: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the repositories the caller watches (an ignored one included) that they can still read, most recently changed first; one they lost access to is left out until access returns */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchedRepo'][]
+        }
+      }
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   authorize: {
     parameters: {
       query?: {
@@ -12055,6 +12168,12 @@ export interface operations {
         before?: string
         /** @description page size, default 50, max 200 */
         limit?: number
+        /** @description keep revisions written by this account name (as in the revision's `author`); repeatable, any of them matches; repository history only */
+        author?: string[]
+        /** @description keep revisions made at or after this RFC 3339 instant; repository history only */
+        since?: string
+        /** @description keep revisions made at or before this RFC 3339 instant; repository history only */
+        until?: string
       }
       header?: never
       path: {
@@ -12075,13 +12194,49 @@ export interface operations {
           'application/json': components['schemas']['HistoryPage']
         }
       }
-      /** @description invalid_request for a bad filter or cursor, or path combined with filter */
+      /** @description invalid_request for a bad filter, cursor or timestamp, path combined with filter, or path combined with author, since or until */
       400: {
         headers: {
           [name: string]: unknown
         }
         content: {
           'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  history_authors: {
+    parameters: {
+      query?: {
+        /** @description the branch to read; the default branch if omitted */
+        branch?: string
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HistoryAuthors']
         }
       }
       /** @description branch_not_found */
@@ -13695,6 +13850,130 @@ export interface operations {
       }
       /** @description path_not_found for a path without revisions */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_watch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the caller's watch level (null when they chose none) and how many accounts watch the repository */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchState']
+        }
+      }
+      /** @description repo_not_found: no such repository, or one the caller cannot read */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  put_watch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetWatchRequest']
+      }
+    }
+    responses: {
+      /** @description the level is set, replacing an earlier one; setting the same level again changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchState']
+        }
+      }
+      /** @description repo_not_found: no such repository, or one the caller cannot read */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many watch changes in an hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_watch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the caller's level is removed (they watch nothing, the default); removing a level that is not there changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WatchState']
+        }
+      }
+      /** @description repo_not_found: no such repository, or one the caller cannot read */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many watch changes in an hour */
+      429: {
         headers: {
           [name: string]: unknown
         }
