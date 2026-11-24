@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PynAccountDelete } from '@avalon-initiative/pyn-common-ui'
+import { PynAccountDelete, PynSettingsSection } from '@avalon-initiative/pyn-common-ui'
 import type { AccountDeleteBlockers } from '@avalon-initiative/pyn-common-ui'
 import { inject, onMounted, ref } from 'vue'
 import { fetchMe } from '../api/admin'
@@ -30,12 +30,14 @@ const remove = (password?: string) =>
 </script>
 
 <template>
-  <PynAccountDelete
-    :external="external"
-    :blockers="blockers"
-    :recovery-days="session.recoveryDays?.value"
-    :busy="busy"
-    :error="error"
-    @remove="remove"
-  />
+  <PynSettingsSection title="Danger zone" danger plain>
+    <PynAccountDelete
+      :external="external"
+      :blockers="blockers"
+      :recovery-days="session.recoveryDays?.value"
+      :busy="busy"
+      :error="error"
+      @remove="remove"
+    />
+  </PynSettingsSection>
 </template>

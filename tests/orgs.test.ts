@@ -22,7 +22,7 @@ import { orgKey, sessionKey } from '../src/state/context.state'
 import { orgMembers, orgs, repoPolicy, teams } from './fixtures/org-data'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
 import NewOrgView from '../src/views/NewOrgView.vue'
-import OrgSettingsView from '../src/views/OrgSettingsView.vue'
+import OrgPolicyView from '../src/views/OrgPolicyView.vue'
 
 const resolve = (path: string) => makeRouter(createMemoryHistory()).resolve(path)
 
@@ -341,7 +341,7 @@ describe('PynOrgRepoPolicy', () => {
   })
 })
 
-describe('OrgSettingsView', () => {
+describe('OrgPolicyView', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   it('loads the policy for owners and saves the base setting', async () => {
@@ -355,7 +355,7 @@ describe('OrgSettingsView', () => {
         return Promise.resolve(new Response(JSON.stringify([])))
       }),
     )
-    const w = mount(OrgSettingsView, {
+    const w = mount(OrgPolicyView, {
       global: {
         provide: {
           [sessionKey as symbol]: { user: ref('alice'), admin: ref(false), expire: () => {} },
@@ -377,6 +377,10 @@ describe('OrgSettingsView', () => {
 })
 
 describe('organization settings routes', () => {
+  it('routes settings/policy to its own page', () => {
+    expect(resolve('/studio/-/settings/policy').name).toBe('org-settings-policy')
+  })
+
   it.each([
     ['members', 'org-settings-members'],
     ['teams', 'org-settings-teams'],

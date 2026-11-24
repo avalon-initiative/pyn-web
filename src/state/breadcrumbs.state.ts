@@ -41,6 +41,7 @@ const ORG: Record<string, string> = {
   'org-settings': 'Settings',
   'org-settings-members': 'Members',
   'org-settings-teams': 'Teams',
+  'org-settings-policy': 'Repository policy',
   'org-settings-usage': 'Usage',
   'org-settings-audit': 'Audit log',
 }
