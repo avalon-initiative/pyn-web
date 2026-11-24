@@ -32,7 +32,7 @@ const branch = (name: string, updated: string, isDefault = false) => ({
   updated_at: updated,
 })
 
-const repo = { ...repoInfo, owner: 'acme', name: 'game' }
+const repo = { ...repoInfo, owner: 'acme', name: 'game', star_count: 0, starred: false }
 
 interface Options {
   org?: unknown
@@ -136,14 +136,14 @@ describe('repository page header', () => {
     expect(shell.props('lockedCount')).toBe(2)
     expect(shell.props('lockHolders')).toEqual(['jamie', 'bob'])
     expect(w.find('[data-lock-strip]').exists()).toBe(true)
-    expect(w.find('[data-count]').text()).toBe('2')
+    expect(w.find('[aria-hidden="true"][data-count]').text()).toBe('2')
     expect(calls.filter((c) => c === '/v1/repos/acme/game/locks')).toHaveLength(1)
   })
 
   it('shows neither without locks or when the lock request fails', async () => {
     const none = await open('/acme/game/history', { locks: [] })
     expect(none.w.find('[data-lock-strip]').exists()).toBe(false)
-    expect(none.w.find('[data-count]').exists()).toBe(false)
+    expect(none.w.find('[aria-hidden="true"][data-count]').exists()).toBe(false)
     const failed = await open('/acme/game/history', { locks: null })
     expect(failed.w.find('[data-lock-strip]').exists()).toBe(false)
     expect(failed.w.findComponent(PynRepoShell).exists()).toBe(true)
@@ -182,7 +182,7 @@ describe('overview Branches panel', () => {
     const { w } = await open('/acme/game')
     const landing = w.findComponent(PynRepoLanding)
     expect(landing.props('goToFile')).toBe(true)
-    expect(landing.props('about')).toEqual({})
+    expect(landing.props('about')).toEqual({ stars: 0 })
     expect(landing.props('downloadZip')).toBeFalsy()
     expect(landing.props('sshUrl')).toBeUndefined()
   })
