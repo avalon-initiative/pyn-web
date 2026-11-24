@@ -4,18 +4,26 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
-import { repoKey } from '../src/state/context.state'
+import { repoKey, sessionKey } from '../src/state/context.state'
 import RepoBranchesView from '../src/views/RepoBranchesView.vue'
 
 const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }))
-const branch = (name: string, def = false) => ({
+const branch = (name: string, def = false, extra: Record<string, unknown> = {}) => ({
   name,
   default: def,
   commit: 'a'.repeat(40),
   created_at: '2026-10-01T09:00:00Z',
   created_by: 'bob',
   updated_at: '2026-10-02T09:00:00Z',
+  updated_by: 'bob',
+  ahead: 0,
+  behind: 0,
+  counts_capped: false,
+  yours: false,
+  active: true,
+  stale: false,
+  ...extra,
 })
 
 async function open(
@@ -25,6 +33,8 @@ async function open(
     url?: string
     deleteReply?: Response[]
     postReply?: Promise<Response>[]
+    user?: string
+    list?: unknown[]
   } = {},
 ) {
   const calls: { url: string; method: string; body?: string }[] = []
@@ -37,9 +47,7 @@ async function open(
       if (method === 'PATCH') return json(branch('feature/y'))
       if (method === 'DELETE') return Promise.resolve(replies.shift()!)
       if (method === 'POST') return opts.postReply?.shift() ?? json(branch('new'))
-      if (url.includes('/compare'))
-        return json({ base: 'main', head: 'x', status: 'ahead', ahead: 1, behind: 0, changes: [] })
-      return json([branch('main', true), branch('feature/x')])
+      return json(opts.list ?? [branch('main', true), branch('feature/x')])
     }),
   )
   const reloadBranches = vi.fn(() => Promise.resolve())
@@ -49,6 +57,7 @@ async function open(
     global: {
       plugins: [router],
       provide: {
+        [sessionKey as symbol]: { user: ref(opts.user ?? 'ann'), admin: ref(false) },
         [repoKey as symbol]: {
           target: ref({ owner: 'acme', name: 'game' }),
           permissions: ref(opts.permissions ?? ['read', 'checkin']),
@@ -75,11 +84,38 @@ describe('branches page', () => {
     expect(page.props('view')).toBe('all')
     expect(page.props('hrefs')).toEqual({
       branches: '/acme/game/branches',
+      yours: '/acme/game/branches?view=yours',
+      active: '/acme/game/branches?view=active',
+      stale: '/acme/game/branches?view=stale',
       all: '/acme/game/branches?view=all',
     })
+    const stale = (await open({ url: '/acme/game/branches?view=stale' })).w
+    expect(stale.findComponent(PynBranchesPage).props('view')).toBe('stale')
+  })
+
+  it('fills the views, author and counts from the one list call', async () => {
+    const { w, calls } = await open({
+      list: [
+        branch('main', true),
+        branch('mine', false, { yours: true, ahead: 2, behind: 1000, counts_capped: true }),
+        branch('old', false, { active: false, stale: true, updated_by: null }),
+      ],
+    })
+    expect(calls.map((c) => c.url)).toEqual(['/v1/repos/acme/game/branches'])
+    const page = w.findComponent(PynBranchesPage)
+    expect(page.props('yours')).toEqual(['mine'])
+    expect(page.props('active')).toEqual(['main', 'mine'])
+    expect(page.props('stale')).toEqual(['old'])
+    const rows = page.props('branches')
+    expect(rows[0]).not.toHaveProperty('ahead')
+    expect(rows[1]).toMatchObject({ ahead: 2, behind: 1000, updatedBy: { username: 'bob' } })
+    expect(rows[2].updatedBy).toBeUndefined()
+  })
+
+  it('hides the Yours view without a sign-in', async () => {
+    const page = (await open({ user: '' })).w.findComponent(PynBranchesPage)
     expect(page.props('yours')).toBeUndefined()
-    expect(page.props('active')).toBeUndefined()
-    expect(page.props('stale')).toBeUndefined()
+    expect(page.props('active')).toEqual(['main', 'feature/x'])
   })
 
   it('offers New branch and Delete only with checkin on an unfrozen owner', async () => {

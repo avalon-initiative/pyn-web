@@ -3,54 +3,37 @@ import { PynBranchDialog, PynBranchesPage, repoPath } from '@avalon-initiative/p
 import type { BranchListItem, BranchView } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { compareBranch, createBranch, deleteBranch, listBranches, renameBranch } from '../api/repos'
+import { createBranch, deleteBranch, listBranches, renameBranch } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { useBranchDialog } from '../state/branch-dialog.state'
-import { repoKey } from '../state/context.state'
+import { repoKey, sessionKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
 import type { Branch } from '../types/repo.types'
 
-const COMPARE_LIMIT = 20
-
 const { target, permissions, frozen, reloadBranches } = inject(repoKey)!
+const session = inject(sessionKey, undefined)
 const route = useRoute()
 const query = ref('')
-const view = computed<BranchView>(() => (route.query.view === 'all' ? 'all' : 'branches'))
+const VIEWS: BranchView[] = ['yours', 'active', 'stale', 'all']
+const view = computed<BranchView>(() => VIEWS.find((v) => v === route.query.view) ?? 'branches')
 const base = computed(() => repoPath(target.value, 'branches'))
-const hrefs = computed(() => ({ branches: base.value, all: `${base.value}?view=all` }))
+const hrefs = computed(() => ({
+  branches: base.value,
+  ...Object.fromEntries(VIEWS.map((v) => [v, `${base.value}?view=${v}`])),
+}))
 const writable = computed(() => canWrite(permissions.value.includes('checkin'), frozen.value))
 const branches = ref<Branch[]>([])
-const counts = ref<Record<string, { ahead: number; behind: number }>>({})
 const loading = ref(true)
 const { error, attempt } = useAction()
 let seq = 0
-
-// Ahead and behind come from the compare summary; a branch it fails for shows none.
-async function compareAll(t: typeof target.value, list: Branch[], mine: number) {
-  const others = list.filter((b) => !b.default).slice(0, COMPARE_LIMIT)
-  await Promise.all(
-    others.map(async (b) => {
-      try {
-        const c = await compareBranch(t, b.name)
-        if (mine === seq) counts.value[b.name] = { ahead: c.ahead, behind: c.behind }
-      } catch {
-        // No counts for this branch.
-      }
-    }),
-  )
-}
 
 async function load() {
   const mine = ++seq
   const t = target.value
   loading.value = true
-  counts.value = {}
   await attempt(async () => {
     const list = await listBranches(t)
-    if (mine !== seq) return
-    branches.value = list
-    loading.value = false
-    await compareAll(t, list, mine)
+    if (mine === seq) branches.value = list
   })
   if (mine === seq) loading.value = false
 }
@@ -62,11 +45,17 @@ const items = computed<BranchListItem[]>(() =>
       name: b.name,
       isDefault: b.default,
       updatedAt: b.updated_at,
+      updatedBy: b.updated_by ? { username: b.updated_by } : undefined,
       href,
-      ...(b.default ? {} : { compareHref: href, ...counts.value[b.name] }),
+      ...(b.default ? {} : { compareHref: href, ahead: b.ahead, behind: b.behind }),
     }
   }),
 )
+
+const names = (keep: (b: Branch) => boolean | undefined) =>
+  branches.value.filter(keep).map((b) => b.name)
+// Nothing is yours without a sign-in, so that view stays hidden.
+const yours = computed(() => (session?.user.value ? names((b) => b.yours) : undefined))
 
 async function reload() {
   await load()
@@ -104,6 +93,9 @@ watch(target, () => {
     :branches="items"
     :view="view"
     :hrefs="hrefs"
+    :yours="yours"
+    :active="names((b) => b.active)"
+    :stale="names((b) => b.stale)"
     :can-create="writable"
     :can-delete="writable"
     :can-rename="writable"
