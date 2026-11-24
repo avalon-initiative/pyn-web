@@ -66,3 +66,9 @@ api.use({
 export async function call<T>(request: Promise<{ data?: T }>): Promise<T> {
   return (await request).data as T
 }
+
+/** A static file served next to the app (not part of the API), as text; null when it is missing. */
+export async function staticText(path: string): Promise<string | null> {
+  const res = await globalThis.fetch(path, { headers: { Accept: 'application/json' } })
+  return res.ok ? res.text() : null
+}
