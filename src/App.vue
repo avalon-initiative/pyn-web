@@ -59,6 +59,7 @@ import {
   useTopBar,
 } from './state/top-bar.state'
 import { recentItems, setRecentUser } from './state/recent.state'
+import { useTopBarSearch } from './state/top-bar-search.state'
 import { usePalette } from './state/palette.state'
 import { breadcrumbs } from './state/breadcrumbs.state'
 import {
@@ -149,6 +150,7 @@ const slugs = computed(() => sessionRepos.value.map(repoSlug))
 const owners = computed(() => topBarOwners(user.value, sessionOrgs.value))
 const extras = computed(() => topBarExtras(props.navItems, props.accountMenuItems))
 const { locksHeld, locksExpiring, bellEntries } = useTopBar()
+const topSearch = useTopBarSearch(sessionRepos, sessionOrgs)
 const bell = bellActions((path) => router.push(path))
 const currentOwner = computed(() => {
   const owner = String(route.params.owner ?? '')
@@ -556,11 +558,13 @@ onMounted(async () => {
             :locks-held="locksHeld"
             :locks-expiring="locksExpiring"
             :notification-entries="bellEntries"
+            :search-results="topSearch.results.value"
             @dismiss-notification="bell.dismiss"
             @accept-notification="bell.accept"
             @decline-notification="bell.decline"
             @account="(id) => selectAccountItem(extras, id)"
             @open="(slug) => router.push(`/${slug}`)"
+            @input="topSearch.input"
             @search="palette.show"
             @shortcuts="palette.showHelp"
             @theme="setTheme"
