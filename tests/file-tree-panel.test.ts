@@ -119,6 +119,16 @@ describe('file view tree panel', () => {
     expect(calls.filter((c) => c.url.includes('path=docs')).length).toBe(fetched)
   })
 
+  it('names the default branch so the panel shows its picker', async () => {
+    const { w } = await open('/acme/game/blob/README.md')
+    expect(w.findComponent(PynFileView).props('branch')).toBe('main')
+    expect(
+      (await open('/acme/game/blob/README.md?branch=dev')).w
+        .findComponent(PynFileView)
+        .props('branch'),
+    ).toBe('dev')
+  })
+
   it('opens a file from the panel on the current branch', async () => {
     const { w, router } = await open('/acme/game/blob/README.md?branch=feature')
     w.findComponent(PynFileView).vm.$emit('open', 'src/a.ts')

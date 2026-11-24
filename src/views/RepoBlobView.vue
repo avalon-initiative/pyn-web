@@ -57,6 +57,8 @@ const loaded = ref<Record<string, TreeEntry[]>>({})
 const expanded = ref<string[]>([])
 const treeLoading = ref<string[]>([])
 const tree = computed(() => Object.values(loaded.value).flat())
+// The panel shows its branch picker only when it is told the current branch, the default one included.
+const shownBranch = computed(() => branch.value ?? branches?.value.find((b) => b.isDefault)?.name)
 const creatable = computed(() => canWrite(permissions.value.includes('checkin'), frozen.value))
 const lockable = computed(() => canWrite(permissions.value.includes('lock'), frozen.value))
 let loadedRevision: number | null = null
@@ -178,7 +180,7 @@ onUnmounted(() => clearInterval(timer))
     :owner="target.owner"
     :name="target.name"
     :path="path"
-    :branch="branch"
+    :branch="shownBranch"
     :entry="entry"
     :body="body"
     :missing="missing"
