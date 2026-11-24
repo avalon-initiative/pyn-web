@@ -2214,6 +2214,164 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/pulls': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Readable without credentials when the repository is public; otherwise 404 unless the caller has a role.
+     *     List a repository's pull requests.
+     */
+    get: operations['list_pulls']
+    put?: never
+    /** Open a pull request. */
+    post: operations['create_pull']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One pull request with its mergeability, change counts, locks and participants. */
+    get: operations['get_pull']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Change an open pull request's title, body or draft flag. */
+    patch: operations['update_pull']
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}/close': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Close an open pull request. */
+    post: operations['close_pull']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}/comments': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Comment on a pull request in any state. */
+    post: operations['comment_pull']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}/commits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The commits of a pull request. */
+    get: operations['pull_commits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}/diff': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The line diff of a pull request. */
+    get: operations['pull_diff']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The timeline of a pull request. */
+    get: operations['pull_events']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}/merge': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Merge a pull request's head branch into its base branch. */
+    post: operations['merge_pull']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/pulls/{number}/reopen': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Reopen a closed pull request. */
+    post: operations['reopen_pull']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/push': {
     parameters: {
       query?: never
@@ -3277,6 +3435,9 @@ export interface components {
       /** @description Six digits from the authenticator app, or a recovery code where the route says so. */
       code: string
     }
+    CommentPullRequest: {
+      body: string
+    }
     /**
      * @description One atomic write: a single checkin or a whole changeset, recorded as a git commit on a branch. `id` is the git
      *     commit id, so a commit can be fetched with a unique abbreviation of at least 4 digits.
@@ -3346,6 +3507,16 @@ export interface components {
     CreateOrgRequest: {
       /** @description Normalised to a canonical name (trimmed, spaces become `-`, lowercased); shares the namespace with user names: 2 to 39 letters, digits, `-` or `_`, not reserved. The typed form becomes the display name when it differs. */
       name: string
+    }
+    CreatePullRequest: {
+      /** @description The branch to merge into; the default branch if omitted. */
+      base?: string | null
+      /** @description Markdown, up to 64 KiB. */
+      body?: string | null
+      draft?: boolean | null
+      head: string
+      /** @description One line, 1 to 256 characters. */
+      title: string
     }
     CreateRepoRequest: {
       /**
@@ -4007,6 +4178,15 @@ export interface components {
     }
     /** @enum {string} */
     MergeOutcome: 'up_to_date' | 'fast_forward' | 'merge' | 'conflicted'
+    MergePullRequest: {
+      /** @description The head branch's commit the caller saw. */
+      expect_head?: string | null
+      /** @description The base branch's commit the caller saw; a different head is `409 merge_stale`. */
+      expect_target?: string | null
+      fast_forward?: components['schemas']['MergeFastForward'] | null
+      /** @description The merge commit's message; `Merge pull request #N from <head>` if omitted. */
+      message?: string | null
+    }
     /** @description What a merge does, or did. */
     MergeReport: {
       /** @description The merge base commits; more than one means a criss-cross history. */
@@ -4536,6 +4716,104 @@ export interface components {
        */
       repository_count: number
       user: string
+    }
+    /** @description A commit of a pull request's range, oldest first. */
+    PullCommit: {
+      author: components['schemas']['PublicIdentity']
+      /** Format: date-time */
+      committed_at: string
+      id: string
+      message: string
+    }
+    /** @description A path whose merge would conflict. */
+    PullConflict: {
+      kind: components['schemas']['MergeConflictKind']
+      path: string
+    }
+    PullEvent: {
+      actor: components['schemas']['PublicIdentity']
+      /** Format: date-time */
+      at: string
+      /** @description The Markdown of a comment. */
+      body?: string | null
+      /** @description The commit a `merged` event wrote. */
+      commit?: string | null
+      /** @description Unique and increasing within the repository; pass the last one as `after`. */
+      id: string
+      kind: components['schemas']['PullEventKind']
+    }
+    /** @enum {string} */
+    PullEventKind: 'comment' | 'merged' | 'closed' | 'reopened'
+    /** @description One pull request with what the page for it shows. */
+    PullRequest: components['schemas']['PullRequestSummary'] & {
+      /** Format: int32 */
+      additions: number
+      /** @description The base branch's commit the same way (before the merge, for a merged one); pass it as `expect_target`. */
+      base_commit?: string | null
+      body: string
+      /** Format: int32 */
+      changed_files: number
+      /**
+       * Format: int32
+       * @description Commits in the range, at most 1000.
+       */
+      commits: number
+      /** @description The paths that would conflict, when `outcome` is `conflicted`. */
+      conflicts?: components['schemas']['PullConflict'][]
+      /** Format: int32 */
+      deletions: number
+      /**
+       * @description The head branch's commit: what an open pull request would merge, or what it merged or was closed at.
+       *     Absent for an open pull request whose head branch is gone.
+       */
+      head_commit?: string | null
+      /**
+       * @description Live locks on the paths it changes, whoever holds them; those held by others block the merge unless the merger
+       *     may force unlocks. Empty once closed or merged.
+       */
+      locks: components['schemas']['Lock'][]
+      /** @description The commit a merge wrote; absent unless merged, and for a head that was already in the base. */
+      merge_commit?: string | null
+      outcome?: components['schemas']['MergeOutcome'] | null
+      /** @description The author and everyone who commented, in order of first appearance. */
+      participants: components['schemas']['PublicIdentity'][]
+    }
+    PullRequestPage: {
+      /**
+       * Format: int64
+       * @description Pass as `before` to fetch the next, older page; null on the last page.
+       */
+      next_before: number | null
+      /** @description Newest first. */
+      pulls: components['schemas']['PullRequestSummary'][]
+    }
+    /** @enum {string} */
+    PullRequestState: 'open' | 'merged' | 'closed'
+    /** @description A pull request as a list shows it. */
+    PullRequestSummary: {
+      author: components['schemas']['PublicIdentity']
+      /** @description The branch that moves when it merges. */
+      base: string
+      /** Format: date-time */
+      closed_at?: string | null
+      /**
+       * Format: int32
+       * @description Comments on it.
+       */
+      comments: number
+      /** @description A draft cannot be merged until it is marked ready. */
+      draft: boolean
+      /** @description The branch whose commits are proposed. */
+      head: string
+      /** Format: date-time */
+      merged_at?: string | null
+      merged_by?: components['schemas']['PublicIdentity'] | null
+      /** Format: int64 */
+      number: number
+      /** Format: date-time */
+      opened_at: string
+      state: components['schemas']['PullRequestState']
+      title: string
     }
     /** @description One git object of a push: its id and its body (the bytes after git's `<kind> <length>` header), base64. */
     PushObject: {
@@ -5427,6 +5705,12 @@ export interface components {
       links?: string[]
       location?: string | null
       visibility?: components['schemas']['ProfileVisibility'] | null
+    }
+    /** @description Only the fields present change. */
+    UpdatePullRequest: {
+      body?: string | null
+      draft?: boolean | null
+      title?: string | null
     }
     /** @description Fields left out stay as they are. */
     UpdateRepoRequest: {
@@ -13302,6 +13586,573 @@ export interface operations {
       }
       /** @description needs the edit_policy permission */
       403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_pulls: {
+    parameters: {
+      query?: {
+        /** @description open, merged or closed; every state if omitted */
+        state?: string
+        /** @description only pull requests into this branch */
+        base?: string
+        /** @description only pull requests from this branch */
+        head?: string
+        /** @description only this account's pull requests */
+        author?: string
+        /** @description the `next_before` of the previous page */
+        before?: number
+        /** @description 1 to 100, default 30 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description newest first; `comments` is counted, the change counts, locks and mergeability are on the single pull request */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullRequestPage']
+        }
+      }
+      /** @description invalid_request for an unknown state */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  create_pull: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreatePullRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullRequest']
+        }
+      }
+      /** @description invalid_request: bad title or body, the same branch twice, a head with nothing to merge */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_exists: an open one has the same branches */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_pull: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullRequest']
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  update_pull: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdatePullRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullRequest']
+        }
+      }
+      /** @description invalid_request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description only the author, or someone with the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_open */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  close_pull: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullRequest']
+        }
+      }
+      /** @description only the author, or someone with the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_open */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  comment_pull: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CommentPullRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullEvent']
+        }
+      }
+      /** @description invalid_request for an empty or oversized comment */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the read permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  pull_commits: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the commits the head has and the base lacks, at most 1000 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullCommit'][]
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  pull_diff: {
+    parameters: {
+      query?: {
+        /** @description unchanged lines around each change, 0 to 100, default 3 */
+        context?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the changes of the head since the merge base, as the diff endpoint reports them; a closed or merged pull request is read at the commits frozen on it */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoDiff']
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  pull_events: {
+    parameters: {
+      query?: {
+        /** @description the id of the last event already seen */
+        after?: string
+        /** @description 1 to 100, default 30 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the comments and state changes, oldest first */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullEvent'][]
+        }
+      }
+      /** @description invalid_request for a bad `after` */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  merge_pull: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MergePullRequest']
+      }
+    }
+    responses: {
+      /** @description the merged pull request, with `merge_commit` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullRequest']
+        }
+      }
+      /** @description needs the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_found, or branch_not_found when a branch is gone */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_open, pull_request_draft, merge_conflict, merge_stale, not_fast_forward, or pull_locks_held when others hold locks on changed paths and the caller lacks force_unlock */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  reopen_pull: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the pull request's number */
+        number: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PullRequest']
+        }
+      }
+      /** @description invalid_request when the head has nothing the base lacks, or no longer exists */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description only the author, or someone with the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description pull_request_not_open for a merged one, pull_request_exists when an open one has the same branches */
+      409: {
         headers: {
           [name: string]: unknown
         }

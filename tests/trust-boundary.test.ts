@@ -192,9 +192,14 @@ describe('what the client can change', () => {
 
   it('keeps nothing the server trusts in browser storage or script-readable cookies', () => {
     // The notice's dismissal is a per-tab display preference, and the recently opened list is
-    // display data only (labels and links, no credentials), and so is the remembered username;
-    // the server trusts none of them.
-    const allowed = ['security-notice.state.ts', 'recent.state.ts', 'remember.state.ts']
+    // display data only (labels and links, no credentials), and so are the remembered username
+    // and the diff layout and viewed marks; the server trusts none of them.
+    const allowed = [
+      'security-notice.state.ts',
+      'recent.state.ts',
+      'remember.state.ts',
+      'pull-diff.state.ts',
+    ]
     for (const [p, text] of sources.filter(([p]) => !allowed.some((a) => p.endsWith(a))))
       expect(text, p).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/)
   })
