@@ -3529,6 +3529,7 @@ export interface components {
        * @description Locks one user may hold; defaults to the server's. A limit in the repository's policy file overrides it.
        */
       max_locks_per_user?: number | null
+      /** @description Normalised to a canonical name (trimmed, spaces become `-`, lowercased): 1 to 100 letters, digits, `-`, `_` or `.`, starting with a letter or digit and not ending in `.`. */
       name: string
       /**
        * @description The namespace to create it in: the caller's own account name, or an organization whose repository-creation
@@ -5721,6 +5722,7 @@ export interface components {
        * @description A number sets the limit, `null` returns to the server default. Refused while the policy file sets one.
        */
       max_locks_per_user?: number | null
+      /** @description The new name, normalised like a new repository's. */
       name?: string | null
       visibility?: components['schemas']['Visibility'] | null
     }
@@ -11727,7 +11729,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -11760,7 +11762,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -11801,7 +11803,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -11876,7 +11878,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -11912,7 +11914,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -11946,7 +11948,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12001,7 +12003,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the branch's name; a slash may be sent as is or as %2F */
         branch: string
@@ -12039,7 +12041,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the branch's name; a slash may be sent as is or as %2F */
         branch: string
@@ -12099,7 +12101,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the branch's name; a slash may be sent as is or as %2F */
         branch: string
@@ -12165,7 +12167,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12220,7 +12222,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12284,7 +12286,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12360,7 +12362,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12402,7 +12404,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description commit id, or a unique abbreviation of at least 4 hex digits */
         commit: string
@@ -12451,7 +12453,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12500,7 +12502,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12558,7 +12560,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12600,7 +12602,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12653,7 +12655,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12686,7 +12688,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12750,7 +12752,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12795,7 +12797,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12828,7 +12830,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12852,7 +12854,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12889,7 +12891,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the invitation's id */
         id: string
@@ -12930,7 +12932,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -12972,7 +12974,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13003,7 +13005,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13036,7 +13038,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13069,7 +13071,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13094,7 +13096,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the member's user name */
         user: string
@@ -13140,7 +13142,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13205,7 +13207,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13261,7 +13263,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13318,7 +13320,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13365,7 +13367,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13422,7 +13424,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13460,7 +13462,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the blob's git id */
         id: string
@@ -13523,7 +13525,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13556,7 +13558,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13615,7 +13617,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13649,7 +13651,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -13713,7 +13715,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -13748,7 +13750,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -13814,7 +13816,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -13867,7 +13869,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -13924,7 +13926,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -13963,7 +13965,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -14004,7 +14006,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -14049,7 +14051,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -14107,7 +14109,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the pull request's number */
         number: number
@@ -14169,7 +14171,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14251,7 +14253,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14286,7 +14288,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14341,7 +14343,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14383,7 +14385,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the role's name */
         role: string
@@ -14429,7 +14431,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14471,7 +14473,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14505,7 +14507,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14548,7 +14550,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14591,7 +14593,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14652,7 +14654,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14685,7 +14687,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14710,7 +14712,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14774,7 +14776,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the tag's name; a slash may be sent as is or as %2F */
         tag: string
@@ -14809,7 +14811,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the tag's name; a slash may be sent as is or as %2F */
         tag: string
@@ -14851,7 +14853,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -14894,7 +14896,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the slug of a team of the owning organization */
         team: string
@@ -14950,7 +14952,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
         /** @description the slug of a team of the owning organization */
         team: string
@@ -15007,7 +15009,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -15049,7 +15051,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -15074,7 +15076,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -15117,7 +15119,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -15170,7 +15172,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -15221,7 +15223,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -15255,7 +15257,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
@@ -15302,7 +15304,7 @@ export interface operations {
       path: {
         /** @description The namespace that owns the repository. */
         owner: string
-        /** @description The repository's name within its owner; matched ignoring case. */
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
         name: string
       }
       cookie?: never
