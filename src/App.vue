@@ -205,6 +205,7 @@ const expire = () => {
 }
 provide(paletteKey, { show: palette.show })
 provide(sessionKey, {
+  requestSignIn: () => (signInRequested.value = true),
   user,
   admin,
   expire,
