@@ -33,6 +33,7 @@ const {
   selectBranch,
   compare,
   starCount,
+  watcherCount,
 } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const palette = inject(paletteKey, null)
@@ -157,7 +158,7 @@ onUnmounted(() => clearInterval(timer))
     :missing="missing"
     :me="user"
     :now="now"
-    :about="{ stars: starCount }"
+    :about="{ stars: starCount, watching: watcherCount }"
     go-to-file
     @select="selectBranch?.($event)"
     @go-to-file="palette?.show()"

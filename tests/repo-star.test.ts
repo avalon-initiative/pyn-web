@@ -63,12 +63,12 @@ const starButton = (w: Awaited<ReturnType<typeof show>>['w']) =>
 afterEach(() => vi.unstubAllGlobals())
 
 describe('repository star', () => {
-  it('shows the count and only the star control', async () => {
+  it('shows the star count and no fork control', async () => {
     stub(() => json({ starred: true, count: 4 }))
     const { w } = await show('bob')
-    expect(w.findComponent(PynRepoShell).props('social')).toEqual({
-      star: { count: 3, active: false, disabled: false },
-    })
+    const social = w.findComponent(PynRepoShell).props('social')
+    expect(social?.star).toEqual({ count: 3, active: false, disabled: false })
+    expect(social?.fork).toBeUndefined()
   })
 
   it('stars optimistically and keeps the server count', async () => {

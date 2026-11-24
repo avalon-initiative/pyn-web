@@ -182,7 +182,7 @@ describe('overview Branches panel', () => {
     const { w } = await open('/acme/game')
     const landing = w.findComponent(PynRepoLanding)
     expect(landing.props('goToFile')).toBe(true)
-    expect(landing.props('about')).toEqual({ stars: 0 })
+    expect(landing.props('about')).toEqual({ stars: 0, watching: 0 })
     expect(landing.props('downloadZip')).toBeFalsy()
     expect(landing.props('sshUrl')).toBeUndefined()
   })

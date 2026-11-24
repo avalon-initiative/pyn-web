@@ -1828,6 +1828,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/diff': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Readable without credentials when the repository is public; otherwise 404 unless the caller has a role.
+     *     The changes of `head` against `base` with line hunks, per path, with each path's mode and live lock.
+     */
+    get: operations['diff']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/fetch': {
     parameters: {
       query?: never
@@ -1939,6 +1959,26 @@ export interface paths {
     put?: never
     post?: never
     delete: operations['revoke_invite']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/lines': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Readable without credentials when the repository is public; otherwise 404 unless the caller has a role.
+     *     A range of the lines of a text file as of a commit, for expanding the context around a diff hunk.
+     */
+    get: operations['file_lines']
+    put?: never
+    post?: never
+    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -2317,6 +2357,41 @@ export interface paths {
     put?: never
     post?: never
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/tags': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readable without credentials when the repository is public; otherwise 404 unless the caller has a role. */
+    get: operations['list_tags']
+    put?: never
+    /** Create a tag at a commit. */
+    post: operations['create_tag']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/repos/{owner}/{name}/tags/{tag}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_tag']
+    put?: never
+    post?: never
+    /** Delete a tag's name; its commit stays. */
+    delete: operations['delete_tag']
     options?: never
     head?: never
     patch?: never
@@ -3028,18 +3103,38 @@ export interface components {
     }
     /** @description A branch: a name pointing at a commit. The default branch's `.pyn/pyn.toml` is the repository's policy. */
     Branch: {
+      /** @description Not stale: the default branch and every branch committed to within the stale period. */
+      active?: boolean
+      /**
+       * Format: int32
+       * @description Commits this branch has and the default branch lacks, at most 1000; 0 for the default branch.
+       */
+      ahead?: number
+      /**
+       * Format: int32
+       * @description Commits the default branch has and this branch lacks, at most 1000; 0 for the default branch.
+       */
+      behind?: number
       /** @description The commit the branch points at; null only for the default branch of a repository with no commits. */
       commit: string | null
+      /** @description `ahead` or `behind` reached 1000, so the real number is larger. */
+      counts_capped?: boolean
       /** Format: date-time */
       created_at: string
       created_by: string
       default: boolean
       name: string
+      /** @description The head commit is older than the server's stale period (`PYN_BRANCH_STALE_DAYS`, 90 days by default). Never the default branch. */
+      stale?: boolean
       /**
        * Format: date-time
        * @description The committed time of the head commit; absent for a branch with no commits.
        */
       updated_at?: string | null
+      /** @description The author of the head commit; absent for a branch with no commits. */
+      updated_by?: string | null
+      /** @description The caller created the branch or wrote its head commit; always false without a sign-in. */
+      yours?: boolean
     }
     /**
      * @description How far a head is from a base. Commits are counted as git does: the head's ahead are those reachable from it and
@@ -3308,6 +3403,14 @@ export interface components {
       /** @description At least one of `manage_accounts`, `manage_organizations`, `manage_limits`, `manage_webhooks`, `manage_freeze`. */
       scopes: string[]
     }
+    CreateTagRequest: {
+      /** @description An optional note kept with the tag. */
+      message?: string | null
+      /** @description Git ref rules apply: no spaces, none of `~ ^ : ? * [ \`, no `..`. */
+      name: string
+      /** @description A branch or tag name, or a commit id or abbreviation of at least 4 digits; the default branch's head if omitted. */
+      target?: string | null
+    }
     CreateTeamRequest: {
       /** @description At most 500 characters; defaults to empty. */
       description?: string | null
@@ -3410,6 +3513,75 @@ export interface components {
       /** @description Repositories the account owns, as `owner/name`. */
       repositories: string[]
     }
+    /** @description One changed path. */
+    DiffFile: {
+      /** Format: int32 */
+      additions: number
+      /** @description A binary file has no hunks. */
+      binary: boolean
+      /** Format: int32 */
+      deletions: number
+      /** @description The git file mode of the new side (of the old side for a deletion). */
+      file_mode: components['schemas']['FileMode']
+      hunks: components['schemas']['DiffHunk'][]
+      lock?: components['schemas']['Lock'] | null
+      /** @description The path's mode under the repository's policy. */
+      mode: components['schemas']['Mode']
+      new_content?: string | null
+      /** @description Git blob ids of the two sides; absent where the path does not exist. */
+      old_content?: string | null
+      old_file_mode?: components['schemas']['FileMode'] | null
+      /** @description The previous path of a renamed file. */
+      old_path?: string | null
+      path: string
+      status: components['schemas']['DiffFileStatus']
+      /** @description The file, or the diff as a whole, is over the size limits: no hunks, and `additions` and `deletions` are 0. */
+      too_large: boolean
+    }
+    /** @enum {string} */
+    DiffFileStatus: 'added' | 'modified' | 'deleted' | 'renamed'
+    DiffHunk: {
+      /** @description The `@@ -a,b +c,d @@ section` line. */
+      header: string
+      /**
+       * Format: int32
+       * @description Unchanged lines after the last hunk to the end of the file; 0 on every other hunk.
+       */
+      hidden_after: number
+      /**
+       * Format: int32
+       * @description Unchanged lines between the previous hunk (or the start of the file) and this one; `/lines` loads them.
+       */
+      hidden_before: number
+      lines: components['schemas']['DiffLine'][]
+      /** Format: int32 */
+      new_lines: number
+      /** Format: int32 */
+      new_start: number
+      /** Format: int32 */
+      old_lines: number
+      /** Format: int32 */
+      old_start: number
+    }
+    DiffLine: {
+      kind: components['schemas']['DiffLineKind']
+      /**
+       * Format: int32
+       * @description Line number in the new file; absent on a deleted line.
+       */
+      new_no?: number | null
+      /** @description The file's last line on this side has no newline. */
+      no_newline?: boolean
+      /**
+       * Format: int32
+       * @description Line number in the old file; absent on an added line.
+       */
+      old_no?: number | null
+      /** @description The line without its newline. */
+      text: string
+    }
+    /** @enum {string} */
+    DiffLineKind: 'context' | 'add' | 'delete'
     DisableAccountRequest: {
       /** @description Shown to administrators; not to the account holder. */
       reason?: string | null
@@ -3526,6 +3698,28 @@ export interface components {
        * @description Head revision; absent if the path is locked but has no revision yet.
        */
       revision?: number | null
+    }
+    /** @description A range of the lines of a file at a revision. */
+    FileLines: {
+      commit: string
+      /** @description Lines without their newlines; empty past the end of the file. */
+      lines: string[]
+      path: string
+      /**
+       * Format: int64
+       * @description The path's revision number at that commit.
+       */
+      revision: number
+      /**
+       * Format: int32
+       * @description The number of the first line in `lines`, counting from 1.
+       */
+      start: number
+      /**
+       * Format: int32
+       * @description Lines in the whole file.
+       */
+      total: number
     }
     /**
      * @description Git's file mode for a file: regular, executable or symbolic link (whose content is the link target).
@@ -4463,6 +4657,20 @@ export interface components {
       /** @description The account's repositories; their old addresses now redirect (`X-Pyn-Moved-To`). */
       repositories: string[]
     }
+    /** @description The changes of a head against a base, with line hunks. */
+    RepoDiff: {
+      /** @description The base as named in the request (the default branch when none was given). */
+      base: string
+      base_commit: string
+      /** @description Ordered by path. */
+      files: components['schemas']['DiffFile'][]
+      /** @description The commit the changes are measured from: the merge base, or the base for a direct diff. */
+      from_commit: string | null
+      head: string
+      head_commit: string
+      /** @description More paths changed than listed. */
+      truncated: boolean
+    }
     RepoInfo: {
       /** Format: date-time */
       created_at: string
@@ -5042,6 +5250,22 @@ export interface components {
        * @description The stranded revision of the path.
        */
       revision: number
+    }
+    /** @description A tag: an immutable name pointing at a commit. It never moves; deleting it frees the name. */
+    Tag: {
+      /** @description The commit the tag points at. */
+      commit: string
+      /**
+       * Format: date-time
+       * @description The committed time of the tagged commit.
+       */
+      committed_at?: string | null
+      /** Format: date-time */
+      created_at: string
+      created_by: string
+      /** @description The note given when the tag was made; null when there was none. */
+      message: string | null
+      name: string
     }
     /** @description A team of an organization with its members and repository roles. */
     TeamInfo: {
@@ -11396,7 +11620,10 @@ export interface operations {
   }
   list_branches: {
     parameters: {
-      query?: never
+      query?: {
+        /** @description `yours`, `active` or `stale`: keep only those branches; every branch if omitted */
+        filter?: string
+      }
       header?: never
       path: {
         /** @description The namespace that owns the repository. */
@@ -11415,6 +11642,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['Branch'][]
+        }
+      }
+      /** @description invalid_request for an unknown filter */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
         }
       }
     }
@@ -12022,6 +12258,57 @@ export interface operations {
       }
     }
   }
+  diff: {
+    parameters: {
+      query: {
+        /** @description a branch, or a commit id or abbreviation; the default branch if omitted */
+        base?: string
+        /** @description a branch, or a commit id or abbreviation */
+        head: string
+        /** @description measure from the merge base of base and head (the default, as a pull request shows it); false diffs the two commits directly */
+        merge_base?: boolean
+        /** @description unchanged lines around each change, 0 to 100, default 3 */
+        context?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoDiff']
+        }
+      }
+      /** @description invalid_request for a branch with no commits, a context over 100 or a history too long to walk, ambiguous_commit */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description commit_not_found: neither a branch nor a commit */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   fetch: {
     parameters: {
       query?: never
@@ -12334,6 +12621,57 @@ export interface operations {
         content?: never
       }
       400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  file_lines: {
+    parameters: {
+      query: {
+        /** @description the file */
+        path: string
+        /** @description a branch, or a commit id or abbreviation; the default branch if omitted */
+        rev?: string
+        /** @description first line, counting from 1; default 1 */
+        start?: number
+        /** @description last line, inclusive; at most 2000 lines are returned */
+        end?: number
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FileLines']
+        }
+      }
+      /** @description invalid_request for a binary file, one over 1 MiB, or a bad range */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description commit_not_found, or revision_not_found when the path does not exist at that commit */
+      404: {
         headers: {
           [name: string]: unknown
         }
@@ -13479,6 +13817,172 @@ export interface operations {
         }
       }
       /** @description branch_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_tags: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description every tag, ordered by name */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Tag'][]
+        }
+      }
+    }
+  }
+  create_tag: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateTagRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Tag']
+        }
+      }
+      /** @description invalid_tag_name, ambiguous_commit for the target, or invalid_request when the repository has no commit to tag */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description needs the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description commit_not_found: the target names no commit */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description tag_exists: the name is taken, or is a folder of another tag's name; a tag is never moved */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_tag: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the tag's name; a slash may be sent as is or as %2F */
+        tag: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Tag']
+        }
+      }
+      /** @description tag_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_tag: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+        /** @description the tag's name; a slash may be sent as is or as %2F */
+        tag: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description needs the checkin permission */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description tag_not_found */
       404: {
         headers: {
           [name: string]: unknown
