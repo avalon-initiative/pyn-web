@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { PynBranchesPage, repoPath } from '@avalon-initiative/pyn-common-ui'
+import { PynBranchDialog, PynBranchesPage, repoPath } from '@avalon-initiative/pyn-common-ui'
 import type { BranchListItem, BranchView } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ApiError } from '../api/client'
-import { compareBranch, createBranch, deleteBranch, listBranches } from '../api/repos'
+import { compareBranch, createBranch, deleteBranch, listBranches, renameBranch } from '../api/repos'
 import { useAction } from '../state/action.state'
+import { useBranchDialog } from '../state/branch-dialog.state'
 import { repoKey } from '../state/context.state'
 import { canWrite } from '../state/freeze.state'
 import type { Branch } from '../types/repo.types'
@@ -73,31 +73,20 @@ async function reload() {
   await reloadBranches?.()
 }
 
-function newBranch() {
-  const name = window.prompt('Name of the new branch')?.trim()
-  if (!name) return
-  void attempt(async () => {
-    await createBranch(target.value, name)
+const dialog = useBranchDialog({
+  create: async (name, from) => {
+    await createBranch(target.value, name, from)
     await reload()
-  })
-}
+  },
+  remove: async (name, force) => {
+    await deleteBranch(target.value, name, force)
+    await reload()
+  },
+})
 
-function remove(name: string) {
-  if (!window.confirm(`Delete the branch ${name}? Its revisions stay in the history.`)) return
+function rename(name: string, newName: string) {
   void attempt(async () => {
-    try {
-      await deleteBranch(target.value, name)
-    } catch (e) {
-      const unmerged = e instanceof ApiError && e.code === 'branch_not_merged'
-      if (
-        !unmerged ||
-        !window.confirm(`${name} has changes that are not on the default branch. Delete it anyway?`)
-      ) {
-        if (!unmerged) throw e
-        return
-      }
-      await deleteBranch(target.value, name, true)
-    }
+    await renameBranch(target.value, name, newName)
     await reload()
   })
 }
@@ -117,10 +106,25 @@ watch(target, () => {
     :hrefs="hrefs"
     :can-create="writable"
     :can-delete="writable"
+    :can-rename="writable"
     :loading="loading"
     :error="error || undefined"
     :default-branch="branches.find((b) => b.default)?.name"
-    @new-branch="newBranch"
-    @delete="remove"
+    @new-branch="dialog.openCreate()"
+    @delete="dialog.openDelete"
+    @rename="rename"
+  />
+  <PynBranchDialog
+    :open="dialog.open.value"
+    :mode="dialog.mode.value"
+    :name="dialog.name.value"
+    :from="dialog.from.value"
+    :branches="items"
+    :unmerged="dialog.unmerged.value"
+    :busy="dialog.busy.value"
+    :error="dialog.error.value || undefined"
+    @close="dialog.close"
+    @create="dialog.create"
+    @delete="dialog.remove"
   />
 </template>

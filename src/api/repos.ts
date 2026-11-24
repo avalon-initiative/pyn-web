@@ -51,6 +51,14 @@ export const listBranches = (r: Repo) =>
 export const createBranch = (r: Repo, name: string, start?: string) =>
   call<Branch>(api.POST('/v1/repos/{owner}/{name}/branches', { ...at(r), body: { name, start } }))
 
+export const renameBranch = (r: Repo, branch: string, name: string) =>
+  call<Branch>(
+    api.PATCH('/v1/repos/{owner}/{name}/branches/{branch}', {
+      params: { path: { ...r, branch } },
+      body: { name },
+    }),
+  )
+
 export const deleteBranch = (r: Repo, branch: string, force = false) =>
   call<void>(
     api.DELETE('/v1/repos/{owner}/{name}/branches/{branch}', {
