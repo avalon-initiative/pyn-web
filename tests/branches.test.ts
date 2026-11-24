@@ -85,7 +85,8 @@ describe('branch picker', () => {
     const pickers = async (path: string) =>
       (await open(path)).w.findAllComponents(PynBranchPicker).length
     expect(await pickers('/acme/game/history')).toBe(1)
-    for (const tab of ['blob/a.txt', 'locks', 'branches', 'policy']) {
+    expect(await pickers('/acme/game/blob/a.txt')).toBe(1)
+    for (const tab of ['locks', 'branches', 'policy']) {
       expect([tab, await pickers(`/acme/game/${tab}`)]).toEqual([tab, 0])
     }
   })
@@ -210,10 +211,9 @@ describe('branch-aware file page', () => {
     expect(w.find('img[src*="/content"]').attributes('src')).toContain('branch=feature')
   })
 
-  it('leaves them without a branch on the default branch', async () => {
+  it('names the default branch, which the panel picker needs to show', async () => {
     const { w } = await open('/acme/game/blob/dir/pic.png')
-    expect(hrefs(w).some((h) => h.includes('branch='))).toBe(false)
-    expect(w.find('img[src*="/content"]').attributes('src')).not.toContain('branch=')
+    expect(hrefs(w)).toContain('/acme/game/tree/dir?branch=main')
   })
 })
 
