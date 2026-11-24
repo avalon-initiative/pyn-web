@@ -11,7 +11,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { acceptInvitation, declineInvitation, listMyInvitations } from '../api/orgs'
 import { useAction } from '../state/action.state'
-import { pendingInvitations } from '../state/invitations.state'
+import { myInvitations } from '../state/invitations.state'
 import { refreshOrgs, refreshRepos } from '../state/session-data.state'
 import { refreshTopBar } from '../state/top-bar.state'
 import type { OrgInvitation } from '@avalon-initiative/pyn-common-ui'
@@ -24,7 +24,7 @@ const { error, attempt } = useAction()
 
 const load = async () => {
   invitations.value = await listMyInvitations()
-  pendingInvitations.value = invitations.value.length
+  myInvitations.value = invitations.value
 }
 
 const refreshAcceptance = () => Promise.all([refreshTopBar(), refreshOrgs(), refreshRepos()])

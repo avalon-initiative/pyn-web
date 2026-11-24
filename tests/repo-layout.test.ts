@@ -121,7 +121,7 @@ describe('shell on repository and dashboard routes', () => {
     expect(w.find('header').exists()).toBe(true)
   })
 
-  it('shows the side rail on the dashboard, in the page and in the drawer', async () => {
+  it('shows the side rail on the dashboard, and in the page', async () => {
     const { w } = await open('/')
     expect(w.findComponent(PynShell).vm.$slots.side).toBeDefined()
     expect(w.findAllComponents(PynSideRail).length).toBeGreaterThanOrEqual(1)
