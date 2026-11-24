@@ -61,7 +61,6 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/alice/game/settings', 'settings'],
   ['/alice/game/settings/members', 'settings-members'],
   ['/alice/game/settings/roles', 'settings-roles'],
-  ['/alice/game/settings/invites', 'settings-invites'],
   ['/alice/game/settings/policy', 'settings-policy'],
   ['/alice/game/settings/storage', 'settings-storage'],
   ['/alice/game/settings/audit', 'settings-audit'],

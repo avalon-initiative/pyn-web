@@ -63,7 +63,6 @@ const REPO_PAGES = new Set([
   'settings',
   'settings-members',
   'settings-roles',
-  'settings-invites',
   'settings-policy',
   'settings-storage',
   'settings-audit',

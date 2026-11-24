@@ -82,10 +82,15 @@ describe('repository routes', () => {
     expect(resolve('/acme/game/history').name).toBe('history')
   })
 
-  it.each(['members', 'roles', 'invites', 'audit'])('redirects /%s under settings', async (s) => {
+  it.each([
+    ['members', 'members'],
+    ['roles', 'roles'],
+    ['invites', 'members'],
+    ['audit', 'audit'],
+  ])('redirects /%s under settings', async (s, target) => {
     const router = makeRouter(createMemoryHistory())
     await router.push(`/acme/game/${s}?x=1`)
-    expect(router.currentRoute.value.path).toBe(`/acme/game/settings/${s}`)
+    expect(router.currentRoute.value.path).toBe(`/acme/game/settings/${target}`)
     expect(router.currentRoute.value.query).toEqual({ x: '1' })
     expect(router.currentRoute.value.params).toMatchObject({ owner: 'acme', name: 'game' })
   })
@@ -100,7 +105,6 @@ describe('repository routes', () => {
     ['', 'settings'],
     ['/members', 'settings-members'],
     ['/roles', 'settings-roles'],
-    ['/invites', 'settings-invites'],
     ['/policy', 'settings-policy'],
     ['/storage', 'settings-storage'],
     ['/audit', 'settings-audit'],
@@ -217,15 +221,7 @@ describe('RepoSettingsLayout', () => {
       'edit_policy',
       'view_audit',
     ])
-    expect(sections(w)).toEqual([
-      'settings',
-      'members',
-      'roles',
-      'invites',
-      'policy',
-      'storage',
-      'audit',
-    ])
+    expect(sections(w)).toEqual(['settings', 'members', 'roles', 'policy', 'storage', 'audit'])
     expect(w.findComponent(PynRepoSettings).props('current')).toBe('settings')
   })
 
@@ -267,5 +263,13 @@ describe('RepoSettingsLayout', () => {
   it('gives a server administrator the General and Storage pages', async () => {
     const { w } = await layout('/acme/game/settings/storage', 'ops', ['read'], true)
     expect(sections(w)).toContain('storage')
+  })
+})
+
+describe('invitations', () => {
+  it('redirects settings/invites to Collaborators and teams', async () => {
+    const router = makeRouter(createMemoryHistory())
+    await router.push('/acme/game/settings/invites')
+    expect(router.currentRoute.value.name).toBe('settings-members')
   })
 })

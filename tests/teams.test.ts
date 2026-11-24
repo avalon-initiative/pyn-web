@@ -315,6 +315,7 @@ describe('team views', () => {
         ])
       if (k === 'GET /v1/repos/studio/game/teams') return json(repoTeams)
       if (k === 'GET /v1/orgs/studio/teams') return json(teams)
+      if (k === 'GET /v1/repos/studio/game/invites') return json([])
       if (k.startsWith('PUT') || k.startsWith('DELETE'))
         return Promise.resolve(new Response(null, { status: 204 }))
       return undefined
@@ -331,6 +332,7 @@ describe('team views', () => {
       const w = mountView(true)
       await flushPromises()
       expect(w.text()).toContain('Comes from owning the organization')
+      expect(calls).toContain('GET /v1/repos/studio/game/invites')
       expect(calls).toContain('GET /v1/repos/studio/game/teams')
       const grant = w.findComponent(PynTeamGrant)
       expect(
