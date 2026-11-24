@@ -48,7 +48,7 @@ afterEach(() => {
 describe('createPynApp', () => {
   it('renders the standard shell with nothing registered', async () => {
     const { el } = await open('/')
-    expect(el.querySelector('[aria-label="Toggle navigation"]')).toBeNull()
+    expect(el.querySelector('[aria-label="Open navigation"]')).not.toBeNull()
     expect(el.querySelector('#pyn-main')).not.toBeNull()
     expect(el.textContent).not.toContain('Reports')
     expect(el.querySelector('#sample')).toBeNull()

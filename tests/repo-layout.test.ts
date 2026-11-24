@@ -1,4 +1,4 @@
-import { PynRepoSettings, PynRepoShell } from '@avalon-initiative/pyn-common-ui'
+import { PynRepoSettings, PynRepoShell, PynShell } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
@@ -107,14 +107,14 @@ describe('repository routes', () => {
 describe('shell on repository and dashboard routes', () => {
   it('hides the sidebar on a repository page and keeps the top bar', async () => {
     const { w } = await open('/acme/game')
-    expect(w.find('header ~ aside').exists()).toBe(false)
-    expect(w.find('[aria-label="Toggle navigation"]').exists()).toBe(false)
+    expect(w.findComponent(PynShell).vm.$slots.side).toBeUndefined()
+    expect(w.find('[aria-label="Open navigation"]').exists()).toBe(true)
     expect(w.find('header').exists()).toBe(true)
   })
 
   it('shows no sidebar on dashboard routes', async () => {
     const { w } = await open('/')
-    expect(w.find('[aria-label="Toggle navigation"]').exists()).toBe(false)
+    expect(w.findComponent(PynShell).vm.$slots.side).toBeUndefined()
   })
 
   it('shows the repository shell with its tab bar', async () => {

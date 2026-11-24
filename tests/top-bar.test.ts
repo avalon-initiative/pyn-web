@@ -163,14 +163,28 @@ describe('top bar data', () => {
     const { w, router } = await openApp()
     for (const p of ['/', '/_/locks', '/acme/game', '/_/orgs'])
       expect(
-        await router.push(p).then(() => w.find('[aria-label="Toggle navigation"]').exists()),
-      ).toBe(false)
+        await router.push(p).then(() => w.findComponent(PynShell).vm.$slots.side),
+      ).toBeUndefined()
     await w.find('[aria-label="Account menu"]').trigger('click')
     const hrefs = w.findAll('[role=menu] a').map((a) => a.attributes('href'))
     expect(hrefs).toEqual(
       expect.arrayContaining(['/_/locks', '/_/orgs', '/_/people', '/_/settings']),
     )
+  })
+
+  it('links the bell panel to invitations while some are pending', async () => {
+    pending = invitations
+    const { w } = await openApp()
+    await w.find('button[data-bell]').trigger('click')
     expect(w.find('a[href="/_/invitations"]').exists()).toBe(true)
+  })
+
+  it('shows owner and repository on a repository page only', async () => {
+    const { w, router } = await openApp('/acme/game')
+    expect(w.findComponent(PynTopBar).props('repo')).toBe('game')
+    await router.push('/_/people')
+    await flushPromises()
+    expect(w.findComponent(PynTopBar).props('repo')).toBeUndefined()
   })
 
   it('fetches the counts once per sign-in, not on route changes', async () => {
@@ -203,7 +217,7 @@ describe('signed-out bar', () => {
     expect(bar.find('a[data-sign-in]').exists()).toBe(true)
     expect(bar.find('input').exists()).toBe(true)
     expect(bar.find('[aria-label="Account menu"]').exists()).toBe(false)
-    expect(w.find('aside').exists()).toBe(false)
+    expect(w.find('header ~ aside').exists()).toBe(false)
   })
 })
 

@@ -137,7 +137,6 @@ describe('PynRepoShell', () => {
         current: 'locks',
       },
     })
-    expect(w.text()).toContain('alice')
     expect(w.text()).toContain('game')
     expect(w.text()).toContain('Private')
     expect(w.findAll('nav[aria-label=Repository] a').map((a) => a.text())).toEqual([
@@ -160,17 +159,11 @@ describe('PynShell', () => {
       slots: { top: 'top', default: 'body' },
     })
     expect(w.find('aside').exists()).toBe(false)
-    expect(w.find('[aria-label="Toggle navigation"]').exists()).toBe(false)
     expect(w.text()).toContain('top')
   })
 
-  it('toggles the sidebar and closes it after following a link', async () => {
+  it('renders the side slot in an aside', () => {
     const w = mount(PynShell, { slots: { side: '<a href="#x">x</a>', default: 'body' } })
-    const side = w.find('aside')
-    expect(side.classes().length).toBe(1)
-    await w.find('[aria-label="Toggle navigation"]').trigger('click')
-    expect(side.classes().length).toBe(2)
-    await side.find('a').trigger('click')
-    expect(side.classes().length).toBe(1)
+    expect(w.find('aside a').text()).toBe('x')
   })
 })
