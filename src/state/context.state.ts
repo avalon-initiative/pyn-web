@@ -1,5 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import type { AccountDeletionStatus } from '../api/account-deletion'
+import type { PynBranchCompare } from '@avalon-initiative/pyn-common-ui'
 import type { BranchSummary, LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
 
@@ -31,9 +32,17 @@ export interface RepoContext {
   branchesError?: Ref<string>
   /** Switches the page to a branch through the address. */
   selectBranch?: (name: string) => unknown
+  /** The branch comparison; the landing page places it under its toolbar, other pages above their content. */
+  compare?: {
+    props: ComputedRef<Omit<InstanceType<typeof PynBranchCompare>['$props'], 'onSelect'>>
+    show: ComputedRef<boolean>
+    open: (path: string) => void
+  }
   reload: () => Promise<void>
 }
 
+/** Opens the command palette, optionally with text typed in. */
+export const paletteKey: InjectionKey<{ show: (initial?: string) => void }> = Symbol('palette')
 export const sessionKey: InjectionKey<SessionContext> = Symbol('session')
 export const repoKey: InjectionKey<RepoContext> = Symbol('repo')
 

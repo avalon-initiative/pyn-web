@@ -176,6 +176,15 @@ describe('overview Branches panel', () => {
     expect(w.findComponent(PynRepoLanding).props('branches')).toHaveLength(7)
   })
 
+  it('wires the code toolbar: go to file opens the palette, no ZIP and no SSH yet', async () => {
+    const { w } = await open('/acme/game')
+    const landing = w.findComponent(PynRepoLanding)
+    expect(landing.props('goToFile')).toBe(true)
+    expect(landing.props('about')).toEqual({})
+    expect(landing.props('downloadZip')).toBeFalsy()
+    expect(landing.props('sshUrl')).toBeUndefined()
+  })
+
   it('adds ahead and behind for the compared branch only', async () => {
     const compare = {
       base: 'main',
