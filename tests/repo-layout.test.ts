@@ -144,6 +144,7 @@ describe('shell on repository and dashboard routes', () => {
     expect(shell.props('ownerHref')).toBe('/acme')
     expect(shell.props('tabs')!.map((t: { label: string }) => t.label)).toEqual([
       'Code',
+      'Pull requests',
       'Locks',
       'Branches',
       'History',

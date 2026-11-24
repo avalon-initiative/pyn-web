@@ -83,6 +83,15 @@ const FRIENDLY: Record<string, string> = {
   access_session_not_found: 'That access session does not exist.',
   account_inactive: 'That account is not active, so no access session can start on it.',
   last_org_owner: 'An organization needs at least one owner. Make someone else an owner first.',
+  pull_request_not_found: 'That pull request does not exist.',
+  pull_request_exists: 'An open pull request already merges these branches.',
+  pull_request_not_open: 'This pull request is no longer open. Reload to see where it stands.',
+  pull_request_draft: 'This pull request is a draft. Mark it ready for review before merging.',
+  pull_locks_held:
+    'Someone else holds locks on paths this pull request changes. They must release them, or someone who may force unlocks can merge.',
+  merge_conflict: 'The branches conflict. Resolve the conflicts on the head branch, then merge.',
+  merge_stale: 'The branches moved since this page loaded. Review the update, then merge again.',
+  not_fast_forward: 'The head branch cannot be fast-forwarded onto the base. Pick another method.',
 }
 
 /** The server words it `"admin" is reserved and ...`; falls back to a generic subject. */
