@@ -159,7 +159,7 @@ describe('pull request abilities', () => {
 describe('diff expand', () => {
   it('loads the lines above the first hunk, joining them to it', () => {
     const f = file()
-    const up = { path: f.path, hunk: 0, direction: 'up' as const }
+    const up = { path: f.path, hunk: 0, direction: 'up' as const, position: 'before' as const }
     expect(expandRange(f, up)).toEqual({ start: 1, end: 9 })
     const next = applyExpand(f, up, 1, ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'])
     expect(next.hunks[0]).toMatchObject({ old_start: 1, new_start: 1, hidden_before: 0 })
@@ -170,12 +170,12 @@ describe('diff expand', () => {
   it('loads part of a gap from either side with the old numbers offset', () => {
     const f = file()
     f.hunks[1]!.hidden_after = 0
-    const down = { path: f.path, hunk: 1, direction: 'down' as const }
+    const down = { path: f.path, hunk: 1, direction: 'down' as const, position: 'before' as const }
     expect(expandRange(f, down, 3)).toEqual({ start: 13, end: 15 })
     const d = applyExpand(f, down, 13, ['x', 'y', 'z'])
     expect(d.hunks[0]!.lines.at(-1)).toEqual({ kind: 'context', old_no: 14, new_no: 15, text: 'z' })
     expect(d.hunks[1]!.hidden_before).toBe(4)
-    const up = { path: f.path, hunk: 1, direction: 'up' as const }
+    const up = { path: f.path, hunk: 1, direction: 'up' as const, position: 'before' as const }
     expect(expandRange(d, up, 3)).toEqual({ start: 17, end: 19 })
     const u = applyExpand(d, up, 17, ['p', 'q', 'r'])
     expect(u.hunks[1]).toMatchObject({ old_start: 16, new_start: 17, hidden_before: 1 })
@@ -183,7 +183,7 @@ describe('diff expand', () => {
 
   it('joins two hunks once the gap between them is loaded', () => {
     const f = file()
-    const all = { path: f.path, hunk: 1, direction: 'all' as const }
+    const all = { path: f.path, hunk: 1, direction: 'all' as const, position: 'before' as const }
     expect(expandRange(f, all)).toEqual({ start: 13, end: 19 })
     const j = applyExpand(f, all, 13, ['1', '2', '3', '4', '5', '6', '7'])
     expect(j.hunks).toHaveLength(1)
@@ -198,7 +198,7 @@ describe('diff expand', () => {
     f.hunks = [
       hunk(10, 11, [{ kind: 'add', new_no: 11, text: 'new' }], { old_start: 10, hidden_after: 5 }),
     ]
-    const down = { path: f.path, hunk: 0, direction: 'down' as const }
+    const down = { path: f.path, hunk: 0, direction: 'down' as const, position: 'after' as const }
     const t = applyExpand(f, down, 12, ['a', 'b'])
     expect(t.hunks[0]!.lines.at(-1)).toMatchObject({ old_no: 12, new_no: 13 })
     expect(t.hunks[0]!.header).toBe('@@ -11,2 +11,3 @@ fn')
@@ -206,7 +206,7 @@ describe('diff expand', () => {
 
   it('loads the trailing lines after the last hunk, also from its own down control', () => {
     const f = file()
-    const down = { path: f.path, hunk: 1, direction: 'down' as const }
+    const down = { path: f.path, hunk: 1, direction: 'down' as const, position: 'after' as const }
     expect(expandRange(f, down)).toEqual({ start: 22, end: 26 })
     const t = applyExpand(f, down, 22, ['a', 'b', 'c', 'd', 'e'])
     expect(t.hunks[1]).toMatchObject({ hidden_after: 0, new_lines: 7 })
