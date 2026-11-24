@@ -78,16 +78,29 @@ const abilities = computed(() =>
   pullAbilities(permissions.value, me.value, server.value?.author.user, frozen.value),
 )
 
-async function loadPull() {
-  const t = target.value
-  const n = number.value
-  await page.attempt(async () => {
-    const p = await getPull(t, n)
-    if (t === target.value && n === number.value) server.value = p
+let seq = 0
+type Action = ReturnType<typeof useAction>
+
+// A result or failure that arrives after the page moved to another pull is dropped.
+function forPull(action: Action, run: (stale: () => boolean) => Promise<void>) {
+  const mine = seq
+  const stale = () => mine !== seq
+  return action.attempt(async () => {
+    try {
+      await run(stale)
+    } catch (e) {
+      if (!stale()) throw e
+    }
   })
 }
 
-async function loadEvents() {
+const loadPull = () =>
+  forPull(page, async (stale) => {
+    const p = await getPull(target.value, number.value)
+    if (!stale()) server.value = p
+  })
+
+async function loadEvents(stale: () => boolean) {
   const t = target.value
   const n = number.value
   const out: PullEvent[] = []
@@ -98,22 +111,22 @@ async function loadEvents() {
     if (batch.length < 100) break
     after = batch.at(-1)!.id
   }
-  if (t === target.value && n === number.value) events.value = out
+  if (!stale()) events.value = out
 }
 
 async function loadTab() {
   const t = target.value
   const n = number.value
-  if (tab.value === 'overview' && !events.value) await page.attempt(loadEvents)
+  if (tab.value === 'overview' && !events.value) await forPull(page, loadEvents)
   if (tab.value === 'commits' && !commits.value)
-    await page.attempt(async () => {
+    await forPull(page, async (stale) => {
       const list = (await pullCommits(t, n)).map(toPullCommit)
-      if (t === target.value && n === number.value) commits.value = list
+      if (!stale()) commits.value = list
     })
   if (tab.value === 'files' && !diff.value)
-    await filesAction.attempt(async () => {
+    await forPull(filesAction, async (stale) => {
       const d = await pullDiff(t, n)
-      if (t !== target.value || n !== number.value) return
+      if (stale()) return
       diff.value = d
       viewed.value = viewedPaths(readViewed(viewedKey.value), d.files)
     })
@@ -122,10 +135,15 @@ async function loadTab() {
 watch(
   [target, number],
   async () => {
+    seq++
     server.value = null
     events.value = null
     commits.value = null
     diff.value = null
+    viewed.value = []
+    filter.value = ''
+    method.value = 'allow'
+    for (const a of [page, filesAction, expand, merge, manage]) a.error.value = ''
     await loadPull()
     if (server.value) await loadTab()
   },
@@ -146,30 +164,36 @@ async function refresh(p: ServerPull) {
 }
 
 const onMerge = (m: PullMergeMethod) =>
-  merge.attempt(async () => {
+  forPull(merge, async (stale) => {
     const p = server.value!
     try {
-      await refresh(
-        await mergePull(target.value, number.value, {
-          fast_forward: m,
-          expect_target: p.base_commit,
-          expect_head: p.head_commit,
-        }),
-      )
+      const merged = await mergePull(target.value, number.value, {
+        fast_forward: m,
+        expect_target: p.base_commit,
+        expect_head: p.head_commit,
+      })
+      if (stale()) return
+      await refresh(merged)
       void reloadBranches?.()
     } catch (e) {
       // The page reloads so the locks, conflicts or moved branches behind the refusal show.
-      if (e instanceof ApiError && e.status === 409) await loadPull()
+      if (!stale() && e instanceof ApiError && e.status === 409) await loadPull()
       throw e
     }
   })
 
-const onState = (action: typeof closePull) =>
-  manage.attempt(async () => refresh(await action(target.value, number.value)))
+const onState = (action: typeof closePull) => {
+  if (manage.busy.value) return
+  return forPull(manage, async (stale) => {
+    const p = await action(target.value, number.value)
+    if (!stale()) await refresh(p)
+  })
+}
 
 const markReady = () =>
-  manage.attempt(async () => {
-    server.value = await updatePull(target.value, number.value, { draft: false })
+  forPull(manage, async (stale) => {
+    const p = await updatePull(target.value, number.value, { draft: false })
+    if (!stale()) server.value = p
   })
 
 function setViewed(paths: string[]) {
@@ -182,7 +206,7 @@ async function onExpand(e: DiffExpand) {
   const file = d?.files.find((f) => f.path === e.path)
   const range = file && expandRange(file, e)
   if (!d || !file || !range) return
-  await expand.attempt(async () => {
+  await forPull(expand, async () => {
     const got = await fileLines(target.value, file.path, d.head_commit, range.start, range.end)
     if (diff.value !== d) return
     const next = applyExpand(file, e, got.start, got.lines)

@@ -60,10 +60,15 @@ export function expandRange(
 }
 
 const section = (header: string) => header.replace(/^@@[^@]*@@/, '')
-const withHeader = (h: ServerDiffHunk): ServerDiffHunk => ({
-  ...h,
-  header: `@@ -${h.old_start},${h.old_lines} +${h.new_start},${h.new_lines} @@${section(h.header)}`,
-})
+// A side that now has lines starts at its first numbered line.
+const firstNo = (h: ServerDiffHunk, key: 'old_no' | 'new_no', start: number) =>
+  h.lines.find((l) => l[key] != null)?.[key] ?? start
+function withHeader(h: ServerDiffHunk): ServerDiffHunk {
+  const old_start = firstNo(h, 'old_no', h.old_start)
+  const new_start = firstNo(h, 'new_no', h.new_start)
+  const header = `@@ -${old_start},${h.old_lines} +${new_start},${h.new_lines} @@${section(h.header)}`
+  return { ...h, old_start, new_start, header }
+}
 
 /** The file with `texts` (new-side lines from `start`) shown as context; a closed gap joins its hunks. */
 export function applyExpand(

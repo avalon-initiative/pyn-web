@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PynPullRequestList, PynViewNotice, repoPath } from '@avalon-initiative/pyn-common-ui'
 import type { PullRequestSummary } from '@avalon-initiative/pyn-common-ui'
-import { computed, inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listPulls } from '../api/pulls'
 import { useAction } from '../state/action.state'
@@ -24,7 +24,8 @@ const all = ref<PullRequestSummary[]>([])
 const capped = ref(false)
 const loading = ref(true)
 const page = ref(1)
-const query = ref(typeof route.query.q === 'string' ? route.query.q : 'is:open')
+const queryOf = (q: unknown) => (typeof q === 'string' ? q : 'is:open')
+const query = ref(queryOf(route.query.q))
 const { error, attempt } = useAction()
 
 const view = computed(() => pullListView(all.value, query.value))
@@ -37,29 +38,46 @@ async function load() {
   await attempt(async () => {
     const out: PullRequestSummary[] = []
     let before: number | undefined
-    for (let i = 0; i < MAX_PAGES; i++) {
-      const res = await listPulls(t, { before, limit: 100 })
-      out.push(...res.pulls.map((p) => toPullSummary(p, repoPath(t, `pulls/${p.number}`))))
-      if (res.next_before == null) {
-        capped.value = false
-        break
+    let more = false
+    try {
+      for (let i = 0; i < MAX_PAGES; i++) {
+        const res = await listPulls(t, { before, limit: 100 })
+        out.push(...res.pulls.map((p) => toPullSummary(p, repoPath(t, `pulls/${p.number}`))))
+        more = res.next_before != null
+        if (!more) break
+        before = res.next_before!
       }
-      before = res.next_before
-      capped.value = true
+    } catch (e) {
+      if (t === target.value) throw e
     }
+    if (t !== target.value) return
     all.value = out
+    capped.value = more
   })
-  loading.value = false
+  if (t === target.value) loading.value = false
 }
 
 const setStatus = (status: PullStatus) => (query.value = withPullStatus(query.value, status))
 
 watch(query, (q) => {
   page.value = 1
-  void router.replace({ query: { ...route.query, q: q === 'is:open' ? undefined : q } })
+  if (q !== queryOf(route.query.q))
+    void router.replace({ query: { ...route.query, q: q === 'is:open' ? undefined : q } })
 })
-
-onMounted(load)
+watch(
+  () => route.query.q,
+  (q) => (query.value = queryOf(q)),
+)
+watch(
+  target,
+  () => {
+    all.value = []
+    capped.value = false
+    loading.value = true
+    void load()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

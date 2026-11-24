@@ -129,6 +129,7 @@ describe('pull request list query', () => {
     expect(pullStatus('is:merged fix')).toBe('closed')
     expect(pullStatus('fix')).toBe('open')
     expect(withPullStatus('fix is:open author:bob', 'closed')).toBe('is:closed fix author:bob')
+    expect(withPullStatus('is:draft is:merged', 'open')).toBe('is:open is:draft')
   })
 
   it('filters by tab and qualifiers and counts both tabs', () => {
@@ -145,15 +146,12 @@ describe('pull request abilities', () => {
     expect(pullAbilities(['read'], 'bob', 'bob', false)).toEqual({
       canMerge: false,
       canManage: true,
-      canComment: true,
     })
     expect(pullAbilities(['read', 'checkin'], 'al', 'bob', false).canMerge).toBe(true)
     expect(pullAbilities(['read'], 'al', 'bob', false).canManage).toBe(false)
-    expect(pullAbilities(['read'], '', 'bob', false).canComment).toBe(false)
     expect(pullAbilities(['read', 'checkin'], 'bob', 'bob', true)).toEqual({
       canMerge: false,
       canManage: false,
-      canComment: false,
     })
   })
 })
@@ -193,6 +191,17 @@ describe('diff expand', () => {
     expect(j.hunks[0]!.lines.map((l) => l.new_no)).toEqual([
       10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
     ])
+  })
+
+  it('starts an empty side at its first line once context is added', () => {
+    const f = file()
+    f.hunks = [
+      hunk(10, 11, [{ kind: 'add', new_no: 11, text: 'new' }], { old_start: 10, hidden_after: 5 }),
+    ]
+    const down = { path: f.path, hunk: 0, direction: 'down' as const }
+    const t = applyExpand(f, down, 12, ['a', 'b'])
+    expect(t.hunks[0]!.lines.at(-1)).toMatchObject({ old_no: 12, new_no: 13 })
+    expect(t.hunks[0]!.header).toBe('@@ -11,2 +11,3 @@ fn')
   })
 
   it('loads the trailing lines after the last hunk, also from its own down control', () => {
@@ -243,6 +252,7 @@ async function mountAt(
       const method = init?.method ?? 'GET'
       calls.push({ url: u, method, body: init?.body ? JSON.parse(String(init.body)) : undefined })
       const out = reply(u, init)
+      if (out instanceof Promise) return out
       return Promise.resolve(
         out instanceof Response ? out : new Response(JSON.stringify(out ?? {}), { status: 200 }),
       )
@@ -251,6 +261,7 @@ async function mountAt(
   const router = makeRouter(createMemoryHistory())
   await router.push(url)
   const reloadBranches = vi.fn(() => Promise.resolve())
+  const name = ref('game')
   const w = mount(component, {
     global: {
       plugins: [router],
@@ -261,7 +272,7 @@ async function mountAt(
           expire: vi.fn(),
         },
         [repoKey as symbol]: {
-          target: computed(() => ({ owner: 'acme', name: 'game' })),
+          target: computed(() => ({ owner: 'acme', name: name.value })),
           permissions: ref(opts.permissions ?? ['read', 'checkin']),
           frozen: ref(false),
           locks: ref(null),
@@ -271,7 +282,7 @@ async function mountAt(
     },
   })
   await flushPromises()
-  return { w, calls, router, reloadBranches }
+  return { w, calls, router, reloadBranches, name }
 }
 
 afterEach(() => {
@@ -295,6 +306,21 @@ describe('pull request list page', () => {
     expect(list.props('pulls')[0].href).toBe('/acme/game/pulls/3')
     expect(list.props('counts')).toEqual({ open: 1, closed: 2 })
     expect(list.props('status')).toBe('open')
+  })
+
+  it('reloads for another repository and follows the address', async () => {
+    const { w, name, router } = await mountAt('/acme/game/pulls', RepoPullsView, (u) => ({
+      pulls: u.includes('/tools/') ? [summary(5)] : [summary(3)],
+      next_before: null,
+    }))
+    name.value = 'tools'
+    await flushPromises()
+    const list = w.findComponent(PynPullRequestList)
+    expect(list.props('pulls')[0].href).toBe('/acme/tools/pulls/5')
+    await router.push('/acme/tools/pulls?q=is:closed')
+    await flushPromises()
+    expect(list.props('query')).toBe('is:closed')
+    expect(list.props('status')).toBe('closed')
   })
 
   it('switches tabs through the is: qualifier in the address', async () => {
@@ -420,6 +446,34 @@ describe('pull request page', () => {
     const page = w.findComponent(PynPullRequestPage)
     expect(page.props('mergeError')).toMatch(/holds locks/)
     expect(calls.filter((c) => c.url === '/v1/repos/acme/game/pulls/7')).toHaveLength(2)
+  })
+
+  it('drops a close that answers after moving to another pull request', async () => {
+    let answer!: (r: Response) => void
+    const { w, router } = await mountAt(
+      '/acme/game/pulls/7',
+      RepoPullView,
+      routes(detail(), (u, init) =>
+        init?.method === 'POST'
+          ? new Promise<Response>((r) => (answer = r))
+          : u.endsWith('/pulls/8')
+            ? detail({ number: 8, title: 'Other' })
+            : undefined,
+      ),
+    )
+    w.findComponent(PynPullRequestPage).vm.$emit('close')
+    await flushPromises()
+    await router.push('/acme/game/pulls/8')
+    await flushPromises()
+    answer(
+      new Response(JSON.stringify({ code: 'pull_request_not_open', message: 'x' }), {
+        status: 409,
+      }),
+    )
+    await flushPromises()
+    const page = w.findComponent(PynPullRequestPage)
+    expect(page.props('pull').number).toBe(8)
+    expect(w.text()).not.toContain('no longer open')
   })
 
   it('closes a pull request', async () => {
