@@ -11,6 +11,8 @@ export interface HistoryQuery {
   before?: string | null
   branch?: string
   limit?: number
+  author?: string
+  since?: string
 }
 
 export type AuditPage = Schemas['AuditPage']

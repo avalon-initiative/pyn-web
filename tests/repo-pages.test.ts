@@ -376,6 +376,8 @@ describe('history view', () => {
     next_cursor: next,
   })
   const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status })
+  const historyUrls = (fn: ReturnType<typeof vi.fn>) =>
+    fn.mock.calls.map((c) => String(c[0])).filter((u) => !u.includes('/history/authors'))
 
   async function mountView(fn: ReturnType<typeof vi.fn>, url = '/alice/game/history') {
     vi.stubGlobal('fetch', fn)
@@ -398,26 +400,35 @@ describe('history view', () => {
   }
 
   it('loads repository history on open and appends on load more', async () => {
-    const fn = vi
-      .fn()
-      .mockResolvedValueOnce(reply(page([3, 2], 'c1')))
-      .mockResolvedValueOnce(reply(page([1], null)))
+    const fn = vi.fn((url: string) =>
+      Promise.resolve(
+        reply(
+          url.includes('/authors')
+            ? { authors: [] }
+            : url.includes('before=')
+              ? page([1], null)
+              : page([3, 2], 'c1'),
+        ),
+      ),
+    )
     const { w } = await mountView(fn)
-    expect(fn.mock.calls[0][0]).toBe('/v1/repos/alice/game/history')
+    expect(historyUrls(fn)[0]).toBe('/v1/repos/alice/game/history')
     expect(w.findAll('li')).toHaveLength(2)
     await w
       .findAll('button')
       .find((b) => b.text() === 'Load more')!
       .trigger('click')
     await flushPromises()
-    expect(fn.mock.calls[1][0]).toBe('/v1/repos/alice/game/history?before=c1')
+    expect(historyUrls(fn)[1]).toBe('/v1/repos/alice/game/history?before=c1')
     expect(w.findAll('li').map((li) => li.find('code').text())).toEqual(['r3', 'r2', 'r1'])
     expect(w.text()).not.toContain('Load more')
   })
 
-  it('wires the branch picker and leaves the author, range and browse controls off', async () => {
+  it('wires the branch picker and leaves the browse link off', async () => {
     const select = vi.fn()
-    const fn = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve(reply(page([1], null))))
+    const fn = vi.fn((url: string, _init?: RequestInit) =>
+      Promise.resolve(reply(url.includes('/authors') ? { authors: ['alice'] } : page([1], null))),
+    )
     vi.stubGlobal('fetch', fn)
     const router = makeRouter(createMemoryHistory())
     await router.push('/alice/game/history')
@@ -442,8 +453,8 @@ describe('history view', () => {
     expect(history.props('branch')).toBeUndefined()
     expect(history.props('newBranchButton')).toBe(true)
     expect(history.props('branchesHref')).toBe('/alice/game/branches')
-    expect(history.props('users')).toBeUndefined()
-    expect(history.props('range')).toBeUndefined()
+    expect(history.props('users')).toEqual(['alice'])
+    expect(history.props('range')).toBe('all')
     expect(history.props('browseHref')).toBeUndefined()
     history.vm.$emit('selectBranch', 'feature')
     expect(select).toHaveBeenCalledWith('feature')
@@ -479,9 +490,74 @@ describe('history view', () => {
     vi.advanceTimersByTime(400)
     vi.useRealTimers()
     await flushPromises()
-    expect(fn.mock.calls[1][0]).toBe('/v1/repos/alice/game/history?filter=Content%2F*.uasset')
+    expect(historyUrls(fn)[1]).toBe('/v1/repos/alice/game/history?filter=Content%2F*.uasset')
     await mountView(fn, '/alice/game/history?path=a.ts')
-    expect(fn.mock.calls[2][0]).toBe('/v1/repos/alice/game/history?path=a.ts')
+    expect(historyUrls(fn)[2]).toBe('/v1/repos/alice/game/history?path=a.ts')
+  })
+
+  it('filters by author and range through the route and the request', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-24T12:00:00Z'))
+    const fn = vi.fn((url: string) =>
+      Promise.resolve(
+        reply(url.includes('/authors') ? { authors: ['alice', 'bob'] } : page([1], null)),
+      ),
+    )
+    const { w, router } = await mountView(fn)
+    const history = w.findComponent(PynHistory)
+    expect(fn.mock.calls.map((c) => c[0])).toContain('/v1/repos/alice/game/history/authors')
+    expect(history.props('users')).toEqual(['alice', 'bob'])
+    expect(history.props('user')).toBe('')
+
+    history.vm.$emit('selectUser', 'bob')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toMatchObject({ author: 'bob' })
+    expect(historyUrls(fn).at(-1)).toBe('/v1/repos/alice/game/history?author=bob')
+
+    history.vm.$emit('selectRange', 'week')
+    await flushPromises()
+    expect(router.currentRoute.value.query).toMatchObject({ author: 'bob', range: 'week' })
+    expect(history.props('range')).toBe('week')
+    expect(historyUrls(fn).at(-1)).toBe(
+      '/v1/repos/alice/game/history?author=bob&since=2026-11-17T12%3A00%3A00.000Z',
+    )
+
+    history.vm.$emit('selectUser', '')
+    history.vm.$emit('selectRange', 'all')
+    await flushPromises()
+    expect(router.currentRoute.value.query.author).toBeUndefined()
+    expect(router.currentRoute.value.query.range).toBeUndefined()
+    expect(historyUrls(fn).at(-1)).toBe('/v1/repos/alice/game/history')
+    vi.useRealTimers()
+  })
+
+  it('reads the filters from the address and keeps an author the list lacks', async () => {
+    const fn = vi.fn((url: string) =>
+      Promise.resolve(reply(url.includes('/authors') ? { authors: ['alice'] } : page([1], null))),
+    )
+    const { w } = await mountView(fn, '/alice/game/history?author=carol&range=bogus')
+    const history = w.findComponent(PynHistory)
+    expect(historyUrls(fn)[0]).toBe('/v1/repos/alice/game/history?author=carol')
+    expect(history.props('users')).toEqual(['carol', 'alice'])
+    expect(history.props('range')).toBe('all')
+  })
+
+  it('hides the author and range filters for one path, and the author filter without a list', async () => {
+    const fn = vi.fn((url: string) =>
+      Promise.resolve(
+        url.includes('/authors')
+          ? reply({ code: 'not_found', message: 'x' }, 404)
+          : reply(page([1], null)),
+      ),
+    )
+    const { w } = await mountView(fn, '/alice/game/history?path=a.ts&author=bob')
+    const history = w.findComponent(PynHistory)
+    expect(historyUrls(fn)[0]).toBe('/v1/repos/alice/game/history?path=a.ts')
+    expect(history.props('users')).toBeUndefined()
+    expect(history.props('range')).toBeUndefined()
+    const { w: w2 } = await mountView(fn)
+    expect(w2.findComponent(PynHistory).props('users')).toBeUndefined()
+    expect(w2.findComponent(PynHistory).props('range')).toBe('all')
   })
 
   it('shows the server message for a bad pattern', async () => {

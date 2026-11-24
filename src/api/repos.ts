@@ -221,8 +221,17 @@ export const fetchHistory = (r: Repo, q: HistoryQuery = {}) =>
           before: blank(q.before),
           branch: blank(q.branch),
           limit: q.limit,
+          author: q.author ? [q.author] : undefined,
+          since: blank(q.since),
         },
       },
+    }),
+  )
+
+export const historyAuthors = (r: Repo, branch?: string) =>
+  call<Schemas['HistoryAuthors']>(
+    api.GET('/v1/repos/{owner}/{name}/history/authors', {
+      params: { path: r, query: { branch: blank(branch) } },
     }),
   )
 
