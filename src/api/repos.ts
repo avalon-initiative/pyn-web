@@ -29,10 +29,15 @@ export const listRepos = (owner?: string) =>
 export const exploreRepos = (query: { after?: string; limit?: number } = {}) =>
   call<Schemas['RepoPage']>(api.GET('/v1/explore/repos', { params: { query } }))
 
-export const createRepo = (owner: string, s: RepoSettings) =>
+export const createRepo = (owner: string, s: RepoSettings, starterPolicy?: boolean) =>
   call<RepoInfo>(
     api.POST('/v1/repos', {
-      body: { owner, ...s, max_locks_per_user: s.max_locks_per_user ?? undefined },
+      body: {
+        owner,
+        ...s,
+        max_locks_per_user: s.max_locks_per_user ?? undefined,
+        starter_policy: starterPolicy,
+      },
     }),
   )
 
@@ -50,6 +55,14 @@ export const listBranches = (r: Repo) =>
 
 export const createBranch = (r: Repo, name: string, start?: string) =>
   call<Branch>(api.POST('/v1/repos/{owner}/{name}/branches', { ...at(r), body: { name, start } }))
+
+export const renameBranch = (r: Repo, branch: string, name: string) =>
+  call<Branch>(
+    api.PATCH('/v1/repos/{owner}/{name}/branches/{branch}', {
+      params: { path: { ...r, branch } },
+      body: { name },
+    }),
+  )
 
 export const deleteBranch = (r: Repo, branch: string, force = false) =>
   call<void>(

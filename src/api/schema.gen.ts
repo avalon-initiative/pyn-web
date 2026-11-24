@@ -2240,6 +2240,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/star': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_star']
+    put: operations['put_star']
+    post?: never
+    delete: operations['delete_star']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/storage-cap': {
     parameters: {
       query?: never
@@ -2539,6 +2555,22 @@ export interface paths {
       cookie?: never
     }
     get: operations['get_avatar']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/users/{user}/starred': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_starred']
     put?: never
     post?: never
     delete?: never
@@ -4220,6 +4252,8 @@ export interface components {
       display_name?: boolean
       links?: boolean
       location?: boolean
+      /** @description The list of repositories the account starred. */
+      starred?: boolean
     }
     /** @description What others may see of an account next to its name: the account name, display name and avatar address. */
     PublicIdentity: {
@@ -4411,6 +4445,13 @@ export interface components {
       owner_id: string
       owner_identity?: components['schemas']['PublicIdentity'] | null
       role?: components['schemas']['Role'] | null
+      /**
+       * Format: int64
+       * @description How many accounts starred the repository. Anyone who can read the repository sees it, private ones included.
+       */
+      star_count: number
+      /** @description Whether the caller starred it; false for a signed-out caller. */
+      starred: boolean
       visibility: components['schemas']['Visibility']
     }
     RepoPage: {
@@ -4870,6 +4911,18 @@ export interface components {
       last_used_at?: string | null
       title: string
       user: string
+    }
+    /** @description A repository's star count and whether the caller starred it. */
+    StarState: {
+      /** Format: int64 */
+      count: number
+      starred: boolean
+    }
+    /** @description One repository in an account's list of stars. */
+    StarredRepo: {
+      repo: components['schemas']['RepoInfo']
+      /** Format: date-time */
+      starred_at: string
     }
     /** @description Starts an access session on the account named in the path. */
     StartAccessSessionRequest: {
@@ -13067,6 +13120,126 @@ export interface operations {
       }
     }
   }
+  get_star: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description whether the caller starred the repository, and how many accounts did */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StarState']
+        }
+      }
+      /** @description repo_not_found: no such repository, or one the caller cannot read */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  put_star: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description starred; starring again changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StarState']
+        }
+      }
+      /** @description repo_not_found: no such repository, or one the caller cannot read */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many stars and unstars in an hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_star: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; matched ignoring case. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description unstarred; removing a star that is not there changes nothing */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StarState']
+        }
+      }
+      /** @description repo_not_found: no such repository, or one the caller cannot read */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many stars and unstars in an hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
   set_repo_storage_cap: {
     parameters: {
       query?: never
@@ -14092,6 +14265,47 @@ export interface operations {
         }
       }
       /** @description user_not_found, or avatar_not_found when the user has none or hides it from the caller */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_starred: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description the account's name */
+        user: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the repositories the user starred that the caller may see, newest star first, with the caller's role in each; a private repository never appears to someone with no role in it, and a profile that hides its stars (`visibility.starred`) lists none to everyone but its owner, indistinguishable from no stars */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StarredRepo'][]
+        }
+      }
+      /** @description credentials were sent but are not valid */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description user_not_found: no such user, or an organization, or an account that is disabled or not yet approved */
       404: {
         headers: {
           [name: string]: unknown
