@@ -67,6 +67,30 @@ describe('ProfileSettingsView', () => {
     expect(form.props('avatarUrl')).toBe('/a?v=1')
   })
 
+  it('passes the visibility flags and sends them whole when saving', async () => {
+    const flags = {
+      avatar: true,
+      display_name: true,
+      bio: true,
+      location: true,
+      company: true,
+      links: true,
+      starred: false,
+    }
+    vi.mocked(admin.fetchMe).mockResolvedValue({
+      profile: { display_name: 'Root', visibility: { starred: false } },
+    } as never)
+    vi.mocked(profile.saveProfile).mockResolvedValue({ visibility: flags })
+    const w = mountView(ProfileSettingsView)
+    await flushPromises()
+    const form = w.findComponent(PynProfileForm)
+    expect(form.props('visibility')).toEqual({ starred: false })
+    form.vm.$emit('save', { display_name: 'Root', visibility: flags })
+    await flushPromises()
+    expect(profile.saveProfile).toHaveBeenCalledWith({ display_name: 'Root', visibility: flags })
+    expect(form.props('visibility')).toEqual(flags)
+  })
+
   it('uploads and removes the avatar, showing server errors', async () => {
     const file = new File(['x'], 'a.png', { type: 'image/png' })
     vi.mocked(profile.uploadAvatar).mockRejectedValue(new ApiError(413, 'too_large', 'too big'))
