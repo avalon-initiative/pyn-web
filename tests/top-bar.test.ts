@@ -25,6 +25,7 @@ const notice = { id: 'n1', kind: 'x', detail: 'd', created_at: '2026-11-01T00:00
 let locks: unknown[] = []
 let pending: unknown[] = []
 let notices: unknown[] = []
+let found: unknown[] = []
 let signedIn = true
 let broken = false
 let calls: string[] = []
@@ -41,6 +42,7 @@ function server(url: string) {
   if (url === '/v1/me/access-sessions') return json([])
   if (['/v1/me/locks', '/v1/me/invitations', '/v1/me/notices'].includes(url) && broken)
     return json({ code: 'internal', message: 'x' }, 500)
+  if (url.startsWith('/v1/users?')) return json({ people: found, next_after: null })
   if (url === '/v1/me/locks') return json(locks)
   if (url === '/v1/me/invitations') return json(pending)
   if (url === '/v1/me/notices') return json(notices)
@@ -66,6 +68,7 @@ beforeEach(() => {
   locks = []
   pending = []
   notices = []
+  found = []
   signedIn = true
   broken = false
   calls = []
@@ -324,6 +327,42 @@ describe('count refresh', () => {
       bellOf(w as unknown as VueWrapper).vm.$emit('declineNotification', 'invitation:studio')
       await flushPromises()
       expect(calls).toContain('POST /v1/me/invitations/studio/decline')
+    })
+  })
+
+  describe('search results', () => {
+    it('shows local matches at once and people from the server after a pause', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+      try {
+        found = [{ identity: { user: 'sam', display_name: 'Sam Doe' } }]
+        const { w } = await openApp()
+        const bar = w.findComponent(PynTopBar)
+        const first = sampleRepos[0]
+        bar.vm.$emit('input', first.name.slice(0, 3))
+        await flushPromises()
+        const local = bar.props('searchResults')!
+        expect(
+          local.some((r) => r.kind === 'repository' && r.label === `${first.owner}/${first.name}`),
+        ).toBe(true)
+        expect(local.some((r) => r.id === 'owner:sam')).toBe(false)
+        bar.vm.$emit('input', 'sam')
+        await vi.advanceTimersByTimeAsync(300)
+        await flushPromises()
+        expect(calls).toContain('GET /v1/users?q=sam&limit=5')
+        expect(bar.props('searchResults')).toContainEqual({
+          id: 'owner:sam',
+          kind: 'owner',
+          label: 'sam',
+          href: '/sam',
+          hint: 'Sam Doe',
+          avatarUrl: undefined,
+        })
+        bar.vm.$emit('input', '')
+        await flushPromises()
+        expect(bar.props('searchResults')).toEqual([])
+      } finally {
+        vi.useRealTimers()
+      }
     })
   })
 })
