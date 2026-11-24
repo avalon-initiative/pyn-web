@@ -50,6 +50,10 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/acme/-/teams/art', 'org-team', 'Home', 'acme', 'Teams', 'art'],
   ['/acme/-/audit', 'org-audit', 'Home', 'acme', 'Audit log'],
   ['/acme/-/settings', 'org-settings', 'Home', 'acme', 'Settings'],
+  ['/acme/-/settings/members', 'org-settings-members', 'Home', 'acme', 'Settings', 'Members'],
+  ['/acme/-/settings/teams', 'org-settings-teams', 'Home', 'acme', 'Settings', 'Teams'],
+  ['/acme/-/settings/usage', 'org-settings-usage', 'Home', 'acme', 'Settings', 'Usage'],
+  ['/acme/-/settings/audit', 'org-settings-audit', 'Home', 'acme', 'Settings', 'Audit log'],
   // Repository pages have no trail: the shell shows the owner / repo title.
   ['/alice/game', 'files'],
   ['/alice/game/tree/src/lib', 'tree'],
