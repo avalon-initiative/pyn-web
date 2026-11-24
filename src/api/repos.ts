@@ -29,10 +29,15 @@ export const listRepos = (owner?: string) =>
 export const exploreRepos = (query: { after?: string; limit?: number } = {}) =>
   call<Schemas['RepoPage']>(api.GET('/v1/explore/repos', { params: { query } }))
 
-export const createRepo = (owner: string, s: RepoSettings) =>
+export const createRepo = (owner: string, s: RepoSettings, starterPolicy?: boolean) =>
   call<RepoInfo>(
     api.POST('/v1/repos', {
-      body: { owner, ...s, max_locks_per_user: s.max_locks_per_user ?? undefined },
+      body: {
+        owner,
+        ...s,
+        max_locks_per_user: s.max_locks_per_user ?? undefined,
+        starter_policy: starterPolicy,
+      },
     }),
   )
 
