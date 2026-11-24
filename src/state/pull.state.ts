@@ -75,7 +75,7 @@ const withoutStatus = (query: string) =>
   query
     .trim()
     .split(/\s+/)
-    .filter((w) => w && !/^is:/i.test(w))
+    .filter((w) => w && !/^is:(open|closed|merged)$/i.test(w))
     .join(' ')
 
 /** The search with its `is:` qualifier set to the tab. */
@@ -105,6 +105,5 @@ export function pullAbilities(
   return {
     canMerge: canWrite(checkin, frozen),
     canManage: canWrite(checkin || (!!me && me === author), frozen),
-    canComment: canWrite(!!me && permissions.includes('read'), frozen),
   }
 }
