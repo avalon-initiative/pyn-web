@@ -11,7 +11,6 @@ import {
   fileBody,
   folderParam,
   repoPath,
-  railBranches,
   readmeEntry,
   VIEW_LIMIT,
   type ReadmeDoc,
@@ -36,15 +35,6 @@ const {
 } = inject(repoKey)!
 const user = inject(sessionKey)!.user
 const palette = inject(paletteKey, null)
-// The default branch first, then the most recently updated, at most five.
-const rail = computed(() =>
-  railBranches(
-    [...(branches?.value ?? [])].sort((a, b) =>
-      (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''),
-    ),
-  ),
-)
-const ACTIVITY_MAX = 5
 const route = useRoute()
 const origin = window.location.origin
 const slug = computed(() => `${target.value.owner}/${target.value.name}`)
@@ -52,12 +42,11 @@ const path = computed(() => folderParam(route.params.path))
 const branch = useBranch()
 const listing = ref<TreeListing | null>(null)
 const summary = ref<RepoSummary | null>(null)
-// The branch bar names summary.default_branch (on a branch, that branch); the rail shows five activity items.
+// The branch bar names summary.default_branch (on a branch, that branch).
 const barSummary = computed(() =>
   summary.value
     ? {
         ...summary.value,
-        activity: summary.value.activity.slice(0, ACTIVITY_MAX),
         ...(branch.value ? { default_branch: branch.value } : {}),
       }
     : null,
@@ -156,7 +145,7 @@ onUnmounted(() => clearInterval(timer))
     :listing="shown"
     :summary="barSummary"
     :branches="branches"
-    :rail-branches="rail"
+    hide-rail-branches
     :branches-href="branches?.length ? repoPath(target, 'branches') : undefined"
     :branch-count="branches?.length"
     :branches-loading="branchesLoading"

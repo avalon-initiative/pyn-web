@@ -159,7 +159,6 @@ const branches = computed(() =>
           behind: compare.result.value.behind,
         }
       : null,
-    Infinity,
   ),
 )
 
