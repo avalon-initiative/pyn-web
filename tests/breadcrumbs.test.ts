@@ -52,6 +52,14 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/acme/-/settings', 'org-settings', 'Home', 'acme', 'Settings'],
   ['/acme/-/settings/members', 'org-settings-members', 'Home', 'acme', 'Settings', 'Members'],
   ['/acme/-/settings/teams', 'org-settings-teams', 'Home', 'acme', 'Settings', 'Teams'],
+  [
+    '/acme/-/settings/policy',
+    'org-settings-policy',
+    'Home',
+    'acme',
+    'Settings',
+    'Repository policy',
+  ],
   ['/acme/-/settings/usage', 'org-settings-usage', 'Home', 'acme', 'Settings', 'Usage'],
   ['/acme/-/settings/audit', 'org-settings-audit', 'Home', 'acme', 'Settings', 'Audit log'],
   // Repository pages have no trail: the shell shows the owner / repo title.

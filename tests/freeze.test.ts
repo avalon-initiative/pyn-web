@@ -22,6 +22,7 @@ import { createMemoryHistory } from 'vue-router'
 import { makeRouter } from '../src/router'
 import RepoLocksView from '../src/views/RepoLocksView.vue'
 import OrgMembersView from '../src/views/OrgMembersView.vue'
+import OrgPolicyView from '../src/views/OrgPolicyView.vue'
 import OrgSettingsView from '../src/views/OrgSettingsView.vue'
 import RepoMembersView from '../src/views/RepoMembersView.vue'
 import RepoGeneralView from '../src/views/RepoGeneralView.vue'
@@ -261,11 +262,15 @@ describe('gating', () => {
 
     it.each([true, false])('OrgSettingsView sets readonly to %s', async (frozen) => {
       stubFetch()
+      const policy = mount(OrgPolicyView, {
+        global: { provide: provide(orgKey as symbol, orgCtx(frozen)) },
+      })
+      await flushPromises()
+      expect(Boolean(policy.findComponent(PynOrgRepoPolicy).props('readonly'))).toBe(frozen)
       const w = mount(OrgSettingsView, {
         global: { provide: provide(orgKey as symbol, orgCtx(frozen)) },
       })
       await flushPromises()
-      expect(Boolean(w.findComponent(PynOrgRepoPolicy).props('readonly'))).toBe(frozen)
       expect(Boolean(w.findComponent(PynOrgDelete).props('readonly'))).toBe(frozen)
     })
   })

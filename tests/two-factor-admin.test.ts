@@ -127,6 +127,9 @@ describe('organization settings', () => {
     })
     const w = mount(OrgSettingsView, { global: { provide } })
     await flushPromises()
+    expect(w.findComponent(PynTwoFactorRequirement).props('title')).toBe(
+      'Two-factor authentication',
+    )
     w.findComponent(PynOrgSettings).vm.$emit('save', { exclusive_read_only: true })
     w.findComponent(PynTwoFactorRequirement).vm.$emit('change', { required: true, grace_days: 3 })
     await flushPromises()

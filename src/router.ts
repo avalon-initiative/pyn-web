@@ -42,6 +42,7 @@ import VerifyEmailView from './views/VerifyEmailView.vue'
 import NewOrgView from './views/NewOrgView.vue'
 import OrgAuditView from './views/OrgAuditView.vue'
 import OrgMembersView from './views/OrgMembersView.vue'
+import OrgPolicyView from './views/OrgPolicyView.vue'
 import OrgSettingsLayout from './views/OrgSettingsLayout.vue'
 import OrgSettingsView from './views/OrgSettingsView.vue'
 import OrgTeamsView from './views/OrgTeamsView.vue'
@@ -133,6 +134,7 @@ export const routes: RouteRecordRaw[] = [
           { path: '', name: 'org-settings', component: OrgSettingsView },
           { path: 'members', name: 'org-settings-members', component: OrgMembersView },
           { path: 'teams', name: 'org-settings-teams', component: OrgTeamsView },
+          { path: 'policy', name: 'org-settings-policy', component: OrgPolicyView },
           { path: 'usage', name: 'org-settings-usage', component: OwnerUsageView },
           { path: 'audit', name: 'org-settings-audit', component: OrgAuditView },
         ],
