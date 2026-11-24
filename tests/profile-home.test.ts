@@ -167,6 +167,26 @@ describe('organization home', () => {
     expect(w.findComponent(PynRepoList).props('boxed')).toBe(true)
   })
 
+  it('offers New repository to an owner on the overview and the Repositories tab', async () => {
+    stub(urls)
+    const owner = { ...studio, role: 'owner' }
+    for (const route of ['owner', 'owner-repositories']) {
+      const w = view('ada', route, owner, 'studio')
+      await flushPromises()
+      const link = w.findAll('a').filter((a) => a.text() === 'New repository')
+      expect(link.map((a) => a.attributes('href'))).toEqual(['/_/new?owner=studio'])
+    }
+  })
+
+  it('offers no New repository to a member or a visitor', async () => {
+    stub(urls)
+    for (const role of ['member', null]) {
+      const w = view('ada', 'owner', { ...studio, role }, 'studio')
+      await flushPromises()
+      expect(w.text()).not.toContain('New repository')
+    }
+  })
+
   it('keeps the member list a bare name when a member has no identity', () => {
     expect(peopleOf([{ user: 'bob', role: 'member' }])).toEqual([{ identity: { user: 'bob' } }])
   })
