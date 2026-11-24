@@ -1,4 +1,5 @@
 import {
+  PynActivity,
   PynBranchBar,
   PynEmptyState,
   PynOrgList,
@@ -230,7 +231,7 @@ describe('repository with no files yet', () => {
       path: `f${i}`,
     }))
     const w = await open([entry('a', 'file')], '', { activity })
-    expect(w.findComponent(PynRepoLanding).props('summary')?.activity).toHaveLength(5)
+    expect(w.findComponent(PynActivity).findAll('li')).toHaveLength(5)
   })
 
   it('also shows it for a completely empty root', async () => {
