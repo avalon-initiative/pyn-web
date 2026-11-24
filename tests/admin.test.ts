@@ -57,7 +57,7 @@ describe('PynTopBar', () => {
 
   it('has Account settings for everyone and Server administration for administrators only', async () => {
     const admin = await open(true)
-    expect(admin.find('a[href="/_/settings"]').text()).toBe('Account settings')
+    expect(admin.find('a[href="/_/settings"]').text()).toBe('Settings')
     expect(admin.find('a[href="/_/admin"]').text()).toBe('Server administration')
     const user = await open()
     expect(user.find('a[href="/_/settings"]').exists()).toBe(true)

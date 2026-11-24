@@ -534,6 +534,7 @@ onMounted(async () => {
             :extra-links="exploreLinks"
             :owners="owners"
             :current-owner="currentOwner"
+            :repo="currentRepo?.name"
             :locks-held="locksHeld"
             :locks-expiring="locksExpiring"
             :notifications="notifications"
