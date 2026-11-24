@@ -55,6 +55,7 @@ import {
   resetTopBar,
   topBarExtras,
   topBarOwners,
+  bellActions,
   useTopBar,
 } from './state/top-bar.state'
 import { recentItems, setRecentUser } from './state/recent.state'
@@ -147,7 +148,8 @@ const exploreLinks = [{ id: 'explore', label: 'Explore', href: '/_/explore' }]
 const slugs = computed(() => sessionRepos.value.map(repoSlug))
 const owners = computed(() => topBarOwners(user.value, sessionOrgs.value))
 const extras = computed(() => topBarExtras(props.navItems, props.accountMenuItems))
-const { locksHeld, locksExpiring, notifications } = useTopBar()
+const { locksHeld, locksExpiring, bellEntries } = useTopBar()
+const bell = bellActions((path) => router.push(path))
 const currentOwner = computed(() => {
   const owner = String(route.params.owner ?? '')
   return owners.value.some((o) => o.name === owner) ? owner : undefined
@@ -553,27 +555,17 @@ onMounted(async () => {
             :repo="currentRepo?.name"
             :locks-held="locksHeld"
             :locks-expiring="locksExpiring"
-            :notifications="notifications"
+            :notification-entries="bellEntries"
+            @dismiss-notification="bell.dismiss"
+            @accept-notification="bell.accept"
+            @decline-notification="bell.decline"
             @account="(id) => selectAccountItem(extras, id)"
             @open="(slug) => router.push(`/${slug}`)"
             @search="palette.show"
             @shortcuts="palette.showHelp"
             @theme="setTheme"
             @sign-out="leave"
-          >
-            <template v-if="onDashboard" #drawer>
-              <PynSideRail
-                :account="user"
-                :display-name="ownProfile.display_name"
-                :avatar-url="ownProfile.avatar_url"
-                :items="railItems"
-                current="home"
-                :repos="sessionRepos"
-                :orgs="sessionOrgs"
-                create-org-href="/_/new-org"
-              />
-            </template>
-          </PynTopBar>
+          />
         </template>
         <PynSecurityNotice
           v-if="securityNotice && route.path !== SECURITY_PATH"
