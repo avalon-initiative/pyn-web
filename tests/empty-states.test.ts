@@ -107,6 +107,11 @@ describe('owner page', () => {
       created_at: '2026-01-01T00:00:00Z',
     }) as never
 
+  beforeEach(() => {
+    vi.mocked(orgsApi.listOrgMembers).mockResolvedValue([])
+    vi.mocked(profileApi.listStarred).mockResolvedValue([])
+  })
+
   it('offers the owner of an empty profile a way to create a repository', async () => {
     vi.mocked(profileApi.getProfile).mockResolvedValue(profile('alice', []))
     const w = mount(OwnerView, options(ctx('alice', null)))
@@ -138,7 +143,7 @@ describe('owner page', () => {
     vi.mocked(reposApi.listRepos).mockResolvedValue(sampleRepos)
     const w = mount(OwnerView, options(ctx('studio', orgs[0])))
     await flushPromises()
-    expect(action(w).exists()).toBe(false)
+    expect(action(w).props('title')).toBe('Pinned repositories')
     expect(w.findComponent(PynRepoList).exists()).toBe(true)
   })
 })

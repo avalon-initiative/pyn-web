@@ -45,6 +45,7 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/_/settings/delete', 'delete-account', 'Home', 'Settings', 'Delete account'],
   ['/alice', 'owner', 'Home', 'alice'],
   ['/alice/-/repositories', 'owner-repositories', 'Home', 'alice', 'Repositories'],
+  ['/alice/-/stars', 'owner-stars', 'Home', 'alice', 'Stars'],
   ['/alice/-/usage', 'owner-usage', 'Home', 'alice', 'Usage'],
   ['/acme/-/members', 'org-members', 'Home', 'acme', 'Members'],
   ['/acme/-/teams', 'org-teams', 'Home', 'acme', 'Teams'],

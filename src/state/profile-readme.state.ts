@@ -1,6 +1,8 @@
 import { fileBody, readmeEntry, VIEW_LIMIT } from '@avalon-initiative/pyn-common-ui'
 import type {
   FetchedContent,
+  OrgMember,
+  PersonEntry,
   ReadmeDoc,
   RepoInfo,
   TreeEntry,
@@ -38,8 +40,6 @@ export async function loadProfileReadme(
 }
 
 /** People-directory rows for the organization home from its member list. */
-export function peopleOf(
-  members: { user: string; identity?: { user: string } | null }[],
-): { identity: { user: string } }[] {
+export function peopleOf(members: OrgMember[]): PersonEntry[] {
   return members.map((m) => ({ identity: m.identity ?? { user: m.user } }))
 }

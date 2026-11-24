@@ -61,7 +61,7 @@ watch(
         if (org.value) {
           repos.value = sortRepos(await listRepos(name.value))
           if (org.value.role)
-            people.value = peopleOf(await listOrgMembers(name.value).catch(() => [])) as never
+            people.value = peopleOf(await listOrgMembers(name.value).catch(() => []))
         } else {
           profile.value = await getProfile(name.value)
           repos.value = sortRepos(profile.value.repositories)

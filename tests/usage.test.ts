@@ -3,7 +3,6 @@ import {
   PynOrgHeader,
   PynStorageCapForm,
   PynUsageBreakdown,
-  PynUserHeader,
 } from '@avalon-initiative/pyn-common-ui'
 import type { OwnerUsage, RepoUsage, RepoUsageBreakdown } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -16,7 +15,7 @@ import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
 import { canOpenSettings, canSeeStorage, canSetCap } from '../src/state/repo-access.state'
 import { ownerParam, routes } from '../src/router'
 import OrgView from '../src/views/OrgView.vue'
-import OwnerUsageView from '../src/views/OwnerUsageView.vue'
+import OwnerUsagePanel from '../src/views/OwnerUsagePanel.vue'
 import RepoStorageView from '../src/views/RepoStorageView.vue'
 
 const row = (name: string, bytes: number, cap: number | null = null, lfs = 0): RepoUsage => ({
@@ -102,9 +101,9 @@ describe('routes', () => {
   })
 })
 
-describe('OwnerUsageView', () => {
+describe('OwnerUsagePanel', () => {
   const mountView = (push = vi.fn()) =>
-    mount(OwnerUsageView, {
+    mount(OwnerUsagePanel, {
       global: {
         provide: {
           [routerKey as symbol]: { push },
@@ -297,13 +296,5 @@ describe('owner navigation', () => {
     expect(owner.findComponent(PynOrgHeader).props('current')).toBe('usage')
     const member = await mountOrgView('/acme', 'alice', 'member')
     expect(hrefs(member)).not.toContain('/acme/-/usage')
-  })
-
-  it('links the user Usage tab on the own profile only', async () => {
-    const own = await mountOrgView('/alice/-/usage', 'alice', null)
-    expect(hrefs(own)).toEqual(['/alice', '/alice/-/usage'])
-    expect(own.findComponent(PynUserHeader).props('current')).toBe('usage')
-    const other = await mountOrgView('/alice', 'bob', null)
-    expect(other.findComponent(PynUserHeader).exists()).toBe(false)
   })
 })
