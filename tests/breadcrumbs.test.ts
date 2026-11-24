@@ -70,6 +70,7 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/alice/game/blob/src/a.txt', 'blob'],
   ['/alice/game/locks', 'locks'],
   ['/alice/game/branches', 'branches'],
+  ['/alice/game/tags', 'tags'],
   ['/alice/game/pulls', 'pulls'],
   ['/alice/game/pulls/7', 'pull'],
   ['/alice/game/pulls/7/commits', 'pull-commits'],

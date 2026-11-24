@@ -31,6 +31,10 @@ const {
   branchesLoading,
   branchesError,
   selectBranch,
+  tags,
+  tagsLoading,
+  tagsError,
+  tagsHref,
   compare,
   starCount,
   watcherCount,
@@ -152,6 +156,11 @@ onUnmounted(() => clearInterval(timer))
     :branch-count="branches?.length"
     :branches-loading="branchesLoading"
     :branches-error="branchesError || undefined"
+    :tags="tags"
+    :tags-loading="tagsLoading"
+    :tags-error="tagsError || undefined"
+    :tags-href="tagsHref"
+    :tag-count="tagsLoading || tagsError ? undefined : tags?.length"
     :https-url="permissions.includes('read') ? `${origin}/${slug}` : undefined"
     :clone-command="`pyn clone ${slug}`"
     :readme="readme"
@@ -160,7 +169,7 @@ onUnmounted(() => clearInterval(timer))
     :now="now"
     :about="{ stars: starCount, watching: watcherCount }"
     go-to-file
-    @select="selectBranch?.($event)"
+    @select="(name, kind) => selectBranch?.(name, kind)"
     @go-to-file="palette?.show()"
   >
     <template v-if="compare?.show.value" #compare>
