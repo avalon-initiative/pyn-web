@@ -97,7 +97,7 @@ async function open(path: string, permissions = ['read'], overrides = {}) {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('tab row', () => {
-  it('puts Branches before History and Policy after it', () => {
+  it('puts Pull requests after Code, Branches before History and Policy after it', () => {
     const tabs = [
       { section: '', label: 'Code' },
       { section: 'locks', label: 'Locks' },
@@ -106,6 +106,7 @@ describe('tab row', () => {
     ]
     expect(withPolicyTabs(tabs).map((t) => t.label)).toEqual([
       'Code',
+      'Pull requests',
       'Locks',
       'Branches',
       'History',
