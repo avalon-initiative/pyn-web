@@ -31,6 +31,8 @@ const requested = computed(() => {
   return typeof q === 'string' && owners.value.includes(q) ? q : ''
 })
 const owner = computed(() => chosen.value || requested.value || user.value)
+const typed = ref('')
+const nameCanonical = computed(() => (typed.value.trim() ? canonicalName(typed.value) : ''))
 const sent = ref('')
 const { busy, error, attempt } = useAction(true, (e) =>
   describeRepoNameError(e, owner.value, sent.value),
@@ -67,7 +69,9 @@ const create = (settings: RepoSettings) => {
     :owners="owners"
     :busy="busy"
     :error="error"
+    :name-canonical="nameCanonical"
     cancel-href="/"
+    @name-input="typed = $event"
     @update:owner="chosen = $event"
     @submit="create"
   >
