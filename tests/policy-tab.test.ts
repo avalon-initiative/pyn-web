@@ -1,5 +1,5 @@
 import {
-  PynBranchList,
+  PynBranchesPage,
   PynPolicyView,
   PynRepoShell,
   PynFileView,
@@ -166,7 +166,7 @@ describe('policy tab', () => {
 describe('branches page', () => {
   it('lists branches with the default marked and ahead/behind from compare', async () => {
     const { w, calls } = await open('/acme/game/branches')
-    const items = w.findComponent(PynBranchList).props('branches')
+    const items = w.findComponent(PynBranchesPage).props('branches')
     expect(items).toEqual([
       expect.objectContaining({ name: 'main', isDefault: true, href: '/acme/game' }),
       expect.objectContaining({
@@ -184,7 +184,7 @@ describe('branches page', () => {
     const { w } = await open('/acme/game/branches', ['read'], {
       '/v1/repos/acme/game/compare': { code: 'internal', message: 'boom' },
     })
-    const items = w.findComponent(PynBranchList).props('branches')
+    const items = w.findComponent(PynBranchesPage).props('branches')
     expect(items.map((b: { name: string }) => b.name)).toEqual(['main', 'feature'])
     expect(items[1].ahead).toBeUndefined()
   })
