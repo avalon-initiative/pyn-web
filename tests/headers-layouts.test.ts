@@ -165,15 +165,17 @@ describe('overview Branches panel', () => {
     expect(w.text()).toContain('Branches')
   })
 
-  it('passes a rail with the default branch first, capped at five', async () => {
+  it('hides the rail Branches panel and keeps the link to the branches page', async () => {
     const many = ['a', 'b', 'c', 'd', 'e', 'f'].map((n, i) =>
       branch(n, `2026-10-0${i + 1}T10:00:00Z`),
     )
     many.push(branch('main', '2026-09-01T10:00:00Z', true))
     const { w } = await open('/acme/game', { branches: many })
-    const rail = w.findComponent(PynRepoLanding).props('railBranches')!
-    expect(rail.map((b: { name: string }) => b.name)).toEqual(['main', 'f', 'e', 'd', 'c'])
-    expect(w.findComponent(PynRepoLanding).props('branches')).toHaveLength(7)
+    const landing = w.findComponent(PynRepoLanding)
+    expect(landing.props('hideRailBranches')).toBe(true)
+    expect(landing.props('branchesHref')).toBe('/acme/game/branches')
+    expect(landing.props('railBranches')).toBeUndefined()
+    expect(landing.props('branches')).toHaveLength(7)
   })
 
   it('wires the code toolbar: go to file opens the palette, no ZIP and no SSH yet', async () => {
@@ -212,12 +214,21 @@ describe('overview Branches panel', () => {
     expect(w.find('#branches-title').exists()).toBe(false)
   })
 
-  it('caps the rail at five and keeps the helpers pure', () => {
+  it('sorts branches newest first and keeps the helpers pure', () => {
     const many = Array.from({ length: 8 }, (_, i) => ({
       name: `b${i}`,
       updatedAt: `2026-10-0${i}`,
     }))
-    expect(railBranches(many)).toHaveLength(5)
+    expect(railBranches(many).map((b) => b.name)).toEqual([
+      'b7',
+      'b6',
+      'b5',
+      'b4',
+      'b3',
+      'b2',
+      'b1',
+      'b0',
+    ])
     expect(lockHolders(summary.locks.concat(summary.locks))).toEqual(['jamie', 'bob'])
   })
 })
