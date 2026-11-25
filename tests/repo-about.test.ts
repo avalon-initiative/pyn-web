@@ -6,6 +6,7 @@ import {
   PynSettingsToggle,
   PynTextArea,
   PynTextField,
+  PynTopicsInput,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,9 +17,9 @@ import * as reposApi from '../src/api/repos'
 import { makeRouter } from '../src/router'
 import { orgKey, repoKey, sessionKey } from '../src/state/context.state'
 import {
+  aboutChanged,
   aboutFields,
   aboutRequest,
-  parseTopics,
   topLanguages,
   topTopics,
 } from '../src/state/repo-about.state'
@@ -42,31 +43,21 @@ const described = (over: Partial<RepoDetails>): RepoDetails => ({ ...sampleRepos
 beforeEach(() => vi.resetAllMocks())
 
 describe('about fields', () => {
-  it('splits, lowercases and dedupes topics', () => {
-    expect(parseTopics(' Game, castle  game,,rpg ')).toEqual({
-      topics: ['game', 'castle', 'rpg'],
-      error: '',
-    })
-    expect(parseTopics('')).toEqual({ topics: [], error: '' })
-  })
-
-  it('refuses a topic outside a-z0-9- or longer than 50, and more than 20', () => {
-    expect(parseTopics('c++').error).toContain('"c++"')
-    expect(parseTopics('a'.repeat(51)).error).not.toBe('')
-    expect(parseTopics('a'.repeat(50)).error).toBe('')
-    const many = Array.from({ length: 21 }, (_, i) => `t${i}`).join(',')
-    expect(parseTopics(many).error).toBe('At most 20 topics.')
-  })
-
   it('clears blank description and website with null', () => {
-    expect(aboutRequest({ description: '  ', website: '', topics: '' }, [])).toEqual({
+    expect(aboutRequest({ description: '  ', website: '', topics: [] })).toEqual({
       description: null,
       website: null,
       topics: [],
     })
     expect(
       aboutFields(described({ description: 'd', website: 'https://x.dev', topics: ['a', 'b'] })),
-    ).toEqual({ description: 'd', website: 'https://x.dev', topics: 'a, b' })
+    ).toEqual({ description: 'd', website: 'https://x.dev', topics: ['a', 'b'] })
+  })
+
+  it('tells edited fields from the saved ones', () => {
+    const r = described({ description: 'd', topics: ['a'] })
+    expect(aboutChanged(aboutFields(r), r)).toBe(false)
+    expect(aboutChanged({ ...aboutFields(r), topics: ['a', 'b'] }, r)).toBe(true)
   })
 
   it('ranks languages by total bytes and topics by use', () => {
@@ -178,8 +169,9 @@ function mountGeneral(repo: RepoDetails) {
 
 const field = (w: ReturnType<typeof mount>, label: string) =>
   w.findAllComponents(PynTextField).find((f) => f.props('label') === label)!
-const saveButton = (w: ReturnType<typeof mount>) =>
-  w.findAllComponents(PynButton).find((b) => b.props('label') === 'Save changes')!
+const button = (w: ReturnType<typeof mount>, label: string) =>
+  w.findAllComponents(PynButton).find((b) => b.props('label') === label)!
+const saveButton = (w: ReturnType<typeof mount>) => button(w, 'Save changes')
 
 describe('repository settings About', () => {
   it('prefills and saves description, website and topics', async () => {
@@ -190,10 +182,11 @@ describe('repository settings About', () => {
     const area = w.findComponent(PynTextArea)
     expect(area.props('modelValue')).toBe('old')
     expect(area.props('maxlength')).toBe(350)
-    expect(field(w, 'Topics').props('modelValue')).toBe('game')
+    const topics = w.findComponent(PynTopicsInput)
+    expect(topics.props('modelValue')).toEqual(['game'])
     area.vm.$emit('update:modelValue', 'A castle game')
     field(w, 'Website').vm.$emit('update:modelValue', ' ')
-    field(w, 'Topics').vm.$emit('update:modelValue', 'Game, RPG')
+    topics.vm.$emit('update:modelValue', ['game', 'rpg'])
     await flushPromises()
     await saveButton(w).trigger('click')
     await flushPromises()
@@ -204,15 +197,45 @@ describe('repository settings About', () => {
     expect(reload).toHaveBeenCalled()
   })
 
-  it('shows a topic error and does not save', async () => {
+  it('adds a typed topic on save and refuses one that cannot be added', async () => {
+    const repo = described({ topics: [] })
+    vi.mocked(reposApi.updateRepo).mockResolvedValue(repo)
+    const { w } = mountGeneral(repo)
+    await flushPromises()
+    const input = w.findComponent(PynTopicsInput).find('input')
+    await input.setValue('c++')
+    await saveButton(w).trigger('click')
+    await flushPromises()
+    expect(reposApi.updateRepo).not.toHaveBeenCalled()
+    await input.setValue('Castle')
+    await saveButton(w).trigger('click')
+    await flushPromises()
+    expect(reposApi.updateRepo).toHaveBeenCalledWith(
+      { owner: 'alice', name: repo.name },
+      expect.objectContaining({ topics: ['castle'] }),
+    )
+  })
+
+  it('puts a server topic refusal under the topics field', async () => {
+    vi.mocked(reposApi.updateRepo).mockRejectedValue(new Error('too many topics'))
     const { w } = mountGeneral(described({}))
     await flushPromises()
-    field(w, 'Topics').vm.$emit('update:modelValue', 'c++')
-    await flushPromises()
-    expect(field(w, 'Topics').props('error')).toContain('c++')
-    expect(saveButton(w).props('disabled')).toBe(true)
     await saveButton(w).trigger('click')
-    expect(reposApi.updateRepo).not.toHaveBeenCalled()
+    await flushPromises()
+    expect(w.findComponent(PynTopicsInput).props('error')).toContain('too many topics')
+  })
+
+  it('keeps Save and Cancel in the section footer and Cancel resets', async () => {
+    const { w } = mountGeneral(described({ description: 'old' }))
+    await flushPromises()
+    expect(button(w, 'Cancel').props('disabled')).toBe(true)
+    w.findComponent(PynTextArea).vm.$emit('update:modelValue', 'new')
+    await flushPromises()
+    expect(button(w, 'Cancel').props('disabled')).toBe(false)
+    await button(w, 'Cancel').trigger('click')
+    await flushPromises()
+    expect(w.findComponent(PynTextArea).props('modelValue')).toBe('old')
+    expect(w.find('[data-about] [data-footer]').text()).toBe('CancelSave changes')
   })
 
   it('no longer passes About fields through the settings form', async () => {
@@ -245,6 +268,31 @@ describe('repository settings About', () => {
 })
 
 describe('new repository description', () => {
+  it('shows the website and topics fields and sends them', async () => {
+    vi.mocked(orgsApi.listMyOrgs).mockResolvedValue([])
+    vi.mocked(reposApi.createRepo).mockResolvedValue(sampleRepos[0])
+    const w = mount(NewRepoView, {
+      global: { plugins: [makeRouter(createMemoryHistory())], provide: session },
+    })
+    await flushPromises()
+    const form = w.findComponent(PynRepoForm)
+    expect(form.props('websiteField')).toBe(true)
+    expect(form.props('topicsField')).toBe(true)
+    form.vm.$emit('submit', {
+      name: 'castle',
+      visibility: 'public',
+      lease_hours: 8,
+      website: 'https://castle.dev',
+      topics: ['game'],
+    })
+    await flushPromises()
+    expect(reposApi.createRepo).toHaveBeenCalledWith(
+      'alice',
+      expect.objectContaining({ website: 'https://castle.dev', topics: ['game'] }),
+      true,
+    )
+  })
+
   it('sends the description the form gives', async () => {
     vi.mocked(orgsApi.listMyOrgs).mockResolvedValue([])
     vi.mocked(reposApi.createRepo).mockResolvedValue(sampleRepos[0])

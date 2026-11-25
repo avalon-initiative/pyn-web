@@ -1,43 +1,28 @@
 import type { RepoDetails, UpdateRepoRequest } from '../types/repo.types'
 
 export const DESCRIPTION_MAX = 350
-export const TOPICS_MAX = 20
-const TOPIC = /^[a-z0-9-]{1,50}$/
-
-/** Splits on commas and whitespace, lowercases and drops repeats; `error` names the first rule broken. */
-export function parseTopics(text: string): { topics: string[]; error: string } {
-  const topics = [
-    ...new Set(
-      text
-        .split(/[\s,]+/)
-        .map((t) => t.toLowerCase())
-        .filter(Boolean),
-    ),
-  ]
-  const bad = topics.find((t) => !TOPIC.test(t))
-  if (bad) return { topics, error: `"${bad}" is not a topic: use 1 to 50 of a-z, 0-9 and -.` }
-  if (topics.length > TOPICS_MAX) return { topics, error: `At most ${TOPICS_MAX} topics.` }
-  return { topics, error: '' }
-}
 
 export interface AboutFields {
   description: string
   website: string
-  topics: string
+  topics: string[]
 }
 
 export const aboutFields = (r: RepoDetails): AboutFields => ({
   description: r.description ?? '',
   website: r.website ?? '',
-  topics: (r.topics ?? []).join(', '),
+  topics: [...(r.topics ?? [])],
 })
 
 /** The PATCH body for the About fields; blank clears. */
-export const aboutRequest = (f: AboutFields, topics: string[]): UpdateRepoRequest => ({
+export const aboutRequest = (f: AboutFields): UpdateRepoRequest => ({
   description: f.description.trim() || null,
   website: f.website.trim() || null,
-  topics,
+  topics: f.topics,
 })
+
+export const aboutChanged = (f: AboutFields, r: RepoDetails) =>
+  JSON.stringify(f) !== JSON.stringify(aboutFields(r))
 
 /** Language names across repositories, by total bytes, largest first. */
 export function topLanguages(repos: RepoDetails[], max = 5): string[] {

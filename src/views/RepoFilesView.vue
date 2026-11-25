@@ -174,6 +174,7 @@ onUnmounted(() => clearInterval(timer))
       stars: starCount,
       watching: watcherCount,
       forks: repo.fork_count,
+      languages: repo.languages,
     }"
     go-to-file
     @select="(name, kind) => selectBranch?.(name, kind)"
