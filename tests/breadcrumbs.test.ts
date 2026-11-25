@@ -73,6 +73,7 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/alice/game/tags', 'tags'],
   ['/alice/game/pulls', 'pulls'],
   ['/alice/game/pulls/new', 'pull-new'],
+  ['/alice/game/fork', 'fork'],
   ['/alice/game/pulls/7', 'pull'],
   ['/alice/game/pulls/7/commits', 'pull-commits'],
   ['/alice/game/pulls/7/checks', 'pull-checks'],

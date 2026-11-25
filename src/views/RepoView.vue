@@ -13,6 +13,9 @@ import {
   PynBranchCompare,
   blobPath,
   repoPath,
+  FORK_CREATE,
+  type ForkLink,
+  type SocialKind,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -25,6 +28,7 @@ import {
   deleteWatch,
   getRepo,
   listBranches,
+  listForks,
   listLocks,
   putStar,
   putWatch,
@@ -40,6 +44,7 @@ import { useOwnerFreeze } from '../state/freeze.state'
 import { refusedSignedOut } from '../state/public.state'
 import { useRepoStar } from '../state/repo-star.state'
 import { useRepoWatch } from '../state/repo-watch.state'
+import { canFork, forkButton, forkLinks, forkOf } from '../state/repo-fork.state'
 import { withPolicyTabs } from '../state/repo-tabs.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
@@ -68,6 +73,7 @@ const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
 const locks = ref<LockInfo[] | null>(null)
 const openPulls = ref<number | undefined>(undefined)
+const forks = ref<ForkLink[] | undefined>(undefined)
 const notFound = ref(false)
 const ownerAvatar = ref<string | null>(null)
 // A signed-out miss reads the same for a private and a missing repository.
@@ -101,8 +107,23 @@ const watching = useRepoWatch(() => signedOut.value, requestSignIn, {
 })
 const social = computed(() => {
   const s = { watch: watching.button.value, star: star.button.value }
+  const r = repo.value
+  if (r) return { ...s, fork: forkButton(r, signedOut.value), forks: forks.value }
   return s.watch || s.star ? s : undefined
 })
+const forkPage = computed(() => repoPath(target.value, 'fork'))
+
+function onSocial(kind: SocialKind) {
+  if (kind === 'star') return star.toggle()
+  if (kind === 'watch') return watching.toggle()
+  if (repo.value && canFork(repo.value, signedOut.value)) void router.push(forkPage.value)
+}
+
+function onSocialMenu(kind: SocialKind, id: string) {
+  if (kind === 'watch') return watching.choose(id)
+  if (kind === 'fork' && id === FORK_CREATE) void router.push(forkPage.value)
+}
+
 const compare = useBranchCompare(target, compareHead, compareBranch)
 const showCompare = computed(
   () =>
@@ -173,6 +194,19 @@ async function loadPullCount() {
   }
 }
 
+// Only a repository with forks asks for them; the list only fills the Fork menu.
+async function loadForks() {
+  const t = target.value
+  forks.value = undefined
+  if (!repo.value?.fork_count) return void (forks.value = [])
+  try {
+    const list = await listForks(t)
+    if (t === target.value) forks.value = forkLinks(list)
+  } catch {
+    // Without the list the menu offers no existing forks.
+  }
+}
+
 // The picture only decorates the header: without it initials stand in.
 async function loadOwnerAvatar() {
   const t = target.value
@@ -200,7 +234,10 @@ watch(
         void loadLocks()
         void loadPullCount()
       }
-      if (repo.value) void loadOwnerAvatar()
+      if (repo.value) {
+        void loadOwnerAvatar()
+        void loadForks()
+      }
     })
   },
   { immediate: true },
@@ -289,8 +326,9 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :facts="facts"
       :hide-lock-strip="section === 'locks'"
       :social="social"
-      @social="(kind) => (kind === 'star' ? star.toggle() : kind === 'watch' && watching.toggle())"
-      @social-menu="(kind, id) => kind === 'watch' && watching.choose(id)"
+      :fork-of="forkOf(repo)"
+      @social="onSocial"
+      @social-menu="onSocialMenu"
     >
       <PynViewNotice v-if="star.error.value" tone="danger">{{ star.error.value }}</PynViewNotice>
       <PynViewNotice v-if="watching.error.value" tone="danger">{{
