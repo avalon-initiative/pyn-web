@@ -266,6 +266,7 @@ provide(repoKey, {
   locks,
   starCount: star.starCount,
   watcherCount: watching.watcherCount,
+  ownerAvatar,
   branches,
   branchesLoading: picker.loading,
   branchesError: picker.error,
@@ -320,6 +321,7 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :branch="branch"
       :owner-href="ownerHref"
       :owner-avatar-url="ownerAvatar"
+      :icon-url="repo.icon_url ?? null"
       :locked-count="locks?.length ?? 0"
       :pull-count="openPulls"
       :lock-holders="lockHolders(locks ?? [])"

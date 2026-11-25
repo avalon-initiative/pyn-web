@@ -66,6 +66,14 @@ export const forkRepo = (r: Repo, body: Schemas['ForkRepoRequest']) =>
 export const updateRepo = (r: Repo, s: UpdateRepoRequest) =>
   call<RepoDetails>(api.PATCH('/v1/repos/{owner}/{name}', { ...at(r), body: s }))
 
+export const uploadRepoIcon = (r: Repo, file: File) =>
+  call<RepoDetails>(
+    api.PUT('/v1/repos/{owner}/{name}/icon', { ...at(r), ...binaryBody(file, file.type) }),
+  )
+
+export const removeRepoIcon = (r: Repo) =>
+  call<RepoDetails>(api.DELETE('/v1/repos/{owner}/{name}/icon', at(r)))
+
 export const deleteRepo = (r: Repo) => call<void>(api.DELETE('/v1/repos/{owner}/{name}', at(r)))
 
 export const repoMe = (r: Repo) => call<Me>(api.GET('/v1/repos/{owner}/{name}/me', at(r)))

@@ -3,6 +3,7 @@ import {
   PynButton,
   PynRepoDelete,
   PynRepoForm,
+  PynRepoIconUpload,
   PynRepoVisibility,
   PynSettingsSection,
   PynSettingsToggle,
@@ -19,7 +20,7 @@ import {
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { deleteRepo, updateRepo } from '../api/repos'
+import { deleteRepo, removeRepoIcon, updateRepo, uploadRepoIcon } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { refreshRepos } from '../state/session-data.state'
@@ -31,14 +32,17 @@ import {
   aboutRequest,
   type AboutFields,
 } from '../state/repo-about.state'
+import { describeIconError } from '../state/repo-icon.state'
+import type { RepoDetails } from '../types/repo.types'
 
-const { repo, target, reload, org, frozen } = inject(repoKey)!
+const { repo, target, reload, org, frozen, ownerAvatar } = inject(repoKey)!
 const { user } = inject(sessionKey)!
 const router = useRouter()
 const saving = useAction()
 const savingAbout = useAction()
 const savingForks = useAction()
 const savingVisibility = useAction()
+const savingIcon = useAction(true, describeIconError)
 const removing = useAction()
 const isOwner = computed(() => isRepoOwner(target.value.owner, user.value, org.value))
 
@@ -106,6 +110,14 @@ const setVisibility = (visibility: Visibility) =>
     void refreshRepos()
   })
 
+const changeIcon = (change: () => Promise<RepoDetails>) =>
+  savingIcon.attempt(async () => {
+    repo.value = await change()
+    void refreshRepos()
+  })
+const uploadIcon = (file: File) => changeIcon(() => uploadRepoIcon(target.value, file))
+const clearIcon = () => changeIcon(() => removeRepoIcon(target.value))
+
 const remove = () =>
   removing.attempt(async () => {
     await deleteRepo(target.value)
@@ -125,6 +137,16 @@ const remove = () =>
       :busy="saving.busy.value"
       :error="saving.error.value"
       @submit="save"
+    />
+    <PynRepoIconUpload
+      :owner="repo.owner"
+      :icon-url="repo.icon_url"
+      :owner-avatar-url="ownerAvatar"
+      :readonly="frozen"
+      :busy="savingIcon.busy.value"
+      :error="savingIcon.error.value"
+      @upload="uploadIcon"
+      @clear="clearIcon"
     />
     <PynSettingsSection
       title="About"

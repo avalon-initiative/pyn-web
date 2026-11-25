@@ -15,6 +15,7 @@ export const repoExtras = {
   starred: false,
   watcher_count: 0,
   watching: null,
+  icon_url: null,
 } satisfies Partial<RepoDetails>
 
 export const sampleRepos: RepoDetails[] = [
