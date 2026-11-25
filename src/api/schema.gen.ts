@@ -3970,6 +3970,11 @@ export interface components {
     }
     /** @description Body of `POST /v1/repos/{owner}/{name}/forks`. */
     ForkRepoRequest: {
+      /**
+       * @description Copy only the default branch: its history, the tags pointing into it, and the uploads and LFS objects that
+       *     history names. `false` copies every branch and tag. Defaults to `true`.
+       */
+      default_branch_only?: boolean | null
       /** @description Defaults to the source's name. */
       name?: string | null
       /**
@@ -12929,7 +12934,7 @@ export interface operations {
       }
     }
     responses: {
-      /** @description the fork, with the source's visibility, history and policy and no locks; the caller becomes its admin */
+      /** @description the fork, with the source's visibility, history (only the default branch's unless default_branch_only is false) and policy and no locks; the caller becomes its admin */
       201: {
         headers: {
           [name: string]: unknown
@@ -12965,7 +12970,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description repo_exists, repo_limit_reached, fork_limit_reached, storage_limit_reached (the fork counts in full against the target owner), or org_deleting */
+      /** @description repo_exists, repo_limit_reached, fork_limit_reached, storage_limit_reached (what the fork copies counts in full against the target owner), or org_deleting */
       409: {
         headers: {
           [name: string]: unknown

@@ -57,6 +57,12 @@ export const putWatch = (r: Repo, level: Schemas['WatchLevel']) =>
 export const deleteWatch = (r: Repo) =>
   call<Schemas['WatchState']>(api.DELETE('/v1/repos/{owner}/{name}/watch', at(r)))
 
+export const listForks = (r: Repo) =>
+  call<RepoDetails[]>(api.GET('/v1/repos/{owner}/{name}/forks', at(r)))
+
+export const forkRepo = (r: Repo, body: Schemas['ForkRepoRequest']) =>
+  call<RepoDetails>(api.POST('/v1/repos/{owner}/{name}/forks', { ...at(r), body }))
+
 export const updateRepo = (r: Repo, s: UpdateRepoRequest) =>
   call<RepoDetails>(api.PATCH('/v1/repos/{owner}/{name}', { ...at(r), body: s }))
 

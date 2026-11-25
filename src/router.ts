@@ -29,6 +29,7 @@ import RepoBlobView from './views/RepoBlobView.vue'
 import RepoAuditView from './views/RepoAuditView.vue'
 import RepoBranchesView from './views/RepoBranchesView.vue'
 import RepoFilesView from './views/RepoFilesView.vue'
+import RepoForkView from './views/RepoForkView.vue'
 import RepoHistoryView from './views/RepoHistoryView.vue'
 import RepoLocksView from './views/RepoLocksView.vue'
 import RepoMembersView from './views/RepoMembersView.vue'
@@ -175,6 +176,7 @@ export const routes: RouteRecordRaw[] = [
       { path: 'tags', name: 'tags', component: RepoTagsView, meta: { public: true } },
       { path: 'pulls', name: 'pulls', component: RepoPullsView, meta: { public: true } },
       { path: 'pulls/new', name: 'pull-new', component: RepoPullNewView },
+      { path: 'fork', name: 'fork', component: RepoForkView },
       ...(['', 'commits', 'checks', 'files'] as const).map((tab) => ({
         path: `pulls/:number(\\d+)${tab && `/${tab}`}`,
         name: tab ? `pull-${tab}` : 'pull',
