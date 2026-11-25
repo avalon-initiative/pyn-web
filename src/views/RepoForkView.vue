@@ -7,15 +7,15 @@ import {
   type ForkFormValue,
   type OrgInfo,
 } from '@avalon-initiative/pyn-common-ui'
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { listMyOrgs } from '../api/orgs'
-import { forkRepo, updateRepo } from '../api/repos'
+import { forkRepo, getRepo, updateRepo } from '../api/repos'
 import { describeError } from '../api/client'
 import { useAction } from '../state/action.state'
 import { repoKey, sessionKey } from '../state/context.state'
 import { canonicalName, describeRepoNameError } from '../state/name.state'
-import { canFork } from '../state/repo-fork.state'
+import { canFork, defaultForkOwner } from '../state/repo-fork.state'
 import { refreshRepos } from '../state/session-data.state'
 import type { RepoDetails } from '../types/repo.types'
 
@@ -25,7 +25,9 @@ const router = useRouter()
 const orgs = ref<OrgInfo[]>([])
 const chosen = ref('')
 const owners = computed(() => ownerChoices(user.value, orgs.value))
-const owner = computed(() => chosen.value || user.value)
+// Owners known to hold a repository of the source's name; one the caller cannot read counts as free.
+const taken = ref<ReadonlySet<string>>(new Set())
+const owner = computed(() => chosen.value || defaultForkOwner(owners.value, taken.value))
 const typed = ref('')
 const nameCanonical = computed(() => (typed.value.trim() ? canonicalName(typed.value) : ''))
 const defaultBranch = computed(() => branches.value.find((b) => b.isDefault)?.name)
@@ -44,6 +46,22 @@ onMounted(() =>
     (o) => (orgs.value = o),
     () => undefined,
   ),
+)
+
+const holds = (o: string, name: string) =>
+  getRepo({ owner: o, name }).then(
+    () => true,
+    () => false,
+  )
+
+watch(
+  [owners, () => repo.value?.owner, () => repo.value?.name],
+  async ([list, source, name]) => {
+    if (!name || !user.value) return
+    const found = await Promise.all(list.map((o) => o === source || holds(o, name)))
+    if (list === owners.value) taken.value = new Set(list.filter((_, i) => found[i]))
+  },
+  { immediate: true },
 )
 
 const submit = (v: ForkFormValue) => {

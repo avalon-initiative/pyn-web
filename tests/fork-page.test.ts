@@ -51,6 +51,7 @@ describe('create-fork page', () => {
     vi.resetAllMocks()
     vi.mocked(orgsApi.listMyOrgs).mockResolvedValue(orgs)
     vi.mocked(reposApi.listRepos).mockResolvedValue([])
+    vi.mocked(reposApi.getRepo).mockRejectedValue(new ApiError(404, 'repo_not_found', 'not found'))
   })
 
   it('fills the form from the source and the account', async () => {
@@ -69,6 +70,36 @@ describe('create-fork page', () => {
     await flushPromises()
     expect(form().props('nameCanonical')).toBe('my-castle')
     expect(form().props('owner')).toBe('studio')
+  })
+
+  it('defaults to an organization when the person owns the source', async () => {
+    const { form } = mountFork({}, 'acme')
+    await flushPromises()
+    expect(form().props('owners')).toEqual(['acme', 'modding-club', 'studio'])
+    expect(form().props('owner')).toBe('modding-club')
+    expect(reposApi.getRepo).not.toHaveBeenCalledWith({ owner: 'acme', name: 'game' })
+  })
+
+  it('defaults to the first owner without a repository of that name', async () => {
+    vi.mocked(reposApi.getRepo).mockImplementation((r) =>
+      r.owner === 'studio'
+        ? Promise.reject(new ApiError(404, 'repo_not_found', 'not found'))
+        : Promise.resolve({ ...sampleRepos[0], ...r } as RepoDetails),
+    )
+    const { form } = mountFork()
+    await flushPromises()
+    expect(reposApi.getRepo).toHaveBeenCalledWith({ owner: 'modding-club', name: 'game' })
+    expect(form().props('owner')).toBe('studio')
+    form().vm.$emit('update:owner', 'alice')
+    await flushPromises()
+    expect(form().props('owner')).toBe('alice')
+  })
+
+  it('keeps the first owner when every owner has the repository', async () => {
+    vi.mocked(reposApi.getRepo).mockResolvedValue(sampleRepos[0] as RepoDetails)
+    const { form } = mountFork()
+    await flushPromises()
+    expect(form().props('owner')).toBe('alice')
   })
 
   it('forks, saves the description and opens the fork', async () => {
