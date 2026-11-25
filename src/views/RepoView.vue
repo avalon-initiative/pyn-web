@@ -251,6 +251,7 @@ const branches = computed(() =>
           head: compareHead.value,
           ahead: compare.result.value.ahead,
           behind: compare.result.value.behind,
+          countsCapped: compare.result.value.counts_capped,
         }
       : null,
   ),

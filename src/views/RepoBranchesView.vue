@@ -47,7 +47,9 @@ const items = computed<BranchListItem[]>(() =>
       updatedAt: b.updated_at,
       updatedBy: b.updated_by ? { username: b.updated_by } : undefined,
       href,
-      ...(b.default ? {} : { compareHref: href, ahead: b.ahead, behind: b.behind }),
+      ...(b.default
+        ? {}
+        : { compareHref: href, ahead: b.ahead, behind: b.behind, countsCapped: b.counts_capped }),
     }
   }),
 )

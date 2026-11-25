@@ -108,7 +108,12 @@ describe('branches page', () => {
     expect(page.props('stale')).toEqual(['old'])
     const rows = page.props('branches')
     expect(rows[0]).not.toHaveProperty('ahead')
-    expect(rows[1]).toMatchObject({ ahead: 2, behind: 1000, updatedBy: { username: 'bob' } })
+    expect(rows[1]).toMatchObject({
+      ahead: 2,
+      behind: 1000,
+      countsCapped: true,
+      updatedBy: { username: 'bob' },
+    })
     expect(rows[2].updatedBy).toBeUndefined()
   })
 
