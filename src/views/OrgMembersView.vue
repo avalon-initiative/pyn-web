@@ -6,6 +6,7 @@ import {
   orgPath,
   type NewOrgMember,
   PynLoading,
+  PynViewStack,
 } from '@avalon-initiative/pyn-common-ui'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -83,26 +84,28 @@ onMounted(async () => {
 </script>
 
 <template>
-  <PynLoading v-if="!loaded && !error" />
-  <PynOrgMembers
-    v-if="loaded"
-    v-model:adding="adding"
-    :members="members"
-    :self="user"
-    :owner="canManage"
-    :busy="busy"
-    :error="error"
-    :notice="notice"
-    @add="add"
-    @set-role="change"
-    @remove="remove"
-  />
-  <PynOrgPendingInvitations
-    v-if="loaded && owner"
-    :invitations="invitations"
-    :readonly="!canManage"
-    :busy="busy"
-    @cancel="cancel"
-  />
-  <p v-else-if="error" role="alert">{{ error }}</p>
+  <PynViewStack>
+    <PynLoading v-if="!loaded && !error" />
+    <PynOrgMembers
+      v-if="loaded"
+      v-model:adding="adding"
+      :members="members"
+      :self="user"
+      :owner="canManage"
+      :busy="busy"
+      :error="error"
+      :notice="notice"
+      @add="add"
+      @set-role="change"
+      @remove="remove"
+    />
+    <PynOrgPendingInvitations
+      v-if="loaded && owner"
+      :invitations="invitations"
+      :readonly="!canManage"
+      :busy="busy"
+      @cancel="cancel"
+    />
+    <p v-else-if="error" role="alert">{{ error }}</p>
+  </PynViewStack>
 </template>
