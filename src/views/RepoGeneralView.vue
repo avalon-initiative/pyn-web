@@ -7,6 +7,7 @@ import {
   PynSettingsToggle,
   PynTextArea,
   PynTextField,
+  PynTopicsInput,
   PynViewError,
   type RepoFormValue,
   type RepoSettings,
@@ -23,9 +24,9 @@ import { refreshRepos } from '../state/session-data.state'
 import { isRepoOwner } from '../state/repo-access.state'
 import {
   DESCRIPTION_MAX,
+  aboutChanged,
   aboutFields,
   aboutRequest,
-  parseTopics,
   type AboutFields,
 } from '../state/repo-about.state'
 
@@ -51,7 +52,7 @@ const form = computed<RepoFormValue | undefined>(() => {
   }
 })
 
-const about = ref<AboutFields>({ description: '', website: '', topics: '' })
+const about = ref<AboutFields>({ description: '', website: '', topics: [] })
 watch(
   () => repo.value?.id,
   () => {
@@ -59,7 +60,12 @@ watch(
   },
   { immediate: true },
 )
-const topics = computed(() => parseTopics(about.value.topics))
+const topicsInput = ref<InstanceType<typeof PynTopicsInput>>()
+const changed = computed(() => !!repo.value && aboutChanged(about.value, repo.value))
+// The server's refusal of a topic belongs under the topics field; anything else above the section.
+const topicsError = computed(() =>
+  /topic/i.test(savingAbout.error.value) ? savingAbout.error.value : '',
+)
 
 const save = (s: RepoSettings) =>
   saving.attempt(async () => {
@@ -70,13 +76,18 @@ const save = (s: RepoSettings) =>
   })
 
 const saveAbout = () => {
-  if (topics.value.error) return
+  if (topicsInput.value && !topicsInput.value.commit()) return
   return savingAbout.attempt(async () => {
-    const updated = await updateRepo(target.value, aboutRequest(about.value, topics.value.topics))
+    const updated = await updateRepo(target.value, aboutRequest(about.value))
     about.value = aboutFields(updated)
     void refreshRepos()
     await reload()
   })
+}
+
+const resetAbout = () => {
+  if (repo.value) about.value = aboutFields(repo.value)
+  savingAbout.error.value = ''
 }
 
 const setPrivateForks = (on: boolean) =>
@@ -109,9 +120,12 @@ const remove = () =>
       title="About"
       description="Shown on the repository page and in repository lists."
       plain
+      form-width
       data-about
     >
-      <PynViewError v-if="savingAbout.error.value">{{ savingAbout.error.value }}</PynViewError>
+      <PynViewError v-if="savingAbout.error.value && !topicsError">{{
+        savingAbout.error.value
+      }}</PynViewError>
       <PynTextArea
         v-model="about.description"
         label="Description"
@@ -129,21 +143,26 @@ const remove = () =>
         placeholder="https://example.com"
         :disabled="frozen"
       />
-      <PynTextField
+      <PynTopicsInput
+        ref="topicsInput"
         v-model="about.topics"
-        label="Topics"
         optional
-        help="Separate topics with commas: up to 20, each lowercase letters, digits and hyphens."
-        :error="topics.error"
+        :error="topicsError"
         :disabled="frozen"
       />
-      <div>
+      <template #footer>
+        <PynButton
+          label="Cancel"
+          variant="secondary"
+          :disabled="frozen || savingAbout.busy.value || !changed"
+          @click="resetAbout"
+        />
         <PynButton
           label="Save changes"
-          :disabled="frozen || savingAbout.busy.value || !!topics.error"
+          :disabled="frozen || savingAbout.busy.value"
           @click="saveAbout"
         />
-      </div>
+      </template>
     </PynSettingsSection>
     <PynSettingsSection v-if="repo?.visibility === 'private'" title="Forks" data-forks>
       <PynViewError v-if="savingForks.error.value">{{ savingForks.error.value }}</PynViewError>

@@ -190,12 +190,13 @@ describe('overview Branches panel', () => {
       stars: 0,
       watching: 0,
       forks: 0,
+      languages: [],
     })
     expect(landing.props('downloadZip')).toBeFalsy()
     expect(landing.props('sshUrl')).toBeUndefined()
   })
 
-  it('fills About from the repository description, website, topics and forks', async () => {
+  it('fills About from the repository description, website, topics, forks and languages', async () => {
     const { w } = await open('/acme/game', {
       repo: {
         ...repo,
@@ -203,6 +204,7 @@ describe('overview Branches panel', () => {
         website: 'https://castle.example',
         topics: ['game', 'castle'],
         fork_count: 3,
+        languages: [{ name: 'Rust', bytes: 900 }],
       },
     })
     expect(w.findComponent(PynRepoLanding).props('about')).toMatchObject({
@@ -210,6 +212,7 @@ describe('overview Branches panel', () => {
       website: 'https://castle.example',
       topics: ['game', 'castle'],
       forks: 3,
+      languages: [{ name: 'Rust', bytes: 900 }],
     })
   })
 

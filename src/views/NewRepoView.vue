@@ -66,6 +66,8 @@ const create = (settings: RepoSettings) => {
     intro="Repositories contain a project's files and version history."
     :suggestion="suggestion"
     describable
+    website-field
+    topics-field
     :owner="owner"
     :owners="owners"
     :busy="busy"
