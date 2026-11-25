@@ -259,6 +259,17 @@ describe('overview Branches panel', () => {
     ])
     expect(lockHolders(summary.locks.concat(summary.locks))).toEqual(['jamie', 'bob'])
   })
+
+  it('carries the capped flag of the compared branch', () => {
+    const rail = railBranches([{ name: 'main' }, { name: 'old' }], {
+      head: 'old',
+      ahead: 2,
+      behind: 1000,
+      countsCapped: true,
+    })
+    expect(rail.find((b) => b.name === 'old')).toMatchObject({ behind: 1000, countsCapped: true })
+    expect(rail.find((b) => b.name === 'main')?.countsCapped).toBeUndefined()
+  })
 })
 
 describe('organization and owner headers', () => {

@@ -8,7 +8,7 @@ export function lockHolders(locks: LockInfo[]): string[] {
 /** The branches, newest first; ahead and behind are known only for the compared one. */
 export function railBranches(
   options: BranchOption[],
-  compared?: { head: string; ahead: number; behind: number } | null,
+  compared?: { head: string; ahead: number; behind: number; countsCapped?: boolean } | null,
 ): BranchSummary[] {
   return [...options]
     .sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
@@ -17,7 +17,7 @@ export function railBranches(
       isDefault: o.isDefault,
       updatedAt: o.updatedAt,
       ...(compared && compared.head === o.name
-        ? { ahead: compared.ahead, behind: compared.behind }
+        ? { ahead: compared.ahead, behind: compared.behind, countsCapped: compared.countsCapped }
         : {}),
     }))
 }
