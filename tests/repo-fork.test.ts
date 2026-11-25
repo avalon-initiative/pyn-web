@@ -32,6 +32,14 @@ function stub(info: Record<string, unknown>) {
     if (url === '/v1/repos/acme/game/forks')
       return json([
         { ...source, owner: 'bob', name: 'game', fork_of: { owner: 'acme', name: 'game' } },
+        {
+          ...source,
+          owner: 'studio',
+          name: 'game',
+          fork_of: { owner: 'acme', name: 'game' },
+          icon_url: '/v1/repos/studio/game/icon?v=1',
+          owner_identity: { user: 'studio', avatar_url: '/v1/orgs/studio/avatar?v=2' },
+        },
       ])
     if (url === '/v1/repos/acme/game/me') return json({ permissions: ['read'] })
     if (url === '/v1/me/orgs') return json([])
@@ -77,9 +85,23 @@ describe('Fork in the repository header', () => {
     const { shell, fetchMock } = await show('alice', { fork_count: 1 })
     expect(shell.props('social')?.fork).toEqual({ count: 1, disabled: false })
     expect(shell.props('social')?.forks).toEqual([
-      { owner: 'bob', name: 'game', href: '/bob/game' },
+      { owner: 'bob', name: 'game', href: '/bob/game', iconUrl: null, ownerAvatarUrl: null },
+      {
+        owner: 'studio',
+        name: 'game',
+        href: '/studio/game',
+        iconUrl: '/v1/repos/studio/game/icon?v=1',
+        ownerAvatarUrl: '/v1/orgs/studio/avatar?v=2',
+      },
     ])
     expect(forkCalls(fetchMock).length).toBeGreaterThan(0)
+  })
+
+  it('shows the repository icon in the header, null without one', async () => {
+    const icon = '/v1/repos/acme/game/icon?v=abc'
+    expect((await show('alice', { icon_url: icon })).shell.props('iconUrl')).toBe(icon)
+    vi.unstubAllGlobals()
+    expect((await show('alice', { icon_url: null })).shell.props('iconUrl')).toBeNull()
   })
 
   it('gives an empty list without asking when there are no forks', async () => {

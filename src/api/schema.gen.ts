@@ -1964,6 +1964,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/icon': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_icon']
+    put: operations['put_icon']
+    post?: never
+    delete: operations['delete_icon']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/invites': {
     parameters: {
       query?: never
@@ -5044,6 +5060,11 @@ export interface components {
        */
       fork_count: number
       fork_of: components['schemas']['RepoRef'] | null
+      /**
+       * @description `/v1/repos/{owner}/{name}/icon?v=` and the start of the image's hash; null when the repository has no icon,
+       *     and a client then shows the owner's avatar.
+       */
+      icon_url: string | null
       /** @description Stable, never reused and unchanged by a rename; a deleted repository's id is never issued again. */
       id: string
       /** @description The first entry of `languages`; null when there is none. */
@@ -13072,6 +13093,204 @@ export interface operations {
       }
       /** @description branch_not_found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  get_icon: {
+    parameters: {
+      query?: {
+        /** @description the version from `icon_url`; it only keeps caches of different images apart, and every response must be revalidated */
+        v?: string
+      }
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the image, as `image/png`, `image/jpeg` or `image/webp` according to its bytes; readable by whoever can read the repository, with an `ETag` and `Cache-Control` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'image/png': string
+        }
+      }
+      /** @description `If-None-Match` matches the current image */
+      304: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description repo_not_found, or icon_not_found when the repository has none */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  put_icon: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
+        name: string
+      }
+      cookie?: never
+    }
+    /** @description the image bytes (png, jpeg or webp, at most 1 MiB); the type is judged from the bytes, not the `Content-Type` header */
+    requestBody: {
+      content: {
+        'image/png': string
+      }
+    }
+    responses: {
+      /** @description the repository with the new `icon_url` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoInfo']
+        }
+      }
+      /** @description invalid_request: an empty body */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description only the owner, with admin rights in the repository */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description owner_frozen */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description object_too_large: over 1 MiB */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description unsupported_image: not a png, jpeg or webp */
+      415: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many icon changes in an hour */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  delete_icon: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the repository without an icon; removing none is not an error */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoInfo']
+        }
+      }
+      /** @description only the owner, with admin rights in the repository */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description owner_frozen */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description too_many_attempts: too many icon changes in an hour */
+      429: {
         headers: {
           [name: string]: unknown
         }

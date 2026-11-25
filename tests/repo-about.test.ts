@@ -125,7 +125,7 @@ describe('repository rows', () => {
     expect(home.props('topics')).toEqual(['game'])
   })
 
-  it('carry stars, forks and the owner avatar, initials when the owner has none on the wire', () => {
+  it('carry stars, forks, the icon and the owner avatar, initials when the owner has none on the wire', () => {
     const org = described({
       star_count: 3,
       fork_count: 1,
@@ -139,7 +139,10 @@ describe('repository rows', () => {
     expect(repoRows([user], '/v1/users/alice/avatar')[0].owner_avatar_url).toBe(
       '/v1/users/alice/avatar',
     )
-    expect(repoRows([user])[0]).not.toHaveProperty('icon_url')
+    expect(repoRows([user])[0].icon_url).toBeNull()
+    expect(repoRows([described({ icon_url: '/v1/repos/alice/x/icon?v=ab' })])[0].icon_url).toBe(
+      '/v1/repos/alice/x/icon?v=ab',
+    )
   })
 
   it('leave the organization rail sections out without data', async () => {

@@ -11,7 +11,13 @@ export const forkButton = (repo: RepoDetails, signedOut: boolean): SocialButton 
 })
 
 export const forkLinks = (forks: RepoDetails[]): ForkLink[] =>
-  forks.map((f) => ({ owner: f.owner, name: f.name, href: repoPath(f) }))
+  forks.map((f) => ({
+    owner: f.owner,
+    name: f.name,
+    href: repoPath(f),
+    iconUrl: f.icon_url ?? null,
+    ownerAvatarUrl: f.owner_identity?.avatar_url ?? null,
+  }))
 
 export const forkOf = (repo: RepoDetails): ForkLink | undefined =>
   repo.fork_of ? { ...repo.fork_of, href: repoPath(repo.fork_of) } : undefined
