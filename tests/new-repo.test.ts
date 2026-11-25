@@ -51,7 +51,7 @@ describe('new repository form', () => {
     const w = await mountView()
     const form = w.findComponent(PynRepoForm)
     expect(form.props('steps')).toBe(true)
-    expect(form.props('describable')).toBeFalsy()
+    expect(form.props('describable')).toBe(true)
     expect(form.props('suggestion')).toMatch(/^[a-z]+-[a-z]+$/)
     expect(w.findComponent(PynSettingsToggle).props('modelValue')).toBe(true)
   })

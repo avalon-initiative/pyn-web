@@ -65,6 +65,7 @@ const create = (settings: RepoSettings) => {
     title="Create a new repository"
     intro="Repositories contain a project's files and version history."
     :suggestion="suggestion"
+    describable
     :owner="owner"
     :owners="owners"
     :busy="busy"

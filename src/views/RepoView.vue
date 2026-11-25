@@ -45,7 +45,7 @@ import { isRepoOwner } from '../state/repo-access.state'
 import { lockHolders, railBranches } from '../state/repo-rail.state'
 import { useTags } from '../state/tags.state'
 import type { LockInfo, OrgInfo, RefKind, RepoFact } from '@avalon-initiative/pyn-common-ui'
-import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RepoDetails } from '../types/repo.types'
 
 const route = useRoute()
 const router = useRouter()
@@ -63,7 +63,7 @@ const { freeze, frozen } = useOwnerFreeze(owner, (o) =>
   signedOut.value ? Promise.reject(new Error('signed out')) : getOwnerFreeze(o),
 )
 const target = computed(() => ({ owner: owner.value, name: name.value }))
-const repo = ref<RepoInfo | null>(null)
+const repo = ref<RepoDetails | null>(null)
 const permissions = ref<string[]>([])
 const org = ref<OrgInfo | null>(null)
 const locks = ref<LockInfo[] | null>(null)

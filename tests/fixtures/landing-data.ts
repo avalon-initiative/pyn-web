@@ -1,5 +1,7 @@
-import type { LockInfo, RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { LockInfo } from '@avalon-initiative/pyn-common-ui'
 import type { Schemas } from '../../src/api/schema'
+import type { RepoDetails } from '../../src/types/repo.types'
+import { repoExtras } from './shell-data'
 
 type TreeEntry = Schemas['TreeEntry']
 type TreeListing = Schemas['TreeListing']
@@ -7,7 +9,7 @@ type RepoSummary = Schemas['RepoSummary']
 
 export const now = new Date('2026-10-08T12:00:00Z')
 
-export const repo: RepoInfo = {
+export const repo: RepoDetails = {
   id: 'repo-castle-quest',
   owner_id: 'owner-acme',
   owner: 'acme',
@@ -18,6 +20,7 @@ export const repo: RepoInfo = {
   lease_hours: 24,
   created_at: '2026-04-12T09:00:00Z',
   role: 'admin',
+  ...repoExtras,
 }
 
 const ago = (hours: number) => new Date(now.getTime() - hours * 3_600_000).toISOString()

@@ -24,15 +24,19 @@ import { orgKey, sessionKey } from '../state/context.state'
 import { loadProfileReadme, peopleOf } from '../state/profile-readme.state'
 import { refusedSignedOut } from '../state/public.state'
 import { sortRepos } from '../state/repo.state'
+import { topLanguages, topTopics } from '../state/repo-about.state'
 import OwnerUsagePanel from './OwnerUsagePanel.vue'
-import type { PersonEntry, ReadmeDoc, RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { PersonEntry, ReadmeDoc } from '@avalon-initiative/pyn-common-ui'
+import type { RepoDetails } from '../types/repo.types'
 
 const { name, org } = inject(orgKey)!
 const self = inject(sessionKey)!.user
 const router = useRouter()
 const route = useRoute()
-const repos = ref<RepoInfo[]>([])
-const starred = ref<RepoInfo[] | undefined>()
+const repos = ref<RepoDetails[]>([])
+const starred = ref<RepoDetails[] | undefined>()
+const languages = computed(() => topLanguages(repos.value))
+const topics = computed(() => topTopics(repos.value))
 const people = ref<PersonEntry[]>([])
 const readme = ref<ReadmeDoc | null>(null)
 const profile = ref<PublicProfile | null>(null)
@@ -142,6 +146,8 @@ watch(
       :repos="repos"
       :people="people"
       :people-href="org?.role ? orgPath(name, 'members') : undefined"
+      :languages="languages.length ? languages : undefined"
+      :topics="topics.length ? topics : undefined"
     >
       <template v-if="readme" #readme>
         <PynReadme :readme="readme" :owner="name" :name="name" />

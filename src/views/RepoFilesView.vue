@@ -167,7 +167,14 @@ onUnmounted(() => clearInterval(timer))
     :missing="missing"
     :me="user"
     :now="now"
-    :about="{ stars: starCount, watching: watcherCount }"
+    :about="{
+      description: repo.description,
+      website: repo.website,
+      topics: repo.topics,
+      stars: starCount,
+      watching: watcherCount,
+      forks: repo.fork_count,
+    }"
     go-to-file
     @select="(name, kind) => selectBranch?.(name, kind)"
     @go-to-file="palette?.show()"
