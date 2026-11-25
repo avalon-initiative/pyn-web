@@ -7,13 +7,14 @@ import {
   PynViewHeader,
   PynLoading,
 } from '@avalon-initiative/pyn-common-ui'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { listRepos } from '../api/repos'
 import { useAction } from '../state/action.state'
-import { sortRepos } from '../state/repo.state'
+import { repoRows, sortRepos } from '../state/repo.state'
 import type { RepoDetails } from '../types/repo.types'
 
 const repos = ref<RepoDetails[]>([])
+const rows = computed(() => repoRows(repos.value))
 const loaded = ref(false)
 const { error, attempt } = useAction()
 
@@ -33,7 +34,7 @@ onMounted(async () => {
   <PynViewError v-if="error">{{ error }}</PynViewError>
   <PynLoading v-else-if="!loaded" />
   <template v-else>
-    <PynRepoList v-if="repos.length" :repos="repos" />
+    <PynRepoList v-if="repos.length" :repos="rows" />
     <PynEmptyState
       v-else
       title="You are not in any repository yet"
