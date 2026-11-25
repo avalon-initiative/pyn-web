@@ -35,6 +35,7 @@ function stub() {
     vi.fn(async (url: string) => {
       calls.push(url)
       if (url === '/v1/users/ada') return new Response(JSON.stringify(profile))
+      if (url.endsWith('/starred')) return new Response('[]')
       return new Response(JSON.stringify(profile.repositories))
     }),
   )
