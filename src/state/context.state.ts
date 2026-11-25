@@ -56,7 +56,7 @@ export interface RepoContext {
   /** How many accounts watch the repository, undefined until it is read. */
   watcherCount?: ComputedRef<number | undefined>
   /** The owner's picture, which stands in for a missing icon; null until read or without one. */
-  ownerAvatar?: Ref<string | null>
+  ownerAvatar?: Readonly<Ref<string | null>>
   reload: () => Promise<void>
 }
 

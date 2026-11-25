@@ -11,7 +11,13 @@ import {
   type RepoSummary,
   type TreeListing,
 } from '@avalon-initiative/pyn-common-ui'
-import type { ActivePolicy, Branch, RepoDetails, UpdateRepoRequest } from '../types/repo.types'
+import type {
+  ActivePolicy,
+  Branch,
+  RepoDetails,
+  UpdateRepoRequest,
+  WatchedRepo,
+} from '../types/repo.types'
 import type { Registered } from '../types/auth.types'
 import { api, binaryBody, call } from './http'
 import type { Schemas } from './schema'
@@ -56,6 +62,8 @@ export const putWatch = (r: Repo, level: Schemas['WatchLevel']) =>
 
 export const deleteWatch = (r: Repo) =>
   call<Schemas['WatchState']>(api.DELETE('/v1/repos/{owner}/{name}/watch', at(r)))
+
+export const listWatching = () => call<WatchedRepo[]>(api.GET('/v1/me/watching'))
 
 export const listForks = (r: Repo) =>
   call<RepoDetails[]>(api.GET('/v1/repos/{owner}/{name}/forks', at(r)))

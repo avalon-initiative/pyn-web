@@ -1,17 +1,18 @@
 import { ref } from 'vue'
 import { sortOrgs } from '@avalon-initiative/pyn-common-ui'
-import type { OrgInfo, RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import { listMyInvitations, listMyOrgs } from '../api/orgs'
 import { listRepos } from '../api/repos'
 import { clearOwnAccessSessions, refreshOwnAccessSessions } from './access-session.state'
 import { myInvitations } from './invitations.state'
 import { sortRepos } from './repo.state'
+import type { RepoDetails } from '../types/repo.types'
 
 export const SESSION_FAST_MS = 60_000
 export const SESSION_SLOW_MS = 300_000
 
 // Session-level lists the shell shows; views refresh the one their action changed.
-export const sessionRepos = ref<RepoInfo[]>([])
+export const sessionRepos = ref<RepoDetails[]>([])
 export const sessionOrgs = ref<OrgInfo[]>([])
 
 export async function refreshRepos() {

@@ -60,6 +60,7 @@ import OwnerView from './views/OwnerView.vue'
 import RepoView from './views/RepoView.vue'
 import ReposView from './views/ReposView.vue'
 import ExploreView from './views/ExploreView.vue'
+import WatchingView from './views/WatchingView.vue'
 import DashboardView from './views/DashboardView.vue'
 import { recentFor, recordRecent } from './state/recent.state'
 
@@ -83,6 +84,7 @@ export const routes: RouteRecordRaw[] = [
   { path: '/verify-email', name: 'verify-email', component: VerifyEmailView },
   { path: '/_/people', name: 'people', component: PeopleView, meta: { public: true } },
   { path: '/_/locks', name: 'my-locks', component: MyLocksView },
+  { path: '/_/watching', name: 'watching', component: WatchingView },
   {
     path: '/_/admin',
     component: AdminView,

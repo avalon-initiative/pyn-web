@@ -50,6 +50,7 @@ const ORG: Record<string, string> = {
 
 const PERSONAL: Record<string, string> = {
   'my-locks': 'Your locks',
+  watching: 'Watching',
   explore: 'Explore',
   people: 'People',
   orgs: 'Organizations',

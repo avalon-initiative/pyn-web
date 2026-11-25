@@ -20,8 +20,7 @@ import {
 import { computed, inject, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError } from '../api/client'
-import { getOrg, getOrgProfile, getOwnerFreeze } from '../api/orgs'
-import { getProfile } from '../api/profile'
+import { getOrg, getOwnerFreeze } from '../api/orgs'
 import {
   compareBranch,
   deleteStar,
@@ -75,7 +74,7 @@ const locks = ref<LockInfo[] | null>(null)
 const openPulls = ref<number | undefined>(undefined)
 const forks = ref<ForkLink[] | undefined>(undefined)
 const notFound = ref(false)
-const ownerAvatar = ref<string | null>(null)
+const ownerAvatar = computed(() => repo.value?.owner_identity?.avatar_url ?? null)
 // A signed-out miss reads the same for a private and a missing repository.
 const gated = ref(false)
 const { error, attempt } = useAction()
@@ -207,20 +206,6 @@ async function loadForks() {
   }
 }
 
-// The picture only decorates the header: without it initials stand in.
-async function loadOwnerAvatar() {
-  const t = target.value
-  ownerAvatar.value = null
-  try {
-    const url = org.value
-      ? (await getOrgProfile(t.owner))?.avatar_url
-      : (await getProfile(t.owner))?.profile?.avatar_url
-    if (t === target.value) ownerAvatar.value = url ?? null
-  } catch {
-    // Initials stand in.
-  }
-}
-
 watch(
   target,
   () => {
@@ -234,10 +219,7 @@ watch(
         void loadLocks()
         void loadPullCount()
       }
-      if (repo.value) {
-        void loadOwnerAvatar()
-        void loadForks()
-      }
+      if (repo.value) void loadForks()
     })
   },
   { immediate: true },
