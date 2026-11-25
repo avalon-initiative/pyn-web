@@ -23,7 +23,7 @@ import { useAction } from '../state/action.state'
 import { orgKey, sessionKey } from '../state/context.state'
 import { loadProfileReadme, peopleOf } from '../state/profile-readme.state'
 import { refusedSignedOut } from '../state/public.state'
-import { sortRepos } from '../state/repo.state'
+import { repoRows, sortRepos } from '../state/repo.state'
 import { topLanguages, topTopics } from '../state/repo-about.state'
 import OwnerUsagePanel from './OwnerUsagePanel.vue'
 import type { PersonEntry, ReadmeDoc } from '@avalon-initiative/pyn-common-ui'
@@ -35,6 +35,8 @@ const router = useRouter()
 const route = useRoute()
 const repos = ref<RepoDetails[]>([])
 const starred = ref<RepoDetails[] | undefined>()
+const rows = computed(() => repoRows(repos.value, profile.value?.profile.avatar_url))
+const starredRows = computed(() => starred.value && repoRows(starred.value))
 const languages = computed(() => topLanguages(repos.value))
 const topics = computed(() => topTopics(repos.value))
 const people = ref<PersonEntry[]>([])
@@ -100,8 +102,8 @@ watch(
       :current="current"
       :self="profile.user === self"
       :stars="starred?.length"
-      :starred-repos="starred"
-      :repos="repos"
+      :starred-repos="starredRows"
+      :repos="rows"
       :orgs="profile.organizations"
     >
       <template #profile>
@@ -143,7 +145,7 @@ watch(
     </PynProfileLayout>
     <PynOrgHome
       v-else-if="!current"
-      :repos="repos"
+      :repos="rows"
       :people="people"
       :people-href="org?.role ? orgPath(name, 'members') : undefined"
       :languages="languages.length ? languages : undefined"
@@ -169,7 +171,7 @@ watch(
         />
       </template>
     </PynOrgHome>
-    <PynRepoList v-else-if="repos.length" boxed :repos="repos">
+    <PynRepoList v-else-if="repos.length" boxed :repos="rows">
       <template v-if="mine" #actions>
         <PynViewAction :href="newRepo" primary>New repository</PynViewAction>
       </template>

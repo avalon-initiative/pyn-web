@@ -3,6 +3,7 @@ import {
   PynOrgHome,
   PynRepoForm,
   PynRepoList,
+  PynRepoVisibility,
   PynSettingsToggle,
   PynTextArea,
   PynTextField,
@@ -23,6 +24,7 @@ import {
   topLanguages,
   topTopics,
 } from '../src/state/repo-about.state'
+import { repoRows } from '../src/state/repo.state'
 import type { RepoDetails } from '../src/types/repo.types'
 import NewRepoView from '../src/views/NewRepoView.vue'
 import OwnerView from '../src/views/OwnerView.vue'
@@ -121,6 +123,23 @@ describe('repository rows', () => {
     const home = w.findComponent(PynOrgHome)
     expect(home.props('languages')).toEqual(['Rust'])
     expect(home.props('topics')).toEqual(['game'])
+  })
+
+  it('carry stars, forks and the owner avatar, initials when the owner has none on the wire', () => {
+    const org = described({
+      star_count: 3,
+      fork_count: 1,
+      owner_identity: { user: 'studio', avatar_url: '/v1/orgs/studio/avatar?v=1' },
+    })
+    const user = described({ owner_identity: null })
+    expect(repoRows([org, user])).toMatchObject([
+      { star_count: 3, fork_count: 1, owner_avatar_url: '/v1/orgs/studio/avatar?v=1' },
+      { owner_avatar_url: null },
+    ])
+    expect(repoRows([user], '/v1/users/alice/avatar')[0].owner_avatar_url).toBe(
+      '/v1/users/alice/avatar',
+    )
+    expect(repoRows([user])[0]).not.toHaveProperty('icon_url')
   })
 
   it('leave the organization rail sections out without data', async () => {
@@ -264,6 +283,22 @@ describe('repository settings About', () => {
     const open = mountGeneral(described({ visibility: 'public' }))
     await flushPromises()
     expect(open.w.find('[data-forks]').exists()).toBe(false)
+  })
+
+  it('changes visibility from the danger zone and reloads', async () => {
+    const repo = described({ visibility: 'private' })
+    vi.mocked(reposApi.updateRepo).mockResolvedValue({ ...repo, visibility: 'public' })
+    const { w, reload } = mountGeneral(repo)
+    await flushPromises()
+    const row = w.findComponent(PynRepoVisibility)
+    expect(row.props()).toMatchObject({ visibility: 'private', slug: `alice/${repo.name}` })
+    row.vm.$emit('change', 'public')
+    await flushPromises()
+    expect(reposApi.updateRepo).toHaveBeenCalledWith(
+      { owner: 'alice', name: repo.name },
+      { visibility: 'public' },
+    )
+    expect(reload).toHaveBeenCalled()
   })
 })
 

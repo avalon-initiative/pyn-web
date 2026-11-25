@@ -3,6 +3,7 @@ import {
   PynButton,
   PynRepoDelete,
   PynRepoForm,
+  PynRepoVisibility,
   PynSettingsSection,
   PynSettingsToggle,
   PynTextArea,
@@ -11,6 +12,7 @@ import {
   PynViewError,
   type RepoFormValue,
   type RepoSettings,
+  type Visibility,
   repoPath,
   repoSlug,
   PynViewStack,
@@ -36,6 +38,7 @@ const router = useRouter()
 const saving = useAction()
 const savingAbout = useAction()
 const savingForks = useAction()
+const savingVisibility = useAction()
 const removing = useAction()
 const isOwner = computed(() => isRepoOwner(target.value.owner, user.value, org.value))
 
@@ -94,6 +97,13 @@ const setPrivateForks = (on: boolean) =>
   savingForks.attempt(async () => {
     await updateRepo(target.value, { allow_private_forks: on })
     await reload()
+  })
+
+const setVisibility = (visibility: Visibility) =>
+  savingVisibility.attempt(async () => {
+    await updateRepo(target.value, { visibility })
+    await reload()
+    void refreshRepos()
   })
 
 const remove = () =>
@@ -175,6 +185,15 @@ const remove = () =>
       />
     </PynSettingsSection>
     <PynSettingsSection title="Danger zone" danger plain>
+      <PynRepoVisibility
+        v-if="repo"
+        :slug="repoSlug(repo)"
+        :visibility="repo.visibility"
+        :readonly="frozen"
+        :busy="savingVisibility.busy.value"
+        :error="savingVisibility.error.value"
+        @change="setVisibility"
+      />
       <PynRepoDelete
         :slug="repo ? repoSlug(repo) : ''"
         :readonly="frozen"
