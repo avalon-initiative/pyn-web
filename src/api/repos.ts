@@ -1,7 +1,7 @@
 import type { FileRow, LockInfo, MyLock } from '@avalon-initiative/pyn-common-ui'
 import type { FileEntry, FilePage, Me } from '../types/lock.types'
 import type { CheckinBody, CheckinResult, PolicyPreview } from '../types/policy.types'
-import type { InviteInfo, Member, RepoInfo, RoleGrant } from '@avalon-initiative/pyn-common-ui'
+import type { InviteInfo, Member, RoleGrant } from '@avalon-initiative/pyn-common-ui'
 import type { AuditPage, BranchComparison, HistoryPage, HistoryQuery } from '../types/repo.types'
 import {
   type AuditFilter,
@@ -11,7 +11,7 @@ import {
   type RepoSummary,
   type TreeListing,
 } from '@avalon-initiative/pyn-common-ui'
-import type { ActivePolicy, Branch } from '../types/repo.types'
+import type { ActivePolicy, Branch, RepoDetails, UpdateRepoRequest } from '../types/repo.types'
 import type { Registered } from '../types/auth.types'
 import { api, binaryBody, call } from './http'
 import type { Schemas } from './schema'
@@ -24,13 +24,13 @@ const at = (r: Repo) => ({ params: { path: r } })
 const blank = (v: string | null | undefined) => v || undefined
 
 export const listRepos = (owner?: string) =>
-  call<RepoInfo[]>(api.GET('/v1/repos', { params: { query: { owner: blank(owner) } } }))
+  call<RepoDetails[]>(api.GET('/v1/repos', { params: { query: { owner: blank(owner) } } }))
 
 export const exploreRepos = (query: { after?: string; limit?: number } = {}) =>
   call<Schemas['RepoPage']>(api.GET('/v1/explore/repos', { params: { query } }))
 
 export const createRepo = (owner: string, s: RepoSettings, starterPolicy?: boolean) =>
-  call<RepoInfo>(
+  call<RepoDetails>(
     api.POST('/v1/repos', {
       body: {
         owner,
@@ -41,11 +41,7 @@ export const createRepo = (owner: string, s: RepoSettings, starterPolicy?: boole
     }),
   )
 
-export type StarFields = Pick<Schemas['RepoInfo'], 'star_count' | 'starred'>
-export type WatchFields = Pick<Schemas['RepoInfo'], 'watcher_count' | 'watching'>
-
-export const getRepo = (r: Repo) =>
-  call<RepoInfo & StarFields & WatchFields>(api.GET('/v1/repos/{owner}/{name}', at(r)))
+export const getRepo = (r: Repo) => call<RepoDetails>(api.GET('/v1/repos/{owner}/{name}', at(r)))
 
 export const putStar = (r: Repo) =>
   call<Schemas['StarState']>(api.PUT('/v1/repos/{owner}/{name}/star', at(r)))
@@ -61,8 +57,8 @@ export const putWatch = (r: Repo, level: Schemas['WatchLevel']) =>
 export const deleteWatch = (r: Repo) =>
   call<Schemas['WatchState']>(api.DELETE('/v1/repos/{owner}/{name}/watch', at(r)))
 
-export const updateRepo = (r: Repo, s: Partial<RepoSettings>) =>
-  call<RepoInfo>(api.PATCH('/v1/repos/{owner}/{name}', { ...at(r), body: s }))
+export const updateRepo = (r: Repo, s: UpdateRepoRequest) =>
+  call<RepoDetails>(api.PATCH('/v1/repos/{owner}/{name}', { ...at(r), body: s }))
 
 export const deleteRepo = (r: Repo) => call<void>(api.DELETE('/v1/repos/{owner}/{name}', at(r)))
 

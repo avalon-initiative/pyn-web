@@ -1914,6 +1914,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/repos/{owner}/{name}/forks': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_forks']
+    put?: never
+    post: operations['fork_repo']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/repos/{owner}/{name}/history': {
     parameters: {
       query?: never
@@ -3535,6 +3551,10 @@ export interface components {
       title: string
     }
     CreateRepoRequest: {
+      /** @description Whether people who can read the repository may fork it while it is private. Defaults to `false`. */
+      allow_private_forks?: boolean | null
+      /** @description One line, at most 350 characters; blank means none. */
+      description?: string | null
       /**
        * Format: int32
        * @description Defaults to 8.
@@ -3558,7 +3578,11 @@ export interface components {
        *     rules for object and binary files). `false` leaves the repository empty, under the server's initial policy.
        */
       starter_policy?: boolean | null
+      /** @description At most 20 topics of 1 to 50 lowercase letters, digits or `-`; uppercase is lowered and repeats dropped. */
+      topics?: string[] | null
       visibility?: components['schemas']['Visibility'] | null
+      /** @description An http or https link; blank means none. */
+      website?: string | null
     }
     CreateServerInvitationRequest: {
       /** @description Where to send the code; used only when a mailer is configured, and stored only to tell invitations apart. */
@@ -3944,6 +3968,16 @@ export interface components {
       /** @description Why the lock is being removed; required and recorded in the audit log. */
       reason: string
     }
+    /** @description Body of `POST /v1/repos/{owner}/{name}/forks`. */
+    ForkRepoRequest: {
+      /** @description Defaults to the source's name. */
+      name?: string | null
+      /**
+       * @description The namespace to fork into: the caller, or an organization whose repository-creation policy allows the source's
+       *     visibility. Defaults to the caller.
+       */
+      owner?: string | null
+    }
     /** @description Freezes an owner, or replaces the reason and time of a freeze already in force. */
     FreezeRequest: {
       /** @description Shown to the owner's members: 1 to 512 bytes. */
@@ -3978,6 +4012,13 @@ export interface components {
       /** Format: date-time */
       used_at?: string | null
       used_by?: string | null
+    }
+    /** @description One programming language's share of a repository, detected from file names. */
+    LanguageShare: {
+      /** Format: int64 */
+      bytes: number
+      /** @description A display name such as `Rust` or `C++`. */
+      name: string
     }
     /**
      * @description Which limit an owner ran into.
@@ -4975,8 +5016,12 @@ export interface components {
       truncated: boolean
     }
     RepoInfo: {
+      /** @description Whether people who can read this private repository may fork it; a public one can always be forked. */
+      allow_private_forks: boolean
       /** Format: date-time */
       created_at: string
+      /** @description One line of plain text for the About block; null when unset. */
+      description: string | null
       /**
        * @description Whether exclusive files are read-only in a work tree until their lock is held: the policy file's
        *     `meta.exclusive_read_only`, else the owning organization's setting, else on.
@@ -4984,8 +5029,21 @@ export interface components {
       exclusive_read_only?: boolean
       /** @description Which of the three decided `exclusive_read_only`. */
       exclusive_read_only_source?: components['schemas']['ReadOnlySource']
+      /**
+       * Format: int64
+       * @description How many repositories were forked from this one, whoever owns them and whatever their visibility.
+       */
+      fork_count: number
+      fork_of: components['schemas']['RepoRef'] | null
       /** @description Stable, never reused and unchanged by a rename; a deleted repository's id is never issued again. */
       id: string
+      /** @description The first entry of `languages`; null when there is none. */
+      language: string | null
+      /**
+       * @description Bytes of each programming language at the head of the default branch, largest first; empty for an empty
+       *     repository or one with no recognised source files. A client computes percentages from `bytes`.
+       */
+      languages: components['schemas']['LanguageShare'][]
       /**
        * Format: int32
        * @description How long a lock lasts before it expires unless renewed.
@@ -5017,6 +5075,13 @@ export interface components {
       star_count: number
       /** @description Whether the caller starred it; false for a signed-out caller. */
       starred: boolean
+      /** @description Lowercase labels set by the owner, in their order; empty when none. */
+      topics: string[]
+      /**
+       * Format: date-time
+       * @description When the newest commit of the default branch was made; null for an empty repository.
+       */
+      updated_at: string | null
       visibility: components['schemas']['Visibility']
       /**
        * Format: int64
@@ -5024,6 +5089,8 @@ export interface components {
        */
       watcher_count: number
       watching: components['schemas']['WatchLevel'] | null
+      /** @description An http or https link for the About block; null when unset. */
+      website: string | null
     }
     RepoPage: {
       /** @description Pass as `after` to fetch the next page; null on the last page. */
@@ -5037,6 +5104,11 @@ export interface components {
       member_creation: components['schemas']['MemberCreation']
       /** @description Ordered by kind, subject, then effect. */
       rules: components['schemas']['CreationRuleInfo'][]
+    }
+    /** @description A repository's address. */
+    RepoRef: {
+      name: string
+      owner: string
     }
     /** @description A repository's own storage cap. */
     RepoStorageCap: {
@@ -5746,6 +5818,10 @@ export interface components {
     }
     /** @description Fields left out stay as they are. */
     UpdateRepoRequest: {
+      /** @description Whether people who can read the repository may fork it while it is private. */
+      allow_private_forks?: boolean | null
+      /** @description One line, at most 350 characters; `null` or blank clears it. */
+      description?: string | null
       /** Format: int32 */
       lease_hours?: number | null
       /**
@@ -5755,7 +5831,11 @@ export interface components {
       max_locks_per_user?: number | null
       /** @description The new name, normalised like a new repository's. */
       name?: string | null
+      /** @description Replaces every topic; `[]` removes them all. */
+      topics?: string[] | null
       visibility?: components['schemas']['Visibility'] | null
+      /** @description An http or https link; `null` or blank clears it. */
+      website?: string | null
     }
     /** @description Whether a newer pyn release exists, as this server last learned it (`GET /v1/admin/update`). */
     UpdateStatus: {
@@ -11762,7 +11842,7 @@ export interface operations {
           'application/json': components['schemas']['RepoInfo']
         }
       }
-      /** @description invalid_repo_name or invalid_request (a lease or lock limit out of range) */
+      /** @description invalid_repo_name or invalid_request (a lease or lock limit out of range, a description or website that does not validate) */
       400: {
         headers: {
           [name: string]: unknown
@@ -11891,7 +11971,7 @@ export interface operations {
           'application/json': components['schemas']['RepoInfo']
         }
       }
-      /** @description invalid_request, including a lock limit change while the policy file sets one */
+      /** @description invalid_request, including a lock limit change while the policy file sets one and a description or website that does not validate */
       400: {
         headers: {
           [name: string]: unknown
@@ -12787,6 +12867,105 @@ export interface operations {
         }
       }
       /** @description not_locked */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  list_forks: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description the forks of the repository the caller may see, ordered by owner then name */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoInfo'][]
+        }
+      }
+      /** @description repo_not_found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+    }
+  }
+  fork_repo: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The namespace that owns the repository. */
+        owner: string
+        /** @description The repository's name within its owner; spaces (`%20`) read as `-` and case is ignored. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ForkRepoRequest']
+      }
+    }
+    responses: {
+      /** @description the fork, with the source's visibility, history and policy and no locks; the caller becomes its admin */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RepoInfo']
+        }
+      }
+      /** @description invalid_repo_name */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description fork_forbidden: a private source that does not allow forks; not_namespace_owner, not_org_member or repo_create_forbidden for the target owner; or a token without manage_roles or limited to repositories */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_not_found: no such repository, or one the caller cannot read */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorBody']
+        }
+      }
+      /** @description repo_exists, repo_limit_reached, fork_limit_reached, storage_limit_reached (the fork counts in full against the target owner), or org_deleting */
       409: {
         headers: {
           [name: string]: unknown

@@ -1,5 +1,9 @@
 import type { Schemas } from '../api/schema'
 
+/** A repository as the server reports it, with the About and listing fields the library type leaves out. */
+export type RepoDetails = Schemas['RepoInfo']
+export type LanguageShare = Schemas['LanguageShare']
+export type UpdateRepoRequest = Schemas['UpdateRepoRequest']
 export type Branch = Schemas['Branch']
 export type ActivePolicy = Schemas['ActivePolicy']
 export type BranchComparison = Schemas['BranchComparison']

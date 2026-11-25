@@ -3,7 +3,7 @@ import type { AccountDeletionStatus } from '../api/account-deletion'
 import type { PynBranchCompare } from '@avalon-initiative/pyn-common-ui'
 import type { BranchSummary, LockInfo, OrgInfo } from '@avalon-initiative/pyn-common-ui'
 import type { RefKind, TagOption } from '@avalon-initiative/pyn-common-ui'
-import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RepoDetails } from '../types/repo.types'
 
 export interface SessionContext {
   user: Ref<string>
@@ -21,7 +21,7 @@ export interface SessionContext {
 
 export interface RepoContext {
   target: ComputedRef<{ owner: string; name: string }>
-  repo: Ref<RepoInfo | null>
+  repo: Ref<RepoDetails | null>
   permissions: Ref<string[]>
   /** The owning organization; null for a user-owned repository. */
   org: Ref<OrgInfo | null>

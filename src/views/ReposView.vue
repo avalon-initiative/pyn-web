@@ -11,9 +11,9 @@ import { onMounted, ref } from 'vue'
 import { listRepos } from '../api/repos'
 import { useAction } from '../state/action.state'
 import { sortRepos } from '../state/repo.state'
-import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RepoDetails } from '../types/repo.types'
 
-const repos = ref<RepoInfo[]>([])
+const repos = ref<RepoDetails[]>([])
 const loaded = ref(false)
 const { error, attempt } = useAction()
 

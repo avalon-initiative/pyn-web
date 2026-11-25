@@ -1,11 +1,11 @@
 import { ref } from 'vue'
 import { exploreRepos } from '../api/repos'
 import { ApiError, describeError } from '../api/client'
-import type { RepoInfo } from '@avalon-initiative/pyn-common-ui'
+import type { RepoDetails } from '../types/repo.types'
 
 /** Paging over the public repository list; `refused` is set when the server wants a sign-in for it. */
 export function useExplore(pageSize = 30) {
-  const repos = ref<RepoInfo[]>([])
+  const repos = ref<RepoDetails[]>([])
   const next = ref<string | null>(null)
   const loaded = ref(false)
   const busy = ref(false)

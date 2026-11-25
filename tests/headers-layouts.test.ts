@@ -35,6 +35,7 @@ const branch = (name: string, updated: string, isDefault = false) => ({
 const repo = { ...repoInfo, owner: 'acme', name: 'game', star_count: 0, starred: false }
 
 interface Options {
+  repo?: unknown
   org?: unknown
   profile?: unknown
   locks?: unknown[] | null
@@ -54,7 +55,7 @@ function stubServer(o: Options = {}) {
       if (path === '/v1/setup') return json({ initialised: true })
       if (path === '/v1/me') return json({ user: 'bob', admin: true })
       if (path === '/v1/server') return json({ version: '0', revision: 'x' })
-      if (path === '/v1/repos/acme/game') return json(repo)
+      if (path === '/v1/repos/acme/game') return json(o.repo ?? repo)
       if (path === '/v1/repos/acme/game/me') return json({ permissions: ['read', 'lock'] })
       if (path === '/v1/repos/acme/game/branches')
         return json(
@@ -182,9 +183,34 @@ describe('overview Branches panel', () => {
     const { w } = await open('/acme/game')
     const landing = w.findComponent(PynRepoLanding)
     expect(landing.props('goToFile')).toBe(true)
-    expect(landing.props('about')).toEqual({ stars: 0, watching: 0 })
+    expect(landing.props('about')).toEqual({
+      description: null,
+      website: null,
+      topics: [],
+      stars: 0,
+      watching: 0,
+      forks: 0,
+    })
     expect(landing.props('downloadZip')).toBeFalsy()
     expect(landing.props('sshUrl')).toBeUndefined()
+  })
+
+  it('fills About from the repository description, website, topics and forks', async () => {
+    const { w } = await open('/acme/game', {
+      repo: {
+        ...repo,
+        description: 'A castle game',
+        website: 'https://castle.example',
+        topics: ['game', 'castle'],
+        fork_count: 3,
+      },
+    })
+    expect(w.findComponent(PynRepoLanding).props('about')).toMatchObject({
+      description: 'A castle game',
+      website: 'https://castle.example',
+      topics: ['game', 'castle'],
+      forks: 3,
+    })
   })
 
   it('adds ahead and behind for the compared branch only', async () => {
