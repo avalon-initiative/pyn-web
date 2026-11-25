@@ -44,6 +44,8 @@ import { ownAccessSessions } from './state/access-session.state'
 import { canonicalName, describeNameError, nameProblem, useNameCheck } from './state/name.state'
 import { rememberedUser, rememberUser } from './state/remember.state'
 import { internalPath } from './state/links.state'
+import { railRepos } from './state/repo.state'
+import { WATCHING_PATH } from './state/watching.state'
 import {
   clearSessionData,
   sessionOrgs,
@@ -85,6 +87,7 @@ import {
   PynViewNotice,
   applyTheme,
   loadTheme,
+  orgPath,
   repoSlug,
   saveTheme,
   PynSetup,
@@ -147,6 +150,11 @@ const onDashboard = computed(() => route.name === 'dashboard')
 const railItems: NavItem[] = [{ id: 'home', label: 'Home', href: '/' }]
 const exploreLinks = [{ id: 'explore', label: 'Explore', href: '/_/explore' }]
 const slugs = computed(() => sessionRepos.value.map(repoSlug))
+const rail = computed(() => railRepos(sessionRepos.value))
+const accountHrefs = computed(() => ({
+  stars: orgPath(user.value, 'stars'),
+  watching: WATCHING_PATH,
+}))
 const owners = computed(() => topBarOwners(user.value, sessionOrgs.value))
 const extras = computed(() => topBarExtras(props.navItems, props.accountMenuItems))
 const { locksHeld, locksExpiring, bellEntries } = useTopBar()
@@ -538,7 +546,7 @@ onMounted(async () => {
             :avatar-url="ownProfile.avatar_url"
             :items="railItems"
             current="home"
-            :repos="sessionRepos"
+            :repos="rail"
             :orgs="sessionOrgs"
             create-org-href="/_/new-org"
           />
@@ -548,6 +556,7 @@ onMounted(async () => {
             :user="user"
             :display-name="ownProfile.display_name"
             :avatar-url="ownProfile.avatar_url"
+            :hrefs="accountHrefs"
             :repos="slugs"
             :theme="theme"
             :admin="admin"
@@ -577,7 +586,7 @@ onMounted(async () => {
                 :account="user"
                 :items="railItems"
                 current="home"
-                :repos="sessionRepos"
+                :repos="rail"
                 :orgs="sessionOrgs"
                 create-org-href="/_/new-org"
               />

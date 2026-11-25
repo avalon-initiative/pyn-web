@@ -131,14 +131,15 @@ describe('repository rows', () => {
       fork_count: 1,
       owner_identity: { user: 'studio', avatar_url: '/v1/orgs/studio/avatar?v=1' },
     })
+    const person = described({
+      owner_identity: { user: 'alice', avatar_url: '/v1/users/alice/avatar?v=2' },
+    })
     const user = described({ owner_identity: null })
-    expect(repoRows([org, user])).toMatchObject([
+    expect(repoRows([org, person, user])).toMatchObject([
       { star_count: 3, fork_count: 1, owner_avatar_url: '/v1/orgs/studio/avatar?v=1' },
+      { owner_avatar_url: '/v1/users/alice/avatar?v=2' },
       { owner_avatar_url: null },
     ])
-    expect(repoRows([user], '/v1/users/alice/avatar')[0].owner_avatar_url).toBe(
-      '/v1/users/alice/avatar',
-    )
     expect(repoRows([user])[0].icon_url).toBeNull()
     expect(repoRows([described({ icon_url: '/v1/repos/alice/x/icon?v=ab' })])[0].icon_url).toBe(
       '/v1/repos/alice/x/icon?v=ab',

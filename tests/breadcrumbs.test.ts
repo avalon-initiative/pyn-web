@@ -17,6 +17,7 @@ const table: [string, string, ...(string | undefined)[]][] = [
   ['/_/explore', 'explore', 'Home', 'Explore'],
   ['/_/people', 'people', 'Home', 'People'],
   ['/_/locks', 'my-locks', 'Home', 'Your locks'],
+  ['/_/watching', 'watching', 'Home', 'Watching'],
   ['/_/new', 'new-repo', 'Home', 'New repository'],
   ['/_/new-org', 'new-org', 'Home', 'New organization'],
   ['/_/orgs', 'orgs', 'Home', 'Organizations'],

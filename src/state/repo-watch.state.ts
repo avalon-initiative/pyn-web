@@ -1,15 +1,9 @@
 import { computed, ref } from 'vue'
-import type { MenuItem } from '@avalon-initiative/pyn-common-ui'
+import { UNWATCH, isWatchLevel, watchMenu } from '@avalon-initiative/pyn-common-ui'
+import type { WatchLevel } from '@avalon-initiative/pyn-common-ui'
 import { useAction } from './action.state'
 
-export type WatchLevel = 'all' | 'locks' | 'ignore'
 type WatchState = { level: WatchLevel | null; watchers: number }
-
-const levels: { id: WatchLevel; label: string }[] = [
-  { id: 'all', label: 'All activity' },
-  { id: 'locks', label: 'Locks only' },
-  { id: 'ignore', label: 'Ignore' },
-]
 
 // The server counts only `all` and `locks` as watchers.
 const counted = (level: WatchLevel | null) => level === 'all' || level === 'locks'
@@ -52,18 +46,9 @@ export function useRepoWatch(
   }
 
   const toggle = () => set(counted(level.value) ? null : 'all')
-  const choose = (id: string) =>
-    set(id === 'unwatch' ? null : (levels.find((l) => l.id === id)?.id ?? level.value))
+  const choose = (id: string) => set(id === UNWATCH ? null : isWatchLevel(id) ? id : level.value)
 
-  const menu = computed<MenuItem[]>(() => [
-    ...levels.map((l) => ({ ...l, checked: level.value === l.id })),
-    ...(level.value
-      ? [
-          { id: 'sep', label: '', separator: true },
-          { id: 'unwatch', label: 'Unwatch' },
-        ]
-      : []),
-  ])
+  const menu = computed(() => watchMenu(level.value))
   const button = computed(() =>
     known.value
       ? {

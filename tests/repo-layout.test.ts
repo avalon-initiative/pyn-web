@@ -3,6 +3,7 @@ import {
   PynRepoShell,
   PynShell,
   PynSideRail,
+  PynTopBar,
 } from '@avalon-initiative/pyn-common-ui'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -25,7 +26,13 @@ const repo = {
   max_locks_set_by_policy: false,
   created_at: '2026-10-01T09:00:00Z',
   role: 'admin',
+  owner_identity: { user: 'acme', avatar_url: '/v1/users/acme/avatar?v=1' },
 }
+const icon = '/v1/repos/acme/game/icon?v=ab'
+const listed = [
+  { ...repo, owner: 'bob', name: 'notes', owner_identity: null },
+  { ...repo, icon_url: icon },
+]
 
 function stubServer(permissions: string[], org: unknown = null) {
   vi.stubGlobal(
@@ -36,6 +43,7 @@ function stubServer(permissions: string[], org: unknown = null) {
       if (url === '/v1/setup') return json({ initialised: true })
       if (url === '/v1/me') return json({ user: 'bob', admin: false })
       if (url === '/v1/server') return json({ version: '0', revision: 'x' })
+      if (url === '/v1/repos') return json(listed)
       if (url === '/v1/repos/acme/game') return json(repo)
       if (url === '/v1/repos/acme/game/me') return json({ permissions })
       if (url === '/v1/orgs/acme') return org ? json(org) : json({ code: 'org_not_found' }, 404)
@@ -125,6 +133,27 @@ describe('shell on repository and dashboard routes', () => {
     const { w } = await open('/')
     expect(w.findComponent(PynShell).vm.$slots.side).toBeDefined()
     expect(w.findAllComponents(PynSideRail).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('gives the rail each repository icon and owner avatar, null without them', async () => {
+    const { w } = await open('/')
+    expect(w.findComponent(PynSideRail).props('repos')).toEqual([
+      { owner: 'acme', name: 'game', iconUrl: icon, ownerAvatarUrl: '/v1/users/acme/avatar?v=1' },
+      { owner: 'bob', name: 'notes', iconUrl: null, ownerAvatarUrl: null },
+    ])
+  })
+
+  it('links the account menu to the stars tab and the Watching page', async () => {
+    const { w } = await open('/')
+    expect(w.findComponent(PynTopBar).props('hrefs')).toEqual({
+      stars: '/bob/-/stars',
+      watching: '/_/watching',
+    })
+  })
+
+  it("shows the owner's avatar from the repository in the header", async () => {
+    const { w } = await open('/acme/game')
+    expect(w.findComponent(PynRepoShell).props('ownerAvatarUrl')).toBe('/v1/users/acme/avatar?v=1')
   })
 
   it('puts the repositories rail without its account block in the navigation drawer', async () => {
