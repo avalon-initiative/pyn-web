@@ -30,6 +30,7 @@ const members = ref<OrgMember[]>([])
 const invitations = ref<OrgInvitation[]>([])
 const notice = ref('')
 const loaded = ref(false)
+const adding = ref(false)
 const { busy, error, attempt } = useAction()
 
 const owner = computed(() => isOrgOwner(org.value))
@@ -43,6 +44,7 @@ const load = async () => {
 const add = (m: NewOrgMember) =>
   attempt(async () => {
     const result = await addOrgMember(name.value, m)
+    adding.value = false
     notice.value =
       'invited' in result
         ? `Invited ${m.user}. They become a member once they accept.`
@@ -84,6 +86,7 @@ onMounted(async () => {
   <PynLoading v-if="!loaded && !error" />
   <PynOrgMembers
     v-if="loaded"
+    v-model:adding="adding"
     :members="members"
     :self="user"
     :owner="canManage"

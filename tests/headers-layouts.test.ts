@@ -109,7 +109,6 @@ describe('repository page header', () => {
     const { w } = await open('/acme/game')
     const shell = w.findComponent(PynRepoShell)
     expect(shell.props('hidePath')).toBeFalsy()
-    expect(shell.props('maxTabs')).toBe(5)
     expect(w.find('nav[aria-label="Repository path"]').exists()).toBe(true)
     expect(w.find('nav[aria-label="Breadcrumb"], nav[aria-label="Breadcrumbs"]').exists()).toBe(
       false,
@@ -273,7 +272,6 @@ describe('organization and owner headers', () => {
     const header = w.findComponent(PynOrgHeader)
     expect(header.props('description')).toBe('We make games')
     expect(header.props('avatarUrl')).toBe('/v1/orgs/studio/avatar?v=abc')
-    expect(header.props('maxTabs')).toBe(7)
     expect(header.find('[data-description]').text()).toBe('We make games')
     expect(header.find('img').attributes('src')).toBe('/v1/orgs/studio/avatar?v=abc')
   })

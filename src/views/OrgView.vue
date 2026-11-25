@@ -75,7 +75,6 @@ provide(orgKey, { name, org, frozen, reload: async () => void (await load()) })
         :current="section"
         :description="profile?.description"
         :avatar-url="profile?.avatar_url"
-        :max-tabs="7"
       />
       <RouterView />
     </template>

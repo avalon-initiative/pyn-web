@@ -6,6 +6,7 @@ import { useAction } from '../state/action.state'
 import type { SshKey } from '@avalon-initiative/pyn-common-ui'
 
 const keys = ref<SshKey[]>([])
+const adding = ref(false)
 const { busy, error, attempt } = useAction()
 
 const load = () =>
@@ -16,6 +17,7 @@ const load = () =>
 const add = (form: { key: string; title: string }) =>
   attempt(async () => {
     await addKey(form.key, form.title)
+    adding.value = false
     keys.value = await listKeys()
   })
 
@@ -29,5 +31,12 @@ onMounted(load)
 </script>
 
 <template>
-  <PynKeys :keys="keys" :busy="busy" :error="error" @add="add" @remove="remove" />
+  <PynKeys
+    v-model:adding="adding"
+    :keys="keys"
+    :busy="busy"
+    :error="error"
+    @add="add"
+    @remove="remove"
+  />
 </template>

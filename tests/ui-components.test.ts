@@ -277,12 +277,14 @@ describe('PynKeys', () => {
     expect(mount(PynKeys, { props: { keys: [] } }).text()).toContain('No keys yet')
   })
 
-  it('emits the pasted key and title, then clears the form', async () => {
-    const w = mount(PynKeys, { props: { keys: [] } })
+  it('emits the pasted key and title, and clears the form once closed', async () => {
+    const w = mount(PynKeys, { props: { keys: [], adding: true } })
     await w.find('input').setValue('laptop')
     await w.find('textarea').setValue('  ssh-ed25519 AAAA  ')
     await w.find('form').trigger('submit')
     expect(w.emitted('add')?.[0]).toEqual([{ key: 'ssh-ed25519 AAAA', title: 'laptop' }])
+    await w.setProps({ adding: false })
+    await w.setProps({ adding: true })
     expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe('')
   })
 

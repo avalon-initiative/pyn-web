@@ -97,9 +97,16 @@ describe('OrgMembersView invitations', () => {
     expect(calls).toContain('DELETE /v1/orgs/studio/invitations/dave')
   })
 
+  const openAdd = (w: Awaited<ReturnType<typeof mountView>>) =>
+    w
+      .findAll('button')
+      .find((b) => b.text() === 'Add member')!
+      .trigger('click')
+
   it('says invited after an add that answers 202', async () => {
     stub((m, u) => (m === 'POST' ? json(invitations[0], 202) : route(m, u)))
     const w = await mountView()
+    await openAdd(w)
     const form = w.findAll('form').at(-1)!
     await form.find('input').setValue('dave')
     await form.trigger('submit')
@@ -111,21 +118,25 @@ describe('OrgMembersView invitations', () => {
   it('says added after a direct add that answers 201', async () => {
     stub((m, u) => (m === 'POST' ? json({ user: 'dave', role: 'member' }, 201) : route(m, u)))
     const w = await mountView()
+    await openAdd(w)
     const form = w.findAll('form').at(-1)!
     await form.find('input').setValue('dave')
     await form.trigger('submit')
     await flushPromises()
     expect(w.findComponent(PynOrgMembers).props('notice')).toBe('Added dave.')
+    expect(w.findComponent(PynOrgMembers).props('adding')).toBe(false)
   })
 
   it('words already_invited on add', async () => {
     stub((m, u) => (m === 'POST' ? fail(409, 'already_invited') : route(m, u)))
     const w = await mountView()
+    await openAdd(w)
     const form = w.findAll('form').at(-1)!
     await form.find('input').setValue('dave')
     await form.trigger('submit')
     await flushPromises()
     expect(w.text()).toContain('already has a pending invitation')
+    expect(w.findComponent(PynOrgMembers).props('adding')).toBe(true)
   })
 
   it('words a cancel that finds nothing pending', async () => {

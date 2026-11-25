@@ -48,7 +48,8 @@ describe('team state', () => {
   })
 
   it('explains the team error codes', () => {
-    expect(describeError(new ApiError(409, 'team_exists', 'x'))).toContain('already exists')
+    const taken = 'studio already has a team with the slug qa'
+    expect(describeError(new ApiError(409, 'team_exists', taken))).toBe(taken)
     expect(describeError(new ApiError(400, 'not_org_repo', 'x'))).toContain('organization')
   })
 })
@@ -67,13 +68,21 @@ describe('PynTeamList', () => {
   })
 })
 
+const newTeam = (w: ReturnType<typeof mount>) =>
+  w
+    .findAll('button')
+    .find((b) => b.text() === 'New team')!
+    .trigger('click')
+
 describe('PynTeamForm', () => {
-  it('emits the slug, name and description when creating', async () => {
+  it('opens from New team and emits the name and description', async () => {
     const w = mount(PynTeamForm, { props: { error: 'taken' } })
-    await w.find('input').setValue(' qa ')
+    expect(w.find('form').exists()).toBe(false)
+    await newTeam(w)
+    await w.find('input').setValue('QA team')
     await w.find('textarea').setValue('testers')
     await w.find('form').trigger('submit')
-    expect(w.emitted('submit')?.[0]).toEqual([{ slug: 'qa', name: '', description: 'testers' }])
+    expect(w.emitted('submit')?.[0]).toEqual([{ name: 'QA team', description: 'testers' }])
     expect(w.find('[role=alert]').text()).toBe('taken')
   })
 
@@ -183,10 +192,10 @@ describe('team views', () => {
     const owner = mountAs('owner')
     await flushPromises()
     expect(owner.text()).toContain('Artists')
-    expect(owner.text()).toContain('Create a team')
+    expect(owner.text()).toContain('New team')
     const member = mountAs('member')
     await flushPromises()
-    expect(member.text()).not.toContain('Create a team')
+    expect(member.text()).not.toContain('New team')
   })
 
   it('creates a team and goes to it', async () => {
@@ -201,11 +210,37 @@ describe('team views', () => {
       },
     })
     await flushPromises()
-    await w.find('input').setValue('qa')
+    await newTeam(w)
+    await w.find('input').setValue('QA')
     await w.find('form').trigger('submit')
     await flushPromises()
     expect(calls).toContain('POST /v1/orgs/studio/teams')
+    const posts = vi
+      .mocked(fetch)
+      .mock.calls.filter(([, init]) => init?.method === 'POST')
+      .map(([, init]) => JSON.parse(String(init?.body)))
+    expect(posts).toEqual([{ name: 'QA' }])
     expect(router.currentRoute.value.path).toBe('/studio/-/teams/qa')
+  })
+
+  it('shows the server wording of a refused team name', async () => {
+    stub((k) =>
+      k === 'POST /v1/orgs/studio/teams'
+        ? json({ code: 'team_exists', message: 'studio already has a team with the slug qa' }, 409)
+        : undefined,
+    )
+    const w = mount(OrgTeamsView, {
+      global: {
+        plugins: [makeRouter(createMemoryHistory())],
+        provide: { [sessionKey as symbol]: session, [orgKey as symbol]: orgCtx('owner') },
+      },
+    })
+    await flushPromises()
+    await newTeam(w)
+    await w.find('input').setValue('QA')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    expect(w.find('[role=alert]').text()).toBe('studio already has a team with the slug qa')
   })
 
   it('loads a team, adds a member from the organization and deletes with confirmation', async () => {
@@ -240,6 +275,7 @@ describe('team views', () => {
     await detail.find('form').trigger('submit')
     await flushPromises()
     expect(calls).toContain('PUT /v1/orgs/studio/teams/artists/members/alice')
+    expect(w.findComponent(PynTeamDetail).props('adding')).toBe(false)
 
     const del = w.findAllComponents(PynTeamDelete)[0]
     await del.find('input').setValue('artists')
@@ -342,9 +378,12 @@ describe('team views', () => {
         page.props('rows').map((r: { name: string; kind: string }) => `${r.kind}:${r.name}`),
       ).toEqual(['person:bob', 'team:artists'])
       expect(page.props('teams')).toEqual(['qa'])
+      await page.setValue('teams', 'adding')
+      expect(page.props('adding')).toBe('teams')
       page.vm.$emit('grant', { name: 'qa', role: 'writer' })
       await flushPromises()
       expect(calls).toContain('PUT /v1/repos/studio/game/teams/qa')
+      expect(page.props('adding')).toBeUndefined()
       page.vm.$emit('revoke', 'artists')
       await flushPromises()
       expect(calls).toContain('DELETE /v1/repos/studio/game/teams/artists')
@@ -380,10 +419,13 @@ describe('team views', () => {
       const w = mountView(true)
       await flushPromises()
       const page = w.findComponent(PynRepoCollaborators)
+      await page.setValue(true, 'inviting')
+      expect(page.props('inviting')).toBe(true)
       page.vm.$emit('createInvite', { role: 'reader', hours: 24 })
       await flushPromises()
       expect(calls).toContain('POST /v1/repos/studio/game/invites')
       expect(page.props('inviteCode')).toBe('pyni_x')
+      expect(page.props('inviting')).toBe(false)
       page.vm.$emit('revokeInvite', 'i1')
       await flushPromises()
       expect(calls).toContain('DELETE /v1/repos/studio/game/invites/i1')
