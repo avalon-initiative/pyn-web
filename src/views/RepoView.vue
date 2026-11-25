@@ -322,7 +322,6 @@ const ownerHref = computed(() => (org.value ? orgPath(owner.value) : `/${owner.v
       :locked-count="locks?.length ?? 0"
       :pull-count="openPulls"
       :lock-holders="lockHolders(locks ?? [])"
-      :max-tabs="5"
       :facts="facts"
       :hide-lock-strip="section === 'locks'"
       :social="social"

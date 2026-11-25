@@ -3626,10 +3626,14 @@ export interface components {
     CreateTeamRequest: {
       /** @description At most 500 characters; defaults to empty. */
       description?: string | null
-      /** @description 1 to 100 characters; defaults to the slug. */
-      name?: string | null
-      /** @description 1 to 39 lowercase letters, digits, `-` or `_`, starting with a letter or digit; unique in the organization. */
-      slug: string
+      /** @description The display name: 1 to 100 characters, trimmed. */
+      name: string
+      /**
+       * @description Unique in the organization: 1 to 39 lowercase letters, digits, `-` or `_`, starting with a letter or digit.
+       *     Derived from the name when left out: trimmed, each run of whitespace one `-`, lowercased, other characters a slug
+       *     cannot hold dropped, runs of `-` collapsed and leading or trailing `-` and `_` trimmed. The response carries it.
+       */
+      slug?: string | null
     }
     CreateTokenRequest: {
       description?: string | null
@@ -11154,6 +11158,7 @@ export interface operations {
       }
     }
     responses: {
+      /** @description carries the slug, derived from the name when left out */
       201: {
         headers: {
           [name: string]: unknown
@@ -11162,7 +11167,7 @@ export interface operations {
           'application/json': components['schemas']['TeamInfo']
         }
       }
-      /** @description invalid_request: bad slug, name or description */
+      /** @description invalid_request: bad name, slug or description, or no slug can be derived from the name */
       400: {
         headers: {
           [name: string]: unknown
@@ -11189,7 +11194,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorBody']
         }
       }
-      /** @description team_exists */
+      /** @description team_exists: the message names the slug */
       409: {
         headers: {
           [name: string]: unknown

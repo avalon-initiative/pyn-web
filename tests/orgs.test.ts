@@ -194,7 +194,7 @@ describe('PynOrgMembers', () => {
     w.findAll('button').filter((b) => b.text().startsWith(text))
 
   it('lets an owner add a member with a role', async () => {
-    const w = mount(PynOrgMembers, { props })
+    const w = mount(PynOrgMembers, { props: { ...props, adding: true } })
     const form = w.findAll('form').at(-1)!
     await form.find('input').setValue(' dave ')
     await form.find('select').setValue('owner')

@@ -29,6 +29,7 @@ const slug = computed(() => String(route.params.team))
 const team = ref<TeamInfo | null>(null)
 const orgMembers = ref<string[]>([])
 const loaded = ref(false)
+const adding = ref(false)
 const notFound = ref(false)
 const owner = computed(() => canWrite(isOrgOwner(org.value), frozen.value))
 const page = useAction()
@@ -57,7 +58,11 @@ const change = (action: () => Promise<void>) =>
     await load()
   })
 
-const add = (user: string) => change(() => addTeamMember(name.value, slug.value, user))
+const add = (user: string) =>
+  change(async () => {
+    await addTeamMember(name.value, slug.value, user)
+    adding.value = false
+  })
 const remove = (user: string) => change(() => removeTeamMember(name.value, slug.value, user))
 
 const removeMany = (users: string[]) =>
@@ -100,6 +105,7 @@ watch(
   <template v-else-if="loaded && team">
     <PynTeamDetail
       :key="team.id"
+      v-model:adding="adding"
       :team="team"
       :candidates="candidates"
       :owner="owner"

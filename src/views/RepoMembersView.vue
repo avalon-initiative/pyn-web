@@ -46,6 +46,7 @@ const loaded = ref(false)
 const tab = ref<AccessTab>('direct')
 const query = ref('')
 const adding = ref<AccessAdd>()
+const inviteOpen = ref(false)
 const type = ref('all')
 const role = ref('all')
 const page = ref(1)
@@ -117,13 +118,18 @@ const setRole = (c: { name: string; role: string }) =>
 const add = (u: NewUser) =>
   run(people, async () => {
     await addUser(target.value, u)
+    adding.value = undefined
   })
 const grant = (c: { name: string; role: string }) =>
-  run(granting, () => setRepoTeam(target.value, c.name, c.role))
+  run(granting, async () => {
+    await setRepoTeam(target.value, c.name, c.role)
+    adding.value = undefined
+  })
 const revoke = (slug: string) => run(teams, () => removeRepoTeam(target.value, slug))
 const invite = (f: { role: string; hours: number }) =>
   run(inviting, async () => {
     inviteCode.value = (await createInvite(target.value, f.role, f.hours)).code
+    inviteOpen.value = false
   })
 const dropInvite = (id: string) => run(inviting, () => revokeInvite(target.value, id))
 
@@ -142,6 +148,7 @@ onMounted(async () => {
     v-model:tab="tab"
     v-model:query="query"
     v-model:adding="adding"
+    v-model:inviting="inviteOpen"
     :rows="rows"
     :count="matching.length"
     :roles="roles"
