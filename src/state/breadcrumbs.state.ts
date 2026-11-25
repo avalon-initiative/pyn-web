@@ -37,7 +37,7 @@ const ORG: Record<string, string> = {
   'owner-repositories': 'Repositories',
   'owner-stars': 'Stars',
   'owner-usage': 'Usage',
-  'org-members': 'Members',
+  'org-members': 'People',
   'org-teams': 'Teams',
   'org-audit': 'Audit log',
   'org-settings': 'Settings',
