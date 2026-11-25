@@ -9,7 +9,7 @@ type Repo = { owner: string; name: string }
 export const listTeams = (org: string) =>
   call<TeamInfo[]>(api.GET('/v1/orgs/{org}/teams', { params: { path: { org } } }))
 
-export const createTeam = (org: string, t: { slug: string; name?: string; description?: string }) =>
+export const createTeam = (org: string, t: { name: string; description?: string }) =>
   call<TeamInfo>(api.POST('/v1/orgs/{org}/teams', { params: { path: { org } }, body: t }))
 
 export const getTeam = (org: string, team: string) =>

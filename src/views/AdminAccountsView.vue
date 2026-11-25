@@ -70,6 +70,7 @@ const reset = (name: string) => {
 const sent = ref('')
 const resending = ref('')
 const adding = useAction(false)
+const addOpen = ref(false)
 
 const resend = async (name: string) => {
   sent.value = ''
@@ -86,6 +87,7 @@ const add = async (form: { username: string; password: string }) => {
     await addAccount(form.username, form.password)
   })
   if (!ok) return
+  addOpen.value = false
   sent.value = `Added ${form.username}. They must choose their own password when they first sign in.`
   await loadAccounts()
 }
@@ -128,7 +130,12 @@ onMounted(() => {
     <PynViewNotice v-if="sent" tone="info" title="Done" dismissible @dismiss="sent = ''">{{
       sent
     }}</PynViewNotice>
-    <PynAddAccount :busy="adding.busy.value" :error="adding.error.value" @add="add" />
+    <PynAddAccount
+      v-model:adding="addOpen"
+      :busy="adding.busy.value"
+      :error="adding.error.value"
+      @add="add"
+    />
     <PynAccounts
       :accounts="accounts"
       :status="status"

@@ -694,7 +694,9 @@ describe('PynInvites', () => {
   ]
 
   it('shows the one-time code, revokes only open invitations and creates', async () => {
-    const w = mount(PynInvites, { props: { invites, roles: ['reader', 'writer'], code: 'pyni_x' } })
+    const w = mount(PynInvites, {
+      props: { invites, roles: ['reader', 'writer'], code: 'pyni_x', adding: true },
+    })
     expect(w.find('[role=status]').text()).toContain('pyni_x')
     expect(w.text()).toContain('used by wendy')
     const revoke = w.findAll('button').filter((b) => b.text() === 'Revoke')

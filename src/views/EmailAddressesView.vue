@@ -7,6 +7,7 @@ import { useAction } from '../state/action.state'
 
 const emails = ref<AccountEmail[]>([])
 const sent = ref('')
+const adding = ref(false)
 const { busy, error, attempt } = useAction()
 
 const load = () =>
@@ -22,16 +23,23 @@ const change = (action: () => Promise<unknown>, linked = '') =>
     sent.value = linked
   })
 
+const add = (a: string) =>
+  change(async () => {
+    await addEmail(a)
+    adding.value = false
+  }, a)
+
 onMounted(load)
 </script>
 
 <template>
   <PynEmailAddresses
+    v-model:adding="adding"
     :emails="emails"
     :busy="busy"
     :error="error"
     :sent="sent"
-    @add="(a: string) => change(() => addEmail(a), a)"
+    @add="add"
     @resend="(a: string) => change(() => resendEmail(a), a)"
     @primary="(a: string) => change(() => setPrimaryEmail(a))"
     @remove="(a: string) => change(() => removeEmail(a))"
