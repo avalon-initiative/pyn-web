@@ -16,6 +16,7 @@ import {
 import { computed, inject, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listOrgMembers } from '../api/orgs'
+import { describeError } from '../api/client'
 import { getProfile, listStarred } from '../api/profile'
 import type { PublicProfile } from '../api/profile'
 import { fetchContent, fetchTree, listRepos } from '../api/repos'
@@ -35,6 +36,7 @@ const router = useRouter()
 const route = useRoute()
 const repos = ref<RepoDetails[]>([])
 const starred = ref<RepoDetails[] | undefined>()
+const starredError = ref('')
 const rows = computed(() => repoRows(repos.value))
 const starredRows = computed(() => starred.value && repoRows(starred.value))
 const languages = computed(() => topLanguages(repos.value))
@@ -62,6 +64,7 @@ watch(
     gated.value = false
     profile.value = null
     starred.value = undefined
+    starredError.value = ''
     people.value = []
     readme.value = null
     await attempt(async () => {
@@ -73,7 +76,13 @@ watch(
         } else {
           profile.value = await getProfile(name.value)
           repos.value = sortRepos(profile.value.repositories)
-          starred.value = (await listStarred(name.value).catch(() => null))?.map((s) => s.repo)
+          starred.value = await listStarred(name.value).then(
+            (list) => list.map((s) => s.repo),
+            (e: unknown) => {
+              starredError.value = describeError(e)
+              return undefined
+            },
+          )
         }
         readme.value = await loadProfileReadme(name.value, repos.value, readers)
       } catch (e) {
@@ -101,7 +110,7 @@ watch(
       :username="profile.user"
       :current="current"
       :self="profile.user === self"
-      :stars="starred?.length"
+      :stars="starredError ? null : starred?.length"
       :starred-repos="starredRows"
       :repos="rows"
       :orgs="profile.organizations"
@@ -126,6 +135,9 @@ watch(
             />
           </template>
         </PynProfileHeader>
+      </template>
+      <template v-if="starredError" #starred>
+        <PynViewError>{{ starredError }}</PynViewError>
       </template>
       <template v-if="readme" #readme>
         <PynReadme :readme="readme" :owner="name" :name="name" />
