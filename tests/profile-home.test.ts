@@ -1,6 +1,7 @@
 import {
   PynOrgHome,
   PynProfileLayout,
+  PynViewError,
   PynReadme,
   PynRepoList,
 } from '@avalon-initiative/pyn-common-ui'
@@ -85,13 +86,18 @@ describe('profile tabs', () => {
     ])
   })
 
-  it('hides the Stars tab when the list cannot be read and Usage for others', async () => {
+  it('keeps the Stars tab with an error when the list cannot be read, and hides Usage for others', async () => {
     stub({ '/v1/users/ada': profile })
-    const w = view('bob', 'owner')
+    const w = view('bob', 'owner-stars')
     await flushPromises()
-    expect(w.findComponent(PynProfileLayout).props()).toMatchObject({ self: false })
-    expect(w.findComponent(PynProfileLayout).props('stars')).toBeUndefined()
-    expect(w.findAll('nav a')).toHaveLength(2)
+    const layout = w.findComponent(PynProfileLayout)
+    expect(layout.props()).toMatchObject({ self: false, stars: null })
+    expect(w.findAll('nav a').map((a) => a.attributes('href'))).toEqual([
+      '/ada',
+      '/ada/-/repositories',
+      '/ada/-/stars',
+    ])
+    expect(w.findComponent(PynViewError).text()).toBe('x')
   })
 })
 
