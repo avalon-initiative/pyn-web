@@ -3269,6 +3269,7 @@ export interface components {
       actor_public?: components['schemas']['PublicIdentity'] | null
       /** Format: date-time */
       at: string
+      /** @description What happened, in words; times the event names are in `times`, not here. */
       detail: string
       /** @description SHA-256 hex over the event's canonical encoding, which includes `previous`. */
       hash: string
@@ -3277,6 +3278,10 @@ export interface components {
       path?: string | null
       /** @description The hash of the preceding event in the same log; absent for the first. */
       previous?: string | null
+      /** @description Times the event names, by name (`expires_at`, `purge_at`, `written_at`), for clients to format; absent when none. Covered by `hash`. */
+      times?: {
+        [key: string]: string
+      }
     }
     AuditPage: {
       /** @description Newest first. */
@@ -12677,6 +12682,8 @@ export interface operations {
         revision?: number
         /** @description the branch whose revision is read when no revision is given; the default branch if omitted */
         branch?: string
+        /** @description when present (any value, `download=1` by convention), the response carries `Content-Disposition: attachment` with the file's name */
+        download?: string
       }
       header?: never
       path: {
@@ -12689,6 +12696,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description the type is guessed from the path (docs/concepts/browsing.md): `text/plain; charset=utf-8` for text, markup and source, an image, audio, video or PDF type for those, `application/octet-stream` otherwise; never an active type such as HTML or SVG. Sent with `X-Content-Type-Options: nosniff` and a sandboxing `Content-Security-Policy` */
       200: {
         headers: {
           [name: string]: unknown
@@ -12697,7 +12705,7 @@ export interface operations {
           'application/octet-stream': string
         }
       }
-      /** @description the part named by a single-range `Range: bytes=` header */
+      /** @description the part named by a single-range `Range: bytes=` header, typed as for 200 */
       206: {
         headers: {
           [name: string]: unknown
